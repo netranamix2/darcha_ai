@@ -1,0 +1,39 @@
+# Hackathon setup: one Postgres (+pgvector) and the API. No Redis: background work runs in-process
+# behind the same InboundMessage interface, so a queue can be added later without touching the pipeline.
+#
+#   docker compose up -d db             # just the database (run the API from the venv to use your GPU)
+#   docker compose up -d                # database + API (CPU) on :8000
+name: darcha   # fixed compose project name: containers and volumes do not depend on the folder name
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: edu
+      POSTGRES_PASSWORD: edu
+      POSTGRES_DB: darcha
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edu -d darcha"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://edu:edu@db:5432/darcha
+      DATA_DIR: /data
+    volumes:
+      - ./data:/data
+      - hfcache:/root/.cache/huggingface
+    ports: ["8000:8000"]
+    depends_on:
+      db: {condition: service_healthy}
+
+  # frontend: added by the frontend developer (frontend/Dockerfile)
+
+volumes:
+  pgdata:
+  hfcache:

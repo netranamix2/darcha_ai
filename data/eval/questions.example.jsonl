@@ -1,0 +1,5 @@
+{"q": "Kontrakt pulini bo'lib to'lash mumkinmi?", "lang": "uz", "script": "latin", "expected_action": "answer", "expected_doc": "<document number>", "expected_points": ["<fill from the regulation>"]}
+{"q": "Боламни бошқа мактабга қандай ўтказаман?", "lang": "uz", "script": "cyrillic", "expected_action": "answer", "expected_doc": "<document number>", "expected_points": ["<...>"]}
+{"q": "Как восстановиться в вузе после отчисления?", "lang": "ru", "script": "cyrillic", "expected_action": "answer", "expected_doc": "<document number>", "expected_points": ["<...>"]}
+{"q": "Universitet meni tiklashdan bosh tortdi, hujjatlarim to'liq edi. Nima qilay?", "lang": "uz", "script": "latin", "expected_action": "ticket"}
+{"q": "Attestatsiyadan o'tdim, lekin toifa berilmadi, direktor sababini aytmayapti", "lang": "uz", "script": "latin", "expected_action": "ticket"}

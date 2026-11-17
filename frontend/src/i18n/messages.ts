@@ -1,5 +1,4 @@
 import type { Language } from './locales'
-import { showcaseMessages } from './showcase'
 
 const latin = {
   'brand.name': 'Darcha',
@@ -11,17 +10,6 @@ const latin = {
   'common.loading': 'Yuklanmoqda…',
   'common.home': 'Bosh sahifa',
   'header.staff': 'Xodimlar uchun',
-  'chat.eyebrow': 'TAʼLIM BOʻYICHA MUROJAATLAR',
-  'chat.heading': 'Savolingizga javob toping',
-  'chat.description': 'Taʼlimga oid murojaatlar uchun yagona darcha. Javoblar rasmiy hujjatlarga tayanadi va zarur hollarda mutaxassisga yuboriladi.',
-  'chat.name': 'Darcha yordamchisi',
-  'chat.preview': 'Suhbat namunasi',
-  'chat.exampleQuestion': 'Oʻqishni koʻchirish tartibini qayerdan bilsam boʻladi?',
-  'chat.exampleAnswer': 'Javobda amaldagi tartib va tegishli rasmiy hujjatga havolani topasiz.',
-  'chat.source': 'Hujjatga havola',
-  'chat.placeholder': 'Savolingizni yozing',
-  'chat.send': 'Yuborish',
-  'chat.unavailable': 'Suhbat hali ochilmagan.',
   'login.heading': 'Xodimlar uchun kirish',
   'login.description': 'Darcha ish maydoniga kirish uchun hisobingizni kiriting.',
   'login.email': 'Elektron pochta',
@@ -58,17 +46,6 @@ const cyrillic = {
   'common.loading': 'Юкланмоқда…',
   'common.home': 'Бош саҳифа',
   'header.staff': 'Ходимлар учун',
-  'chat.eyebrow': 'ТАЪЛИМ БЎЙИЧА МУРОЖААТЛАР',
-  'chat.heading': 'Саволингизга жавоб топинг',
-  'chat.description': 'Таълимга оид мурожаатлар учун ягона дарча. Жавоблар расмий ҳужжатларга таянади ва зарур ҳолларда мутахассисга юборилади.',
-  'chat.name': 'Darcha ёрдамчиси',
-  'chat.preview': 'Суҳбат намунаси',
-  'chat.exampleQuestion': 'Ўқишни кўчириш тартибини қаердан билсам бўлади?',
-  'chat.exampleAnswer': 'Жавобда амалдаги тартиб ва тегишли расмий ҳужжатга ҳаволани топасиз.',
-  'chat.source': 'Ҳужжатга ҳавола',
-  'chat.placeholder': 'Саволингизни ёзинг',
-  'chat.send': 'Юбориш',
-  'chat.unavailable': 'Суҳбат ҳали очилмаган.',
   'login.heading': 'Ходимлар учун кириш',
   'login.description': 'Darcha иш майдонига кириш учун ҳисобингизни киритинг.',
   'login.email': 'Электрон почта',
@@ -105,17 +82,6 @@ const russian = {
   'common.loading': 'Загрузка…',
   'common.home': 'Главная',
   'header.staff': 'Для сотрудников',
-  'chat.eyebrow': 'ОБРАЩЕНИЯ ПО ВОПРОСАМ ОБРАЗОВАНИЯ',
-  'chat.heading': 'Найдите ответ на свой вопрос',
-  'chat.description': 'Единое окно для обращений по вопросам образования. Ответы опираются на официальные документы. При необходимости обращение передаётся специалисту.',
-  'chat.name': 'Помощник Darcha',
-  'chat.preview': 'Пример беседы',
-  'chat.exampleQuestion': 'Где узнать порядок перевода в другой вуз?',
-  'chat.exampleAnswer': 'В ответе вы найдёте описание действующего порядка и ссылку на официальный документ.',
-  'chat.source': 'Ссылка на документ',
-  'chat.placeholder': 'Напишите свой вопрос',
-  'chat.send': 'Отправить',
-  'chat.unavailable': 'Чат ещё не открыт.',
   'login.heading': 'Вход для сотрудников',
   'login.description': 'Войдите в свою учётную запись, чтобы открыть рабочую область Darcha.',
   'login.email': 'Электронная почта',
@@ -142,10 +108,10 @@ const russian = {
   'missing.description': 'Проверьте адрес или вернитесь на главную.',
 } satisfies Record<keyof typeof latin, string>
 
-export type TranslationKey = keyof typeof latin | keyof (typeof showcaseMessages)['uz-latn']
+export type TranslationKey = keyof typeof latin
 
 export const messages: Record<Language, Record<TranslationKey, string>> = {
-  'uz-latn': { ...latin, ...showcaseMessages['uz-latn'] },
-  'uz-cyrl': { ...cyrillic, ...showcaseMessages['uz-cyrl'] },
-  ru: { ...russian, ...showcaseMessages.ru },
+  'uz-latn': latin,
+  'uz-cyrl': cyrillic,
+  ru: russian,
 }

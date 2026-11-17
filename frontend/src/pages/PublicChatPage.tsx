@@ -1,45 +1,127 @@
-import { ArrowUp, FileText, Landmark } from 'lucide-react'
-import { WindowMark } from '../components/Brand'
-import { GlassPanel, IconButton, Input } from '../components/ui'
+import { Activity, Clock3, FileCheck2, Languages, MessageCircle, Search, ShieldCheck } from 'lucide-react'
+import { useInView } from 'motion/react'
+import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
+import PublicChat from '../components/chat/PublicChat'
+import { ViewportCounter } from '../components/ui'
+import { localeCodes } from '../i18n/locales'
+import { publicHomeMessages } from '../i18n/public-home'
+import { useLanguage } from '../i18n/useLanguage'
 import { useT } from '../i18n/useT'
+import './public-home.css'
 
-export default function PublicChatPage() {
-  const t = useT()
+const PublicDetails = lazy(() => import('../components/public/PublicDetails'))
+const introStorageKey = 'darcha.home-intro'
+let introShownInDocument = false
+
+const trustItems = [
+  { label: 'public.trustSources', icon: FileCheck2 },
+  { label: 'public.trustAvailability', icon: Clock3 },
+  { label: 'public.trustLanguages', icon: Languages },
+  { label: 'public.trustReview', icon: ShieldCheck },
+] as const
+
+const steps = [
+  { label: 'public.stepQuestion', icon: MessageCircle },
+  { label: 'public.stepSearch', icon: Search },
+  { label: 'public.stepAnswer', icon: FileCheck2 },
+] as const
+
+function shouldShowIntro() {
+  if (introShownInDocument) return false
+  try {
+    return sessionStorage.getItem(introStorageKey) === null
+  } catch {
+    return true
+  }
+}
+
+function HeadlineWords({ words, offset = 0 }: { words: string[]; offset?: number }) {
+  return words.map((word, index) => (
+    <Fragment key={index}>
+      {index > 0 && ' '}
+      <span className="public-headline-word" style={{ '--word-index': offset + index } as CSSProperties}>
+        {word}
+      </span>
+    </Fragment>
+  ))
+}
+
+function DeferredDetails() {
+  const slot = useRef<HTMLDivElement>(null)
+  const isNear = useInView(slot, { once: true, margin: '0px 0px 240px 0px' })
 
   return (
-    <div className="chat-page">
-      <section className="chat-intro" aria-labelledby="chat-heading">
-        <p className="chat-eyebrow"><Landmark size={16} aria-hidden="true" />{t('chat.eyebrow')}</p>
-        <h1 id="chat-heading">{t('chat.heading')}</h1>
-        <p className="chat-description">{t('chat.description')}</p>
-      </section>
-      <GlassPanel variant="elevated" className="chat-window">
-        <section aria-labelledby="chat-name">
-          <header className="chat-window-header">
-            <WindowMark />
-            <div>
-              <h2 id="chat-name">{t('chat.name')}</h2>
-              <p>{t('chat.preview')}</p>
-            </div>
-          </header>
-          <div className="chat-thread">
-            <p className="chat-question">{t('chat.exampleQuestion')}</p>
-            <div className="chat-answer">
-              <p>{t('chat.exampleAnswer')}</p>
-              <span className="chat-source"><FileText aria-hidden="true" size={15} />{t('chat.source')}</span>
-            </div>
-          </div>
-          <div className="chat-composer">
-            <div className="chat-composer-row">
-              <Input disabled placeholder={t('chat.placeholder')} aria-label={t('chat.placeholder')} />
-              <IconButton variant="secondary" disabled aria-label={t('chat.send')}>
-                <ArrowUp aria-hidden="true" size={18} />
-              </IconButton>
-            </div>
-            <p>{t('chat.unavailable')}</p>
+    <div className="public-details-slot" ref={slot}>
+      {isNear && (
+        <Suspense fallback={null}>
+          <PublicDetails />
+        </Suspense>
+      )}
+    </div>
+  )
+}
+
+export default function PublicChatPage() {
+  const [showIntro] = useState(shouldShowIntro)
+  const t = useT(publicHomeMessages)
+  const { language } = useLanguage()
+  const lead = t('public.heroLead')
+  const accent = t('public.heroAccent')
+  const leadWords = lead.match(/\S+(?:\s+—)?/gu) ?? [lead]
+  const accentWords = accent.split(' ')
+
+  useEffect(() => {
+    if (!showIntro) return
+    introShownInDocument = true
+    try {
+      sessionStorage.setItem(introStorageKey, 'shown')
+    } catch {
+      // The document flag covers in-app navigation when storage is unavailable.
+    }
+  }, [showIntro])
+
+  return (
+    <div className="public-home" data-intro={showIntro ? '' : undefined}>
+      <div className="public-hero">
+        <section className="public-hero-intro" aria-labelledby="public-hero-heading">
+          <h1 id="public-hero-heading" className="public-headline" aria-label={`${lead} ${accent}`}>
+            <span aria-hidden="true"><HeadlineWords words={leadWords} /></span>
+            <span className="public-headline-accent" aria-hidden="true">
+              <HeadlineWords words={accentWords} offset={leadWords.length} />
+            </span>
+          </h1>
+          <p className="public-hero-description">{t('public.heroDescription')}</p>
+          <ul className="public-trust">
+            {trustItems.map(({ label, icon: Icon }) => (
+              <li key={label}>
+                <Icon size={15} aria-hidden="true" />
+                <span>{t(label)}</span>
+              </li>
+            ))}
+          </ul>
+          <ol className="public-steps" aria-label={t('public.how')}>
+            {steps.map(({ label, icon: Icon }) => (
+              <li key={label}>
+                <span className="public-step-icon"><Icon size={18} aria-hidden="true" /></span>
+                <span>{t(label)}</span>
+              </li>
+            ))}
+          </ol>
+          <div className="public-stat">
+            <Activity size={18} aria-hidden="true" />
+            <p>
+              {t('public.today')}{' '}
+              <ViewportCounter value={1284} locale={localeCodes[language]} className="public-stat-value" />
+            </p>
+            <small>{t('public.todayDemo')}</small>
           </div>
         </section>
-      </GlassPanel>
+        <div className="public-chat-slot">
+          <PublicChat />
+        </div>
+      </div>
+      <DeferredDetails />
     </div>
   )
 }

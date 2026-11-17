@@ -1,9 +1,10 @@
 .glass-panel {
   --panel-blur: var(--glass-blur);
   position: relative;
-  border: 1px solid rgb(255 255 255 / 4%);
+  isolation: isolate;
+  border: 1px solid rgb(255 255 255 / 3%);
   border-radius: var(--radius-panel);
-  background: var(--glass-fill);
+  background: linear-gradient(165deg, rgb(164 196 250 / 4%), transparent 47%), var(--glass-fill);
   -webkit-backdrop-filter: blur(var(--panel-blur));
   backdrop-filter: blur(var(--panel-blur));
   box-shadow: var(--glass-highlight), var(--shadow-panel);
@@ -21,23 +22,103 @@
   content: "";
 }
 
+.glass-panel__spotlight {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .glass-panel__spotlight {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    display: block;
+    overflow: hidden;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 260ms var(--ease-out);
+    pointer-events: none;
+  }
+
+  .glass-panel:hover > .glass-panel__spotlight {
+    opacity: 1;
+  }
+
+  .glass-panel__spotlight::after {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 28rem;
+    height: 28rem;
+    transform: translate3d(var(--spot-x, 0px), var(--spot-y, 0px), 0) translate(-50%, -50%);
+    background: radial-gradient(circle, rgb(143 184 255 / 17%), rgb(88 147 255 / 6%) 38%, transparent 69%);
+    content: "";
+  }
+}
+
 .glass-panel--elevated {
   --panel-blur: 24px;
   border-radius: var(--radius-panel-elevated);
-  background: var(--glass-fill-elevated);
+  background: linear-gradient(154deg, rgb(156 194 255 / 5%), transparent 48%), var(--glass-fill-elevated);
   box-shadow: var(--glass-highlight), var(--shadow-elevated);
 }
 
 .glass-panel--subtle {
   --panel-blur: 16px;
   border-radius: var(--radius-panel-subtle);
-  background: var(--glass-fill-subtle);
-  box-shadow: var(--glass-highlight), 0 12px 36px rgb(1 5 15 / 17%);
+  background: linear-gradient(164deg, rgb(156 194 255 / 2.5%), transparent 49%), var(--glass-fill-subtle);
+  box-shadow: var(--glass-highlight), 0 12px 40px rgb(5 15 39 / 21%);
 }
 
 .glass-panel[data-blur="off"] {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+
+.glass-lift {
+  position: relative;
+  transition: transform 240ms var(--ease-spring);
+}
+
+.glass-lift::after {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(165 200 254 / 34%);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 240ms var(--ease-out);
+  pointer-events: none;
+  content: "";
+}
+
+.glass-lift:focus-visible::after {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .glass-lift:where(:not(:disabled, [aria-disabled="true"])):hover {
+    transform: translateY(-2px);
+  }
+
+  .glass-lift:where(:not(:disabled, [aria-disabled="true"])):hover::after {
+    opacity: 1;
+  }
+}
+
+.glass-stagger > * {
+  animation: glass-rise 300ms var(--ease-out) backwards;
+  animation-delay: calc(var(--stagger-index, 0) * 40ms);
+}
+
+.glass-stagger > :nth-child(2) { --stagger-index: 1; }
+.glass-stagger > :nth-child(3) { --stagger-index: 2; }
+.glass-stagger > :nth-child(4) { --stagger-index: 3; }
+.glass-stagger > :nth-child(5) { --stagger-index: 4; }
+.glass-stagger > :nth-child(6) { --stagger-index: 5; }
+.glass-stagger > :nth-child(7) { --stagger-index: 6; }
+.glass-stagger > :nth-child(n+8) { --stagger-index: 7; }
+
+@keyframes glass-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .ui-button {
@@ -60,7 +141,7 @@
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  transition: transform var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
+  transition: transform 180ms var(--ease-out), opacity var(--motion-fast) var(--ease-out);
 }
 
 .ui-button[data-size="sm"] {
@@ -81,16 +162,20 @@
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 14%), 0 5px 15px rgb(13 57 162 / 34%);
 }
 
-.ui-button[data-variant="primary"]::before {
+.ui-button::before {
   position: absolute;
   z-index: -1;
   inset: 0;
   border-radius: inherit;
-  box-shadow: 0 0 24px rgb(47 123 255 / 40%);
+  box-shadow: 0 0 18px rgb(78 126 246 / 20%);
   opacity: 0;
   transition: opacity var(--motion-normal) var(--ease-out);
   pointer-events: none;
   content: "";
+}
+
+.ui-button[data-variant="primary"]::before {
+  box-shadow: 0 0 25px rgb(47 123 255 / 40%), 0 0 8px rgb(107 163 255 / 32%);
 }
 
 .ui-button[data-variant="secondary"] {
@@ -110,10 +195,10 @@
 }
 
 .ui-button:where(:not(:disabled, [aria-disabled="true"])):is(:hover, [data-preview-state="hover"]) {
-  transform: translateY(-1px);
+  transform: translate3d(var(--button-x, 0px), var(--button-y, -1px), 0);
 }
 
-.ui-button[data-variant="primary"]:where(:not(:disabled, [aria-disabled="true"])):is(:hover, [data-preview-state="hover"])::before {
+.ui-button:where(:not(:disabled, [aria-disabled="true"])):is(:hover, [data-preview-state="hover"])::before {
   opacity: 1;
 }
 
@@ -123,7 +208,7 @@
 }
 
 .ui-button:where(:not(:disabled, [aria-disabled="true"])):active {
-  transform: scale(0.98);
+  transform: translate3d(var(--button-x, 0px), var(--button-y, 0px), 0) scale(0.97);
 }
 
 .ui-button:is(:disabled, [aria-disabled="true"]) {
@@ -223,8 +308,8 @@
 
 .ui-field:is(:focus-visible, [data-preview-state="focus"]),
 .ui-textarea:is(:focus-visible, [data-preview-state="focus"]) {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: 1px solid rgb(150 192 255 / 55%);
+  outline-offset: 1px;
 }
 
 .ui-field:disabled, .ui-textarea:disabled {
@@ -245,10 +330,48 @@
   position: relative;
   display: block;
   min-width: 0;
+  border-radius: var(--radius-control);
 }
 
-.ui-field-wrap .ui-field {
+.ui-field-wrap[data-icon="true"] .ui-field {
   padding-inline-start: 2.35rem;
+}
+
+.ui-field-ring {
+  position: absolute;
+  z-index: 1;
+  inset: -2px;
+  overflow: hidden;
+  padding: 2px;
+  border-radius: calc(var(--radius-control) + 2px);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+  pointer-events: none;
+}
+
+.ui-field-ring::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(160%, 16rem);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(from 35deg, #5378c3 0%, #bbddff 14%, #6c9ef1 30%, #5576b8 47%, #7497e8 65%, #a2caff 79%, #5378c3 100%);
+  content: "";
+}
+
+.ui-field-wrap:is(:focus-within, :has([data-preview-state="focus"])) > .ui-field-ring {
+  opacity: 1;
+}
+
+.ui-field-wrap:is(:focus-within, :has([data-preview-state="focus"])) > .ui-field-ring::before {
+  animation: ui-field-rotation 9s linear infinite;
+}
+
+@keyframes ui-field-rotation {
+  to { transform: translate(-50%, -50%) rotate(1turn); }
 }
 
 .ui-field-icon {
@@ -268,6 +391,20 @@
 }
 
 .ui-field-wrap:has(.ui-field:disabled) .ui-field-icon { opacity: 0.54; }
+
+.ui-counter {
+  display: inline-grid;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-counter > [aria-hidden="true"] {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+}
+
+.ui-counter__spacer {
+  visibility: hidden;
+}
 
 .ui-tabs-list {
   display: inline-flex;
@@ -538,8 +675,11 @@
 .ui-divider { flex-shrink: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ui-button, .ui-button::before, .ui-toast[data-swipe="cancel"] { transition: none; }
+  .ui-button, .ui-button::before, .ui-toast[data-swipe="cancel"], .ui-field-ring,
+  .glass-lift, .glass-lift::after { transition: none; }
   .ui-button:where(:not(:disabled, [aria-disabled="true"])):is(:hover, :active, [data-preview-state="hover"]) { transform: none; }
+  .glass-lift:hover { transform: none; }
   .ui-button__spinner, .ui-popover, .ui-skeleton::after,
-  .ui-toast[data-state], .ui-toast[data-swipe="end"] { animation: none; }
+  .ui-toast[data-state], .ui-toast[data-swipe="end"], .glass-stagger > *,
+  .ui-field-wrap:is(:focus-within, :has([data-preview-state="focus"])) > .ui-field-ring::before { animation: none; }
 }

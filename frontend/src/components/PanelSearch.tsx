@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useT } from '../i18n/useT'
 import { panelSections } from '../lib/panel-sections'
+import { Input } from './ui'
 
 export function PanelSearch() {
   const [query, setQuery] = useState('')
@@ -35,8 +36,9 @@ export function PanelSearch() {
         closeResults()
       }}
     >
-      <Search size={17} aria-hidden="true" />
-      <input
+      <Input
+        containerClassName="panel-search-field"
+        startIcon={<Search aria-hidden="true" />}
         aria-label={t('panel.search')}
         placeholder={t('panel.search')}
         type="search"

@@ -1,8 +1,15 @@
 import { forwardRef, type ComponentPropsWithoutRef } from 'react'
 import { cn } from '../../lib/cn'
+import { FieldFrame } from './field-frame'
 
-export const Textarea = forwardRef<HTMLTextAreaElement, ComponentPropsWithoutRef<'textarea'>>(function Textarea(
-  { className, ...props }, ref,
+type TextareaProps = ComponentPropsWithoutRef<'textarea'> & { containerClassName?: string }
+
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  { className, containerClassName, ...props }, ref,
 ) {
-  return <textarea {...props} ref={ref} className={cn('ui-textarea', className)} />
+  return (
+    <FieldFrame className={containerClassName}>
+      <textarea {...props} ref={ref} className={cn('ui-textarea', className)} />
+    </FieldFrame>
+  )
 })

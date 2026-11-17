@@ -28,7 +28,7 @@ const transferTitle = {
 export const topics = {
   transfer: {
     label: 'Oʻqishni koʻchirish',
-    pattern: /ko'chir|kochirish|кўчир|перевод(?:а|е|у|ом)?(?![\p{L}]|\s+(?:денег|денежных))|перевестись|перейти в другой вуз/iu,
+    pattern: /ko'chir|kochirish|кўчир|boshqa (?:otm|oliygoh).*o'tish|бошқа (?:отм|олийгоҳ).*ўтиш|перевод(?:а|е|у|ом)?(?![\p{L}]|\s+(?:денег|денежных))|перевестись|перейти в другой вуз/iu,
     level: 'green',
     source: {
       title: transferTitle,
@@ -170,6 +170,16 @@ const replyText = {
     'uz-cyrl': 'Ўқишга киритишни ваъда қилиб пул сўраш фирибгарлик белгиси бўлиши мумкин. Пул ўтказманг ва карта маълумотларини берманг. Хабарингиз текширув учун мутахассисга юборилди.',
     ru: 'Просьба заплатить за обещание поступления может быть признаком мошенничества. Не переводите деньги и не сообщайте данные карты. Сообщение передано специалисту для проверки.',
   },
+  clarify: {
+    'uz-latn': 'Savolingizga aniq javob berish uchun taʼlim muassasasi nomini va qaysi masala boʻyicha yordam kerakligini yozing. Murojaatlarni koʻrib chiqish tartibi quyidagi hujjatda keltirilgan.',
+    'uz-cyrl': 'Саволингизга аниқ жавоб бериш учун таълим муассасаси номини ва қайси масала бўйича ёрдам кераклигини ёзинг. Мурожаатларни кўриб чиқиш тартиби қуйидаги ҳужжатда келтирилган.',
+    ru: 'Чтобы ответить точнее, укажите учебное заведение и опишите, в чём нужна помощь. Порядок рассмотрения обращений приведён в документе ниже.',
+  },
+  specialist: {
+    'uz-latn': 'Murojaatingizni koʻrib chiqdim. Vaziyatni aniqlashtirish uchun taʼlim muassasasi nomini va hodisa sanasini shu suhbatda yozishingiz mumkin.',
+    'uz-cyrl': 'Мурожаатингизни кўриб чиқдим. Вазиятни аниқлаштириш учун таълим муассасаси номини ва ҳодиса санасини шу суҳбатда ёзишингиз мумкин.',
+    ru: 'Я ознакомился с обращением. Для уточнения обстоятельств укажите в этом чате название учебного заведения и дату события.',
+  },
 } satisfies Record<string, LocalizedText>
 
 function detectLocale(text: string): MockLocale {
@@ -208,5 +218,6 @@ export function determineReply(text: string) {
   else if (topic?.level === 'green') answer = topic.overview[locale]
 
   const label = fraud ? 'Qabuldagi firibgarlik' : topic?.label ?? 'Boshqa murojaatlar'
-  return { locale, topic: label, level, answer, citations: [cite(source, locale)], fraud }
+  const followUp = escalated ? replyText.specialist[locale] : topic?.overview[locale] ?? replyText.clarify[locale]
+  return { locale, topic: label, level, answer, citations: [cite(source, locale)], fraud, followUp }
 }

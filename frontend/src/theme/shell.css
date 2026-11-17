@@ -150,128 +150,8 @@
   transform: translateY(1rem);
 }
 
-.chat-page {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
-  align-items: center;
-  gap: clamp(2.2rem, 7vw, 6.5rem);
-  min-height: min(42rem, calc(100svh - 8.2rem));
-  max-width: 75rem;
-  margin-inline: auto;
-  padding-block: clamp(3.75rem, 8vw, 7rem);
-}
-
-.chat-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  margin-bottom: 1.4rem;
-  color: var(--color-focus);
-  font-size: var(--text-caption);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-}
-
-.chat-eyebrow svg,
 .staff-link svg {
   flex: 0 0 auto;
-}
-
-.chat-intro h1 {
-  max-width: 12ch;
-  font-size: var(--text-display);
-  font-weight: 750;
-  line-height: 1.04;
-  letter-spacing: -0.065em;
-}
-
-.chat-description {
-  max-width: 35rem;
-  margin-top: 1.35rem;
-  color: var(--color-secondary);
-  font-size: clamp(1rem, 1.25vw, 1.125rem);
-  line-height: 1.75;
-}
-
-.chat-window {
-  min-width: 0;
-}
-
-.chat-window-header,
-.chat-composer {
-  padding: 1.25rem clamp(1rem, 2.6vw, 1.65rem);
-}
-
-.chat-window-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.chat-window-header h2 {
-  font-size: 1.05rem;
-}
-
-.chat-window-header p,
-.chat-composer p {
-  color: var(--color-secondary);
-  font-size: var(--text-caption);
-}
-
-.chat-thread {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-  padding: 1.65rem clamp(1rem, 2.6vw, 1.65rem) 1.5rem;
-  font-size: var(--text-ui);
-  line-height: 1.6;
-}
-
-.chat-question,
-.chat-answer {
-  padding: 0.8rem 0.95rem;
-  border: 1px solid var(--color-border);
-  border-radius: 1rem;
-}
-
-.chat-question {
-  align-self: flex-end;
-  max-width: 90%;
-  border-color: rgb(72 130 235 / 28%);
-  border-bottom-right-radius: 0.3rem;
-  background: rgb(47 123 255 / 14%);
-}
-
-.chat-answer {
-  align-self: flex-start;
-  max-width: 94%;
-  border-bottom-left-radius: 0.3rem;
-  background: var(--glass-fill-subtle);
-}
-
-.chat-source {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.65rem;
-  color: var(--color-focus);
-  font-size: var(--text-caption);
-}
-
-.chat-composer {
-  padding-top: 0.15rem;
-}
-
-.chat-composer-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.chat-composer p {
-  margin-top: 0.65rem;
 }
 
 .login-page {
@@ -443,35 +323,23 @@
 
 .panel-search {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
   min-width: 0;
   width: min(100%, 19rem);
+}
+
+.panel-search-field .ui-field {
   min-height: 2.5rem;
-  padding-inline: 0.7rem;
-  border: 1px solid var(--control-border);
-  border-radius: var(--radius-control);
+  padding-block: 0.55rem;
   background: var(--control-fill);
-  color: var(--color-secondary);
 }
 
-.panel-search:focus-within {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
+.panel-search-field .ui-field-icon {
+  inset-inline-start: 0.7rem;
 }
 
-.panel-search input {
-  min-width: 0;
-  width: 100%;
-  color: var(--color-text);
-  outline: none;
-  font-size: var(--text-ui);
-}
-
-.panel-search input::placeholder {
-  color: var(--color-secondary);
-  opacity: 1;
+.panel-search-field .ui-field-icon svg {
+  width: 17px;
+  height: 17px;
 }
 
 .panel-search svg {
@@ -576,18 +444,6 @@
 }
 
 @media (max-width: 800px) {
-  .chat-page {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2rem;
-    max-width: 36rem;
-    min-height: auto;
-    padding-block: 3.25rem 1rem;
-  }
-
-  .chat-intro h1 {
-    max-width: 16ch;
-  }
-
   .panel-shell,
   .panel-shell[data-collapsed="true"] {
     grid-template-columns: minmax(0, 1fr);
@@ -675,10 +531,6 @@
     font-size: var(--text-caption);
   }
 
-  .chat-page {
-    padding-top: 2.6rem;
-  }
-
   .panel-shell .panel-nav a,
   .panel-shell[data-collapsed="true"] .panel-nav a {
     min-width: 2.62rem;
@@ -694,9 +546,12 @@
     padding-inline: 0.45rem;
   }
 
-  .panel-search {
-    gap: 0.4rem;
-    padding-inline: 0.5rem;
+  .panel-search-field .ui-field {
+    padding-inline-start: 2rem;
+  }
+
+  .panel-search-field .ui-field-icon {
+    inset-inline-start: 0.5rem;
   }
 }
 

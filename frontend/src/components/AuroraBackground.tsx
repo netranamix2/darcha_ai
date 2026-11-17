@@ -22,6 +22,8 @@ export function AuroraBackground() {
       <div className="aurora-background__blob aurora-background__blob--cyan" />
       <div className="aurora-background__blob aurora-background__blob--violet" />
       <div className="aurora-background__blob aurora-background__blob--deep-blue" />
+      <div className="aurora-background__blob aurora-background__blob--veil" />
+      <div className="aurora-background__midlight" />
       <div className="aurora-background__grain" />
     </div>
   )

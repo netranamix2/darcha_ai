@@ -3,18 +3,23 @@ import {
   Bell,
   ChevronDown,
   CircleHelp,
+  CircleCheck,
   FileText,
   Globe2,
   Keyboard,
   Layers2,
   LayoutGrid,
+  MessageSquareText,
+  MousePointer2,
   PanelTop,
+  RotateCcw,
   Rows3,
   Search,
   SlidersHorizontal,
   SquareMousePointer,
   TextCursorInput,
   UserRound,
+  Waypoints,
   type LucideIcon,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -43,7 +48,11 @@ import {
   ToastViewport,
   Tooltip,
   TooltipProvider,
+  ViewportCounter,
 } from '../components/ui';
+import { localeCodes } from '../i18n/locales';
+import { useLanguage } from '../i18n/useLanguage';
+import { showcaseMessages } from '../i18n/showcase';
 import { useT } from '../i18n/useT';
 import './ui-page.css';
 
@@ -54,6 +63,7 @@ const sections = {
   fields: { id: 'ui-fields', label: 'ui.fields', icon: TextCursorInput },
   navigation: { id: 'ui-navigation', label: 'ui.navigation', icon: LayoutGrid },
   feedback: { id: 'ui-feedback', label: 'ui.feedback', icon: Bell },
+  motion: { id: 'ui-motion', label: 'ui.motion', icon: Waypoints },
   identity: { id: 'ui-avatar', label: 'ui.avatar', icon: UserRound },
   keyboard: { id: 'ui-keyboard', label: 'ui.keyboard', icon: Keyboard },
 } as const satisfies Record<string, { id: string; label: string; icon: LucideIcon }>;
@@ -64,11 +74,17 @@ const surfaceSamples = [
   { variant: 'subtle', label: 'ui.surfaceSubtle', icon: Rows3 },
 ] as const;
 
+const motionSteps = [
+  { label: 'ui.motionQuestion', icon: MessageSquareText },
+  { label: 'ui.motionSearch', icon: Search },
+  { label: 'ui.motionAnswer', icon: CircleCheck },
+] as const;
+
 type ActionName = 'ui.primary' | 'ui.secondary' | 'ui.ghost' | 'ui.hover' | 'ui.focus';
 type Section = (typeof sections)[keyof typeof sections];
 
 function SampleSection({ section, children }: { section: Section; children: ReactNode }) {
-  const t = useT();
+  const t = useT(showcaseMessages);
 
   return (
     <section className="ui-sample" id={section.id} aria-labelledby={`${section.id}-label`}>
@@ -79,24 +95,25 @@ function SampleSection({ section, children }: { section: Section; children: Reac
 }
 
 function SurfaceSamples() {
-  const t = useT();
+  const t = useT(showcaseMessages);
 
   return (
     <SampleSection section={sections.surfaces}>
-      <div className="ui-surface-grid">
+      <div className="ui-surface-grid glass-stagger">
         {surfaceSamples.map(({ variant, label, icon: Icon }) => (
-          <GlassPanel className="ui-surface-preview" variant={variant} key={variant}>
+          <GlassPanel className="ui-surface-preview glass-lift" variant={variant} key={variant}>
             <span className="ui-surface-symbol" aria-hidden="true"><Icon size={20} /></span>
             <span>{t(label)}</span>
           </GlassPanel>
         ))}
       </div>
+      <p className="ui-pointer-hint"><MousePointer2 size={15} aria-hidden="true" /> {t('ui.spotlightHint')}</p>
     </SampleSection>
   );
 }
 
 function ActionSamples({ onPress }: { onPress: (action: ActionName) => void }) {
-  const t = useT();
+  const t = useT(showcaseMessages);
 
   return (
     <SampleSection section={sections.actions}>
@@ -108,6 +125,7 @@ function ActionSamples({ onPress }: { onPress: (action: ActionName) => void }) {
         <Button variant="secondary" onClick={() => onPress('ui.secondary')}>{t('ui.secondary')}</Button>
         <Button variant="ghost" onClick={() => onPress('ui.ghost')}>{t('ui.ghost')}</Button>
       </div>
+      <p className="ui-pointer-hint"><MousePointer2 size={15} aria-hidden="true" /> {t('ui.magnetHint')}</p>
       <Divider className="ui-sample-divider" />
       <div className="ui-inline-samples">
         <Button variant="primary" size="sm" data-preview-state="hover" onClick={() => onPress('ui.hover')}>
@@ -123,12 +141,41 @@ function ActionSamples({ onPress }: { onPress: (action: ActionName) => void }) {
   );
 }
 
+function MotionSamples() {
+  const t = useT(showcaseMessages);
+  const { language } = useLanguage();
+  const [sequence, setSequence] = useState(0);
+
+  return (
+    <SampleSection section={sections.motion}>
+      <div className="ui-motion-preview">
+        <div className="ui-motion-group">
+          <span>{t('ui.stagger')}</span>
+          <ol className="ui-motion-steps glass-stagger" key={sequence}>
+            {motionSteps.map(({ icon: Icon, label }) => (
+              <li className="glass-lift" key={label}><Icon size={16} aria-hidden="true" />{t(label)}</li>
+            ))}
+          </ol>
+        </div>
+        <GlassPanel variant="subtle" blur={false} className="ui-motion-counter glass-lift">
+          <span>{t('ui.counter')}</span>
+          <ViewportCounter value={1284} locale={localeCodes[language]} key={sequence} />
+        </GlassPanel>
+      </div>
+      <Button size="sm" variant="ghost" className="ui-motion-replay" onClick={() => setSequence((value) => value + 1)}>
+        <RotateCcw aria-hidden="true" />
+        {t('ui.replay')}
+      </Button>
+    </SampleSection>
+  );
+}
+
 function StatusSamples() {
-  const t = useT();
+  const t = useT(showcaseMessages);
 
   return (
     <SampleSection section={sections.statuses}>
-      <ul className="ui-status-list">
+      <ul className="ui-status-list glass-stagger">
         <li><StatusPill level="green">{t('ui.statusGreen')}</StatusPill></li>
         <li><StatusPill level="yellow">{t('ui.statusYellow')}</StatusPill></li>
         <li><StatusPill level="red">{t('ui.statusRed')}</StatusPill></li>
@@ -138,7 +185,7 @@ function StatusSamples() {
 }
 
 function FieldSamples() {
-  const t = useT();
+  const t = useT(showcaseMessages);
   const [email, setEmail] = useState<string>();
   const emailValue = email ?? t('ui.invalidSample');
   const invalidEmail = emailValue.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(emailValue);
@@ -192,7 +239,7 @@ const channels = [
 ] as const;
 
 function NavigationSamples() {
-  const t = useT();
+  const t = useT(showcaseMessages);
   const [channel, setChannel] = useState<(typeof channels)[number]['label']>('ui.web');
 
   return (
@@ -254,7 +301,7 @@ function NavigationSamples() {
 }
 
 function FeedbackSamples({ onPreview }: { onPreview: () => void }) {
-  const t = useT();
+  const t = useT(showcaseMessages);
 
   return (
     <SampleSection section={sections.feedback}>
@@ -284,7 +331,7 @@ function FeedbackSamples({ onPreview }: { onPreview: () => void }) {
 }
 
 function IdentitySamples() {
-  const t = useT();
+  const t = useT(showcaseMessages);
 
   return (
     <SampleSection section={sections.identity}>
@@ -300,7 +347,7 @@ function IdentitySamples() {
 }
 
 function KeyboardSamples() {
-  const t = useT();
+  const t = useT(showcaseMessages);
 
   return (
     <SampleSection section={sections.keyboard}>
@@ -325,7 +372,7 @@ type Notice = {
 };
 
 export default function UiPage() {
-  const t = useT();
+  const t = useT(showcaseMessages);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   function showNotice(action?: ActionName) {
@@ -357,6 +404,7 @@ export default function UiPage() {
               <FieldSamples />
               <NavigationSamples />
               <FeedbackSamples onPreview={() => showNotice()} />
+              <MotionSamples />
               <div className="ui-samples-pair">
                 <IdentitySamples />
                 <KeyboardSamples />

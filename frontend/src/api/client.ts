@@ -27,6 +27,32 @@ let mockStaffSession = false
 let mixedMode = false
 let shadowCasesInMemory = false
 let departmentRequest: Promise<ReadonlyMap<string, TicketDepartment>> | undefined
+const staffSessionKey = 'darcha.staff.session'
+
+// Keep the live staff token for the browser tab, so a panel reload does not drop the session.
+function saveStaffSession(token: string | undefined, id: string) {
+  try {
+    if (token) sessionStorage.setItem(staffSessionKey, JSON.stringify({ token, id }))
+    else sessionStorage.removeItem(staffSessionKey)
+  } catch {
+    // Storage can be unavailable (private mode); the session then lasts until reload.
+  }
+}
+
+function restoreStaffSession() {
+  if (!apiUrl) return
+  try {
+    const saved = record(JSON.parse(sessionStorage.getItem(staffSessionKey) ?? 'null'))
+    if (typeof saved.token === 'string' && saved.token) {
+      staffToken = saved.token
+      staffId = typeof saved.id === 'string' ? saved.id : ''
+    }
+  } catch {
+    // Ignore a corrupt or unavailable entry.
+  }
+}
+
+restoreStaffSession()
 
 function loadMocks() {
   return import('./mocks/index')
@@ -87,6 +113,13 @@ async function fetchApi(path: string, { method = 'GET', body, staff }: RequestOp
   } catch (error) {
     if (error instanceof TypeError) throw new NetworkError()
     throw error
+  }
+
+  if (response.status === 401 && staff) {
+    staffToken = undefined
+    staffId = ''
+    saveStaffSession(undefined, '')
+    if (window.location.pathname.startsWith('/panel')) window.location.assign('/login')
   }
 
   if (!response.ok) {
@@ -198,6 +231,7 @@ export async function login(email: string, password: string): Promise<LoginReply
     staffToken = next.token
     staffId = next.staffId
     mockStaffSession = false
+    saveStaffSession(next.token, next.staffId)
     return { token: next.token, role: next.role }
   }, async () => {
     const next = await (await loadMocks()).login(email, password)

@@ -223,7 +223,7 @@ export function cite(source: TopicReference, locale: MockLocale): Citation {
   return { title: source.title[locale], ref: source.ref[locale], url: `https://lex.uz/${prefix}docs/${latinMarker}${source.documentId}` }
 }
 
-const abusiveWords = /(?<!\p{L})(?:a[hx]moq|аҳмоқ|ахмоқ|tentak|тентак|jinni|жинни|siktir|сиктир|go't|гўт|haromi|ҳароми|бл(?:я|яд\p{L}*)|сука|мудак\p{L}*|долбо[её]б\p{L}*|(?:на|по|ни|за)?ху[йеяи]\p{L}*|пизд\p{L}*|[ёе]б(?:ан|ат|лан|уч)\p{L}*|дебил\p{L}*|идиот\p{L}*|дурак\p{L}*)(?!\p{L})/iu
+export const abusiveWords = /(?<!\p{L})(?:a[hx]moq|аҳмоқ|ахмоқ|tentak|тентак|jinni|жинни|siktir|сиктир|go't|гўт|haromi|ҳароми|бл(?:я|яд\p{L}*)|сука|мудак\p{L}*|долбо[её]б\p{L}*|(?:на|по|ни|за)?ху[йеяи]\p{L}*|пизд\p{L}*|[ёе]б(?:ан|ат|лан|уч)\p{L}*|дебил\p{L}*|идиот\p{L}*|дурак\p{L}*)(?!\p{L})/iu
 const educationTopic = /ta'lim|talaba|maktab|o'quv|o'qish|dars|pedagog|o'qituv|otm\b|universitet|institut|oliygoh|kollej|imtihon|shahodatnoma|stipendiy|таълим|талаба|мактаб|ўқув|ўқиш|дарс|педагог|ўқитув|университет|институт|олийгоҳ|коллеж|имтиҳон|образован|уч(?:ё|е)б|ученик|школ|студент|учител|преподав|(?:^|[^\p{L}])вуз|колледж|экзамен|каникул|сессия|стипенди|абитуриент/iu
 const unrelatedUse = /парол|уч[её]тн\p{L}* запис|восстанов\p{L}* файл|перевод \p{L}*(?:слов|текст)|контракт на (?:аренду|поставку)|банковск\p{L}* перевод|parol|файл|akkaunt|ijara shartnoma|погод|ob-havo/iu
 

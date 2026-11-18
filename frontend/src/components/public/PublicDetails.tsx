@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, Globe2, Inbox, Instagram, Phone, Send } from 'lucide-react'
+import { Link } from 'react-router'
 import { getPublicKnowledgeBase } from '../../api/client'
 import { publicHomeMessages } from '../../i18n/public-home'
 import { useLanguage } from '../../i18n/useLanguage'
@@ -106,7 +107,14 @@ export function PublicOverview() {
       <PublicSection id="channels" title={t('public.channelsTitle')}>
         <div className="landing-channel-diagram">
           <ul className="landing-channel-inputs">
-            {channels.map(({ label, Icon }) => <li key={label}><Icon size={16} aria-hidden="true" />{t(label)}</li>)}
+            {channels.map(({ label, Icon }) => (
+              <li key={label}>
+                <Icon size={16} aria-hidden="true" />{t(label)}
+                {label === 'public.channelInstagram'
+                  ? <Link className="landing-channel-demo" to="/demo/instagram">{t('public.channelInstagramDemo')} →</Link>
+                  : null}
+              </li>
+            ))}
           </ul>
           <span className="landing-channel-join" aria-hidden="true" />
           <GlassPanel variant="subtle" blur={false} className="landing-channel-inbox">

@@ -14,6 +14,7 @@ const TicketsPage = lazy(() => import('./pages/TicketsPage'))
 const InboxPage = lazy(() => import('./pages/InboxPage'))
 const KnowledgeBasePage = lazy(() => import('./pages/KnowledgeBasePage'))
 const UiPage = lazy(() => import('./pages/UiPage'))
+const InstagramSandboxPage = lazy(() => import('./pages/InstagramSandboxPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 function PanelStart() {
@@ -33,6 +34,14 @@ export default function App() {
             <Route path="ui" element={<UiPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
+          <Route
+            path="demo/instagram"
+            element={
+              <Suspense fallback={<RouteLoading />}>
+                <InstagramSandboxPage />
+              </Suspense>
+            }
+          />
           <Route
             path="panel"
             element={

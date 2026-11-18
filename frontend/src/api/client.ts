@@ -8,7 +8,7 @@ import type { Language } from '../i18n/locales'
 import { caseStorageKey, subscribeToMockCaseChanges } from './mocks/case-events'
 import type {
   AnalyticsAlert, AnalyticsSummary, CaseChangeKind, ChatMessage, ChatReply, ChatSession, Citation,
-  FaqReport, InboxItem, KnowledgeDocument, Level, LoginReply, StaffMember, Ticket, TicketDepartment, TicketPatch,
+  FaqReport, InboxItem, InstagramComment, InstagramFeed, InstagramTrace, KnowledgeDocument, Level, LoginReply, StaffMember, Ticket, TicketDepartment, TicketPatch,
 } from './types'
 
 export { ApiError } from './errors'
@@ -402,4 +402,57 @@ export async function runFaqReport(): Promise<void> {
   return request(path, async () => {
     await fetchApi(path, { method: 'POST', staff: true })
   }, async () => (await loadMocks()).runFaqReport(), mockStaffSession)
+}
+
+// Instagram sandbox: the backend simulator (/api/dev/instagram/*) runs comments through the real pipeline.
+const liveInstagramTraces: InstagramTrace[] = []
+
+function instagramNode(value: unknown, hidden: ReadonlySet<string>): InstagramComment {
+  const row = record(value)
+  const id = identifier(row.id)
+  return {
+    id,
+    author: typeof row.author === 'string' ? row.author : 'mehmon',
+    text: typeof row.text === 'string' ? row.text : '',
+    created_at: typeof row.created_at === 'string' ? row.created_at : new Date().toISOString(),
+    is_bot: row.is_bot === true,
+    hidden: hidden.has(id),
+    replies: Array.isArray(row.replies) ? row.replies.map((reply) => instagramNode(reply, hidden)) : [],
+  }
+}
+
+export async function getInstagramFeed(): Promise<InstagramFeed> {
+  const path = '/api/dev/instagram/feed'
+  return request(path, async () => {
+    const posts = record(await read(path)).posts
+    const post = record(Array.isArray(posts) ? posts[0] : undefined)
+    const hidden = new Set(liveInstagramTraces.filter(({ reason }) => reason === 'abuse').map(({ comment_id }) => comment_id))
+    const comments = Array.isArray(post.comments) ? post.comments.map((comment) => instagramNode(comment, hidden)) : []
+    for (const trace of liveInstagramTraces) {
+      if (trace.replied_at) continue
+      const reply = comments.find(({ id }) => id === trace.comment_id)?.replies.find(({ is_bot }) => is_bot)
+      if (reply) trace.replied_at = reply.created_at
+    }
+    return { post_id: identifier(post.id), comments: [...comments].reverse(), traces: structuredClone(liveInstagramTraces) }
+  }, async () => (await loadMocks()).getInstagramFeed())
+}
+
+export async function postInstagramComment(postId: string, author: string, text: string): Promise<InstagramTrace> {
+  const path = '/api/dev/instagram/comments'
+  return request(path, async () => {
+    const result = record(await read(path, { method: 'POST', body: { post_id: Number(postId), author, text } }))
+    const level = result.level
+    const reason = typeof result.reason === 'string' ? result.reason : ''
+    const trace: InstagramTrace = {
+      comment_id: identifier(result.comment_id),
+      received_at: new Date().toISOString(),
+      level: level === 'green' || level === 'yellow' || level === 'red' ? level : 'hidden',
+      ticket_number: identifier(result.ticket_number) || null,
+      replied_at: null,
+    }
+    if (trace.level === 'hidden') trace.reason = /abuse|insult|profan/iu.test(reason) ? 'abuse' : 'off_topic'
+    liveInstagramTraces.unshift(trace)
+    liveInstagramTraces.splice(20)
+    return trace
+  }, async () => (await loadMocks()).postInstagramComment(author, text))
 }

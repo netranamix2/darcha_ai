@@ -1,5 +1,5 @@
 import { ApiError } from '../errors'
-import type { ChatMessage, ChatReply, ChatSession, FaqReport, InboxItem, Level, LoginReply, StaffRole, Ticket, TicketPatch } from '../types'
+import type { Channel, ChatMessage, ChatReply, ChatSession, FaqReport, InboxItem, Level, LoginReply, StaffRole, Ticket, TicketPatch } from '../types'
 import { determineReply, publicKnowledgeBase } from './chat'
 import type { MockLocale } from './chat'
 import {
@@ -53,17 +53,18 @@ export function readChatMessages(sessionId: string, allowMissing: boolean): Prom
 }
 
 export async function sendChatMessage(
-  sessionId: string, text: string, { shadow = false, allowMissing = false } = {},
+  sessionId: string, text: string,
+  { shadow = false, allowMissing = false, channel = 'web' as Channel } = {},
 ): Promise<ChatReply> {
   const started = Date.now()
   await pause()
   return withChatState(() => {
     if (allowMissing && !sessions.has(sessionId)) sessions.set(sessionId, [])
-    return recordMessage(sessionId, text, started, shadow)
+    return recordMessage(sessionId, text, started, shadow, channel)
   })
 }
 
-function recordMessage(sessionId: string, text: string, started: number, shadow: boolean): ChatReply {
+function recordMessage(sessionId: string, text: string, started: number, shadow: boolean, channel: Channel): ChatReply {
   const history = requireRecord(sessions, sessionId)
   const message = nonBlank(text)
   deliverReadyReplies(sessionId)
@@ -108,7 +109,7 @@ function recordMessage(sessionId: string, text: string, started: number, shadow:
 
   const item: InboxItem = {
     id: inboxId,
-    channel: 'web',
+    channel,
     text: message,
     created_at: createdAt,
     level: result.level,
@@ -346,3 +347,5 @@ export async function runFaqReport(): Promise<void> {
     persistChatState('report')
   })
 }
+
+export { getInstagramFeed, postInstagramComment } from './instagram'

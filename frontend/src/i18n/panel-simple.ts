@@ -62,6 +62,7 @@ export const panelSimpleMessages = {
     "simple.demoTicket": "Murojaatlar boʻlimida yangi tiketni oching",
     "simple.demoAnswer": "Murojaatga javob yozing",
     "simple.demoChat": "Mutaxassis javobini sayt chatida koʻring",
+    "simple.demoInstagram": "Bonus: Instagram sandboxda izoh yozing",
     "simple.inboxHelp": "Xabarni tanlang va javob loyihasini tekshiring.",
     "simple.ticketsHelp": "Murojaatlarni kuzating va fuqarolarga oʻz kanalida javob bering."
   },
@@ -128,6 +129,7 @@ export const panelSimpleMessages = {
     "simple.demoTicket": "Мурожаатлар бўлимида янги тикетни очинг",
     "simple.demoAnswer": "Мурожаатга жавоб ёзинг",
     "simple.demoChat": "Мутахассис жавобини сайт чатида кўринг",
+    "simple.demoInstagram": "Бонус: Instagram sandboxда изоҳ ёзинг",
     "simple.inboxHelp": "Хабарни танланг ва жавоб лойиҳасини текширинг.",
     "simple.ticketsHelp": "Мурожаатларни кузатинг ва фуқароларга ўз каналида жавоб беринг."
   },
@@ -194,6 +196,7 @@ export const panelSimpleMessages = {
     "simple.demoTicket": "Откройте новое обращение в панели",
     "simple.demoAnswer": "Напишите ответ на обращение",
     "simple.demoChat": "Посмотрите ответ специалиста в чате",
+    "simple.demoInstagram": "Бонус: оставьте комментарий в Instagram sandbox",
     "simple.inboxHelp": "Выберите сообщение и проверьте черновик ответа.",
     "simple.ticketsHelp": "Следите за сроками и отвечайте в тот же канал, из которого пришло обращение."
   }

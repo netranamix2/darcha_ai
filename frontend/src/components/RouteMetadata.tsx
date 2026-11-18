@@ -18,7 +18,7 @@ export function RouteMetadata() {
   const t = useT()
   const { pathname } = useLocation()
   const path = pathname.toLowerCase().replace(/\/+$/u, '') || '/'
-  const page = t(labels[path] ?? 'missing.heading')
+  const page = path === '/demo/instagram' ? 'Instagram sandbox' : t(labels[path] ?? 'missing.heading')
   const title = `${t('brand.name')} · ${page}`
   const description = t('meta.description')
 

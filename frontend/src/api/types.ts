@@ -200,3 +200,32 @@ export interface LoginReply {
   token: string
   role: StaffRole
 }
+
+export interface InstagramComment {
+  id: string
+  author: string
+  text: string
+  created_at: string
+  is_bot: boolean
+  hidden?: boolean
+  pending?: boolean
+  replies: InstagramComment[]
+}
+
+export interface InstagramTrace {
+  comment_id: string
+  received_at: string
+  level: Level | 'hidden'
+  lang?: 'uz-latn' | 'uz-cyrl' | 'ru'
+  topic?: string
+  documents?: number
+  replied_at?: string | null
+  ticket_number?: string | null
+  reason?: 'abuse' | 'off_topic'
+}
+
+export interface InstagramFeed {
+  post_id: string
+  comments: InstagramComment[]
+  traces: InstagramTrace[]
+}

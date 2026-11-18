@@ -9,6 +9,7 @@ const steps = [
   { label: 'simple.demoTicket', to: '/panel/tickets?status=new' },
   { label: 'simple.demoAnswer', to: '/panel/tickets?status=new&answer=1' },
   { label: 'simple.demoChat', to: '/#chat', publicChat: true },
+  { label: 'simple.demoInstagram', to: '/demo/instagram', publicChat: true },
 ] as const
 
 export function PanelDemo() {

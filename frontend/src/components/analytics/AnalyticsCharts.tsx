@@ -25,7 +25,7 @@ const rankHeight = 47
 const rankMargin = { top: 0, right: 0, bottom: 0, left: 0 }
 const tooltipStyle = { zIndex: 4 }
 
-function ChartCard({ title, detail, className = '', children }: {
+export function ChartCard({ title, detail, className = '', children }: {
   title: string
   detail?: string
   className?: string
@@ -71,7 +71,7 @@ function EmptyChart() {
   return <p className="analytics-chart-empty">{t('charts.empty')}</p>
 }
 
-function ChannelChart({ byChannel, locale }: { byChannel: AnalyticsSummary['by_channel']; locale: string }) {
+export function ChannelChart({ byChannel, locale }: { byChannel: AnalyticsSummary['by_channel']; locale: string }) {
   const t = useT(analyticsChartMessages)
   const gradient = 'channel-' + useId().replaceAll(':', '')
   const names = Object.keys(channelNames) as Channel[]

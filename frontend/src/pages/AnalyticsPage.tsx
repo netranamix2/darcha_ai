@@ -1,7 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router'
-import { AnalyticsKpis } from '../components/analytics/AnalyticsKpis'
-import { AlertFeed } from '../components/analytics/AnalyticsOperations'
+import { LeadershipView } from '../components/analytics/LeadershipView'
 import { Button, GlassPanel, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { useTicketClock } from '../hooks/useTicketClock'
@@ -11,7 +10,6 @@ import { useT } from '../i18n/useT'
 import { faqReportId } from '../lib/panel-sections'
 import './analytics-page.css'
 
-const Charts = lazy(async () => ({ default: (await import('../components/analytics/AnalyticsCharts')).AnalyticsCharts }))
 const Faq = lazy(async () => ({ default: (await import('../components/analytics/FaqReportSection')).FaqReportSection }))
 const periods = [7, 14, 30] as const
 
@@ -19,7 +17,8 @@ function ReportOverview() {
   const [days, setDays] = useState<(typeof periods)[number]>(7)
   const t = useT(analyticsMessages)
   const simple = useT(panelSimpleMessages)
-  const { current } = useAnalytics(days, useTicketClock())
+  const now = useTicketClock()
+  const { current } = useAnalytics(days, now)
   const summary = current.data
 
   return (
@@ -40,12 +39,8 @@ function ReportOverview() {
         <div className="simple-panel-state" role="status" aria-label={t('common.loading')}><Skeleton /><Skeleton /></div>
       ) : summary && (
         <>
-          <AnalyticsKpis summary={summary} />
           {summary.total === 0 && <p className="simple-report-note">{simple('simple.emptySummary')}</p>}
-          <Suspense fallback={<div className="simple-panel-state" role="status" aria-label={t('common.loading')}><Skeleton /></div>}>
-            <Charts summary={summary} />
-          </Suspense>
-          <AlertFeed alerts={summary.alerts} />
+          <LeadershipView summary={summary} days={days} now={now} />
         </>
       )}
     </div>

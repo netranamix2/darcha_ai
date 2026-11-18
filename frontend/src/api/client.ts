@@ -427,8 +427,15 @@ export async function getAnalyticsSummary(from: string, to: string): Promise<Ana
 
 export async function getFaqReport(period: string): Promise<FaqReport> {
   const path = '/api/reports/faq'
-  return request(path, async () => faqReport(await read(`${path}?${new URLSearchParams({ period })}`, { staff: true }), period),
-    async () => (await loadMocks()).getFaqReport(period), mockStaffSession)
+  return request(path, async () => {
+    try {
+      return faqReport(await read(`${path}?${new URLSearchParams({ period })}`, { staff: true }), period)
+    } catch (error) {
+      // 404 here means "no report built yet", not a missing endpoint: show an honest empty report.
+      if (error instanceof ApiError && error.status === 404) return { period, generated_at: '', clusters: [] }
+      throw error
+    }
+  }, async () => (await loadMocks()).getFaqReport(period), mockStaffSession)
 }
 
 export async function runFaqReport(): Promise<void> {

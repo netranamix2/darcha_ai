@@ -114,6 +114,7 @@ export function LeadershipView({ summary, days, now }: { summary: AnalyticsSumma
   const levels = (['green', 'yellow', 'red'] as const).map((level) => ({
     level, name: t(`lead.${level}` as Keys), value: summary.by_level.find((row) => row.level === level)?.count ?? 0,
   }))
+  const fixedReplies = summary.fixed_replies ?? 0
   const aiCount = levels[0].value
   const savedHours = (aiCount * minutesPerAnswer) / 60
   const regions = summary.by_region
@@ -133,7 +134,8 @@ export function LeadershipView({ summary, days, now }: { summary: AnalyticsSumma
     const minutes = ms / 60_000
     return minutes < 90 ? `${number.format(minutes)} ${t('lead.minutes')}` : `${decimal.format(minutes / 60)} ${t('lead.hours')}`
   }
-  const aiSeconds = summary.avg_response_sec > 0 && summary.avg_response_sec < 120 ? summary.avg_response_sec : 6
+  // No invented fallback: hide the AI response time when the API has no measurement.
+  const aiSeconds = summary.avg_response_sec > 0 ? summary.avg_response_sec : null
 
   const insights: Array<{ text: string; to: string; link: string }> = []
   const rising = topics.filter(({ growth_pct }) => (growth_pct ?? 0) >= 20).sort((a, b) => (b.growth_pct ?? 0) - (a.growth_pct ?? 0))[0]
@@ -229,7 +231,7 @@ export function LeadershipView({ summary, days, now }: { summary: AnalyticsSumma
         <GlassPanel variant="subtle" blur={false} className="leader-kpi">
           <dt>{t('lead.response')}</dt>
           <dd className="leader-kpi-split">
-            <span>{fill(t('lead.responseAi'), { value: `${number.format(aiSeconds)} ${t('lead.seconds')}` })}</span>
+            {aiSeconds !== null ? <span>{fill(t('lead.responseAi'), { value: `${number.format(aiSeconds)} ${t('lead.seconds')}` })}</span> : null}
             {stats.avgStaffMs !== null ? <span>{fill(t('lead.responseStaff'), { value: duration(stats.avgStaffMs) })}</span> : null}
           </dd>
         </GlassPanel>
@@ -251,9 +253,10 @@ export function LeadershipView({ summary, days, now }: { summary: AnalyticsSumma
         <ChartCard title={t('lead.levels')}>
           <div className="leader-donut">
             <PieChart width={190} height={190}>
-              <Pie data={levels} dataKey="value" nameKey="name" innerRadius={62} outerRadius={88} paddingAngle={3}
+              <Pie data={fixedReplies > 0 ? [...levels, { level: 'fixed' as const, name: t('lead.fixed'), value: fixedReplies }] : levels} dataKey="value" nameKey="name" innerRadius={62} outerRadius={88} paddingAngle={3}
                 stroke="none" cornerRadius={6} animationDuration={700}>
                 {levels.map(({ level }) => <Cell key={level} fill={levelColors[level]} />)}
+                {fixedReplies > 0 ? <Cell key="fixed" fill="var(--color-muted)" /> : null}
               </Pie>
               <Tooltip wrapperClassName="analytics-chart-tooltip" />
             </PieChart>
@@ -262,6 +265,9 @@ export function LeadershipView({ summary, days, now }: { summary: AnalyticsSumma
               {levels.map(({ level, name, value }) => (
                 <li key={level}><i style={{ background: levelColors[level] }} /><span>{name}</span><b>{number.format(value)}</b></li>
               ))}
+              {fixedReplies > 0 ? (
+                <li><i style={{ background: 'var(--color-muted)' }} /><span>{t('lead.fixed')}</span><b>{number.format(fixedReplies)}</b></li>
+              ) : null}
             </ul>
           </div>
         </ChartCard>

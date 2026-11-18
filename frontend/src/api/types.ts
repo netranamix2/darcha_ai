@@ -151,6 +151,8 @@ export interface AnalyticsSummary {
   daily?: AnalyticsDay[]
   // TODO(backend): who answered each appeal in the period; ai + specialist + waiting = total.
   by_outcome?: AnalyticsOutcome
+  // Fixed (template) replies: refusals, off-topic, thanks. Not counted as AI answers.
+  fixed_replies?: number
 }
 
 export interface BackendAnalyticsSummary {

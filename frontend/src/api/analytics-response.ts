@@ -62,6 +62,7 @@ export function analyticsSummary(value: unknown): AnalyticsSummary {
         : {}),
     })),
     by_outcome: outcome(response.by_outcome),
+    fixed_replies: typeof levels.gray === 'number' ? finiteNumber(levels.gray) : undefined,
   }
 }
 

@@ -17,6 +17,11 @@ OVERLAP_WORDS = 60
 _CHAPTER_RE = re.compile(
     r"(?im)^\s*(?:(\d+|[IVXLC]+)\s*[-.]?\s*(?:bob|боб|глава)\b|(?:глава|bob)\s+(\d+|[IVXLC]+))[.:]?\s*(.*)$"
 )
+# "3-ilova. Title" on its own line (written by scripts/fetch_lex.py). Point numbers restart in every
+# appendix, so the appendix becomes part of the citation: "3-ilova, 14-band".
+# Or the explicit marker "§ILOVA <label> | <title>" from fetch_lex.py, which also covers nested
+# appendices ("3-ilovaga 2-ilova") and superscripts ("1¹-ilova").
+_APPENDIX_RE = re.compile(r"(?im)^\s*(?:§ILOVA\s+(.+?)\s*\|\s*(.*)|(\d+)\s*-\s*(?:ilova|илова|приложение)[.:]\s*(.*))$")
 _ARTICLE_RE = re.compile(r"(?im)^\s*(\d+)\s*-\s*(?:modda|модда)\b[.:]?.*$|^\s*статья\s+(\d+)\b.*$")
 _POINT_RE = re.compile(r"(?m)^\s*(\d{1,3})\.\s+(?=\S)")
 _FAQ_Q_RE = re.compile(r"(?im)^\s*(?:S|Q|Savol|Савол|Вопрос)\s*[:.)-]\s*")
@@ -84,6 +89,21 @@ def _split(text: str) -> list[tuple[str, str]]:
     return [("", text)]
 
 
+def _appendices(text: str) -> list[tuple[str, str, str]]:
+    """[(label, title, body)]; a single ('', '', text) when the text has no appendix markers."""
+    ms = list(_APPENDIX_RE.finditer(text))
+    if not ms:
+        return [("", "", text)]
+    out = []
+    if text[: ms[0].start()].strip():
+        out.append(("", "", text[: ms[0].start()]))   # the decree itself
+    for m, nxt in zip(ms, ms[1:] + [None]):
+        label = m.group(1).strip() if m.group(1) else f"{m.group(3)}-ilova"
+        title = (m.group(2) if m.group(1) else m.group(4)) or ""
+        out.append((label, title.strip(), text[m.end(): nxt.start() if nxt else len(text)]))
+    return out
+
+
 def chunk_faq(text: str, title: str) -> list[Piece]:
     parts = _FAQ_Q_RE.split(text)
     out = []
@@ -98,17 +118,23 @@ def chunk_faq(text: str, title: str) -> list[Piece]:
 
 def chunk_document(text: str, title: str) -> list[Piece]:
     text = clean(text)
-    if len(_FAQ_Q_RE.findall(text)) >= 3:
+    # FAQ: three or more questions, or explicit "S: ... / J: ..." pairs (scripts/import_findings.py writes those)
+    if len(_FAQ_Q_RE.findall(text)) >= 3 or (_FAQ_Q_RE.search(text) and re.search(r"(?im)^\s*J\s*[:.)-]", text)):
         return chunk_faq(text, title)
     pieces: list[Piece] = []
-    for chapter, ch_text in _chapters(text):
-        for ref, body in _split(ch_text):
-            body = body.strip()
-            if not body or len(body) < 20:
-                continue
-            windows = _windows(body)
-            for i, w in enumerate(windows):
-                r = ref + (f" ({i + 1}-qism)" if len(windows) > 1 else "")
-                header = " — ".join(x for x in [title, chapter, r] if x)
-                pieces.append(Piece(article_ref=r or (chapter or "Kirish"), header=header, text=w))
+    for appl, appl_title, appl_text in _appendices(text):
+        appl_head = f"{appl}: {appl_title[:120]}" if appl and appl_title else appl
+        for chapter, ch_text in _chapters(appl_text):
+            for ref, body in _split(ch_text):
+                body = body.strip()
+                if not body or len(body) < 20:
+                    continue
+                windows = _windows(body)
+                for i, w in enumerate(windows):
+                    r = ref + (f" ({i + 1}-qism)" if len(windows) > 1 else "")
+                    # citation reference: "3-ilova, 14-band"; a chapter without points is cited by its number only
+                    short_ch = (re.match(r"\S+-bob", chapter) or [chapter[:60]])[0] if chapter else ""
+                    full_ref = (", ".join(x for x in [appl, r] if x) or short_ch or "Kirish")[:200]
+                    header = " — ".join(x for x in [title, appl_head, chapter, r] if x)
+                    pieces.append(Piece(article_ref=full_ref, header=header, text=w))
     return pieces

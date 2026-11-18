@@ -1,15 +1,16 @@
 """Step 4: hybrid search (section 9).
 
 top-8 by vectors (bge-m3, pgvector HNSW) + top-8 by keywords (Postgres full text)
--> Reciprocal Rank Fusion -> cross-encoder rerank -> top-4. Only documents with status=active.
+-> Reciprocal Rank Fusion -> cross-encoder rerank -> top-4. Only active, not-expired documents.
 """
 from __future__ import annotations
 
 import asyncio
 import re
 from dataclasses import dataclass
+from datetime import date
 
-from sqlalchemy import func, literal_column, select
+from sqlalchemy import func, literal_column, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import RETRIEVE_FINAL, RETRIEVE_PER_METHOD, VEC_SIM_FLOOR, VEC_SIM_FULL
@@ -68,6 +69,13 @@ def _hit(c: Chunk, d: Document) -> Hit:
     return Hit(c.id, d.id, d.title, d.number, d.source_url, c.article_ref, c.header, c.text)
 
 
+def _citable() -> tuple:
+    """Only active documents whose validity (if limited) has not ended - an expired one-off deadline
+    extension must never be presented as current."""
+    today = date.today().isoformat()
+    return (Document.status == "active", or_(Document.valid_until.is_(None), Document.valid_until >= today))
+
+
 def semantic_text(text_masked: str, text_latin: str, lang: str | None) -> str:
     """What to embed: bge-m3 understands Russian in Cyrillic far better than transliterated Russian
     (measured: 0.60 vs 0.39 similarity to the right Uzbek passage), while Uzbek works best in Latin."""
@@ -83,7 +91,7 @@ async def retrieve(s: AsyncSession, text_latin: str, k: int = RETRIEVE_FINAL, se
     vec_rows = (await s.execute(
         select(Chunk, Document, dist.label("dist"))
         .join(Document, Document.id == Chunk.document_id)
-        .where(Document.status == "active")
+        .where(*_citable())
         .order_by(dist).limit(RETRIEVE_PER_METHOD)
     )).all()
 
@@ -95,7 +103,7 @@ async def retrieve(s: AsyncSession, text_latin: str, k: int = RETRIEVE_FINAL, se
         kw_rows = (await s.execute(
             select(Chunk, Document, rank.label("rank"))
             .join(Document, Document.id == Chunk.document_id)
-            .where(Document.status == "active", Chunk.tsv.op("@@")(query))
+            .where(*_citable(), Chunk.tsv.op("@@")(query))
             .order_by(rank.desc()).limit(RETRIEVE_PER_METHOD)
         )).all()
 

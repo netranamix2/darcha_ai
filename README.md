@@ -17,7 +17,7 @@ Instagram (comments, Direct, tags) / sim. ──┘
                                                 3 search: bge-m3 vectors top-8 + full-text top-8 → RRF → reranker → top-4 │ parallel
                                                 4 answer (LLM, JSON) ONLY from the fragments, with citations             ┘
                                                 5 verify in code: every citation must be a retrieved, active document
-                                                6 level: 🟢 auto-answer · 🟡 draft for approval · 🔴 ticket (number + legal deadline)
+                                                6 level: 🟢 AI answer · ⚪ fixed reply/refusal · 🟡 draft for approval · 🔴 ticket (number + legal deadline)
                                                 7 deliver to the same channel + store for analytics
 PostgreSQL + pgvector ◄─────────────────────────────────────────────────────────────────────────────────
   └─ background jobs (in-process): SLA reminders/escalation · spike alerts · weekly FAQ report (HDBSCAN + LLM)
@@ -61,7 +61,7 @@ Everything in Docker (CPU): `docker compose up -d`.
 | GET/POST | `/api/dev/instagram/feed` · `/comments` · `/dm` · `/posts` | demo | Instagram mock-profile simulator |
 | POST | `/webhooks/telegram`, GET/POST `/webhooks/meta` | Telegram, Meta | webhooks (secret token / X-Hub-Signature-256 checked) |
 
-`level`: `green` = AI answer · `none` = ignored (spam/abuse, empty `answer`; show nothing) · `yellow` = staff is preparing the answer (`answer` is empty) · `red` = ticket (`ticket_number`, `due_at`).
+`level`: `green` = AI answer from the knowledge base · `gray` = fixed pre-written reply (refusals of personal-data / cheating / forgery / defamation / threat requests, politics, off-topic, insults, thanks) · `none` = ignored (spam, empty `answer`; show nothing) · `yellow` = staff is preparing the answer (`answer` is empty) · `red` = ticket (`ticket_number`, `due_at`).
 
 ## Channels
 - **Telegram:** `TELEGRAM_MODE=polling` needs no public URL. For channel comments, add the bot as an admin to the channel's discussion group and turn privacy mode off in @BotFather. In groups the bot answers when it is mentioned or someone replies to it.

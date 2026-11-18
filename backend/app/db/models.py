@@ -186,6 +186,7 @@ class Document(Base):
     number: Mapped[str | None] = mapped_column(String(128))
     issued_at: Mapped[str | None] = mapped_column(String(32))
     status: Mapped[str] = mapped_column(String(16), default="active")   # active | repealed
+    valid_until: Mapped[str | None] = mapped_column(String(10))   # YYYY-MM-DD: one-off rules stop being cited after it
     doc_type: Mapped[str] = mapped_column(String(32), default="regulation")  # regulation | faq | specialist_answer
     source_url: Mapped[str | None] = mapped_column(Text)
     lang: Mapped[str | None] = mapped_column(String(8))

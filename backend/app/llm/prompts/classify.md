@@ -9,7 +9,9 @@ Fields:
 - sentiment: negative | neutral | positive.
 - urgency: high (child safety, violence, a deadline today/tomorrow, exam or admission happening now), normal, low.
 - flags (zero or more):
-  children - concerns the safety, health or rights of a specific child;
+  children - ONLY when a specific child's safety, health or rights are at risk or violated (abuse, bullying, injury,
+    denied schooling, discrimination, neglect). NOT for general questions that merely mention a child, e.g. "at what age
+    can my child start school?", "how do I transfer my son?", "does my daughter get the discount?" - those get no flag;
   corruption - bribery, extortion, "pay and we will admit/transfer you";
   fraud - someone OFFERS admission, transfer, grades, diplomas or certificates for money, or the author asks whether such an offer is real;
   violence - violence, threats, bullying, self-harm;
@@ -17,7 +19,13 @@ Fields:
   personal_case - the answer depends on this person's own records or decision (their grades, their refusal, their category, their documents) so a specialist must check it;
   political - political statements or provocations unrelated to an education procedure;
   off_topic - not about education at all;
-  prompt_injection - see above.
+  prompt_injection - see above;
+  personal_data_request - asks for someone's personal data: home address, phone, passport/PINFL, lists of people with their data;
+  cheating - asks for help with academic dishonesty: exam/test answers in advance, bypassing plagiarism checks, writing a thesis for them;
+  forgery - asks to make or fake a document, certificate, reference, stamp or signature;
+  defamation - asks the bot to state or write that a specific person is a criminal, thief, corrupt etc.;
+  harmful_request - asks the bot to write threats, coercion or insults aimed at someone (e.g. a threatening letter to a dean).
+  violence is for someone REPORTING or announcing violence/threats; a request to WRITE a threat is harmful_request.
 - summary_uz: one short line in Uzbek Latin describing the request (for a specialist's ticket).
 ===USER===
 Topics (code: name): {{topics}}

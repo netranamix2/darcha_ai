@@ -12,7 +12,10 @@ log = logging.getLogger("classify")
 
 TYPES = ["question", "complaint", "suggestion", "gratitude", "spam", "insult"]
 FLAGS = ["children", "corruption", "fraud", "violence", "complaint_about_person", "personal_case",
-         "political", "off_topic", "prompt_injection"]
+         "political", "off_topic", "prompt_injection",
+         # requests the bot must refuse with a fixed reply (never an AI-written answer):
+         "personal_data_request", "cheating", "forgery", "defamation", "harmful_request"]
+REFUSAL_FLAGS = ["personal_data_request", "forgery", "cheating", "defamation", "harmful_request"]   # priority order
 SENSITIVE_FLAGS = {"children", "corruption", "complaint_about_person"}
 TOPIC_CODES = [t[0] for t in TOPICS]
 

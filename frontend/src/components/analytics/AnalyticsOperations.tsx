@@ -1,6 +1,5 @@
-import { ShieldAlert, SlidersHorizontal, TrendingUp } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
-import type { CSSProperties } from 'react'
+import { ShieldAlert, TrendingUp } from 'lucide-react'
+import { useId, useMemo } from 'react'
 import { Link } from 'react-router'
 import type { AnalyticsSummary } from '../../api/types'
 import { analyticsMessages } from '../../i18n/analytics'
@@ -10,58 +9,7 @@ import { useT } from '../../i18n/useT'
 import { analyticsTimestamp } from '../../lib/analytics-date'
 import { GlassPanel } from '../ui'
 
-const maxMinutes = 60
-const minMinutes = 1
-const hoursPerStaffWeek = 40
-
-interface SavingsOptions {
-  summary: AnalyticsSummary
-  days: number
-  minutes: number
-  onMinutesChange: (minutes: number) => void
-}
-
-function TimeSavings({ summary, days, minutes, onMinutesChange }: SavingsOptions) {
-  const t = useT(analyticsMessages)
-  const { language } = useLanguage()
-  const sliderId = useId()
-  const headingId = useId()
-  const format = useMemo(() => new Intl.NumberFormat(localeCodes[language], { maximumFractionDigits: 1 }), [language])
-  const share = Math.min(100, Math.max(0, summary.ai_resolved_pct)) / 100
-  const hours = summary.total * share * minutes / 60
-  const staff = hours / (hoursPerStaffWeek * days / 7)
-  const fill = (minutes - minMinutes) / (maxMinutes - minMinutes) * 100
-  const minutesLabel = t('analytics.minutes').replace('{count}', String(minutes))
-
-  return (
-    <GlassPanel variant="elevated" blur={false} className="analytics-savings" role="region" aria-labelledby={headingId}>
-      <div className="analytics-operations-heading">
-        <h2 id={headingId}>{t('analytics.saved')}</h2>
-      </div>
-      <output className="analytics-savings-value" htmlFor={sliderId} aria-live="off">
-        <strong>{format.format(hours)}</strong> <span>{t('analytics.savedHours')}</span>
-      </output>
-      <p className="analytics-savings-fte" title={t('analytics.staffWeek')}>{t('analytics.fte').replace('{count}', format.format(staff))}</p>
-      <div className="analytics-savings-control">
-        <label htmlFor={sliderId}><SlidersHorizontal size={15} aria-hidden="true" />{t('analytics.minutesPerAnswer')}</label>
-        <span>{minutesLabel}</span>
-        <input
-          id={sliderId}
-          type="range"
-          min={minMinutes}
-          max={maxMinutes}
-          value={minutes}
-          aria-valuetext={minutesLabel}
-          onChange={(event) => onMinutesChange(event.currentTarget.valueAsNumber)}
-          style={{ '--analytics-slider-fill': `${fill}%` } as CSSProperties}
-        />
-      </div>
-      <p className="analytics-savings-note">{t('analytics.savedNote')}</p>
-    </GlassPanel>
-  )
-}
-
-function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
+export function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
   const t = useT(analyticsMessages)
   const { language } = useLanguage()
   const headingId = useId()
@@ -74,6 +22,7 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
       <div className="analytics-operations-heading">
         <h2 id={headingId}>{t('analytics.alerts')}</h2>
       </div>
+      {recent.length === 0 && <p className="simple-report-note">{t('analytics.noAlerts')}</p>}
       <ul className="analytics-alert-list glass-stagger" aria-live="polite" aria-relevant="additions">
         {recent.map((alert) => {
           const fraud = alert.kind === 'fraud'
@@ -107,17 +56,5 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
         })}
       </ul>
     </GlassPanel>
-  )
-}
-
-export function AnalyticsOperations({ summary, days }: { summary?: AnalyticsSummary; days: number }) {
-  const [minutes, setMinutes] = useState(15)
-  if (!summary || (!summary.total && !summary.alerts.length)) return null
-
-  return (
-    <div className="analytics-operations">
-      {summary.total > 0 && <TimeSavings summary={summary} days={days} minutes={minutes} onMinutesChange={setMinutes} />}
-      {summary.alerts.length > 0 && <AlertFeed alerts={summary.alerts} />}
-    </div>
   )
 }

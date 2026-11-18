@@ -7,7 +7,8 @@ import {
 import { Dialog } from 'radix-ui'
 import { useEffect, useId, useRef, useState } from 'react'
 import { answerTicket, markTicketViewed, updateTicket } from '../../api/client'
-import type { Channel, Citation, StaffMember, Ticket, TicketEvent, TicketPatch } from '../../api/types'
+import type { Citation, StaffMember, Ticket, TicketEvent, TicketPatch } from '../../api/types'
+import { panelSimpleMessages } from '../../i18n/panel-simple'
 import { ticketDrawerMessages } from '../../i18n/ticket-drawer'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
@@ -104,11 +105,21 @@ function TicketOriginal({ ticket }: { ticket: Ticket }) {
         <span className="ticket-drawer-channel"><ChannelIcon size={13} aria-hidden="true" /> {t(`drawer.channel.${ticket.channel}`)}</span>
       </div>
       <blockquote className="ticket-drawer-original">{ticket.original_text}</blockquote>
-      <div className="ticket-drawer-summary">
-        <span><Sparkles size={13} aria-hidden="true" /> {t('drawer.summary')}</span>
-        <p title={ticket.summary}>{ticket.summary}</p>
-      </div>
-      {Boolean(ticket.flags?.length) && (
+    </section>
+  )
+}
+
+function TicketFacts({ ticket }: { ticket: Ticket }) {
+  const t = useT(ticketDrawerMessages)
+  return (
+    <>
+      {ticket.summary.trim() && ticket.summary.trim() !== ticket.original_text.trim() && (
+        <div className="ticket-drawer-summary">
+          <span>{t('drawer.summary')}</span>
+          <p>{ticket.summary}</p>
+        </div>
+      )}
+      {!!ticket.flags?.length && (
         <ul className="ticket-drawer-flags">
           {Array.from(new Set(ticket.flags)).map((flag) => (
             <li key={flag}><Flag size={12} aria-hidden="true" /> {
@@ -117,7 +128,7 @@ function TicketOriginal({ ticket }: { ticket: Ticket }) {
           ))}
         </ul>
       )}
-    </section>
+    </>
   )
 }
 
@@ -161,12 +172,15 @@ interface TicketDrawerProps {
   staffError?: () => void
   onClose: () => void
   onUpdated: () => void
-  onSent: (channel: Channel) => void
+  onSent: (answer: string) => void
+  onChangeNotice: (ok: boolean) => void
+  onSendError: () => void
 }
 
-export function TicketDrawer({ ticket, staff, now, detailLoading, readOnly, detailError, staffUnavailable, staffError, onClose, onUpdated, onSent }: TicketDrawerProps) {
+export function TicketDrawer({ ticket, staff, now, detailLoading, readOnly, detailError, staffUnavailable, staffError, onClose, onUpdated, onSent, onChangeNotice, onSendError }: TicketDrawerProps) {
   const t = useT(ticketDrawerMessages)
   const { language } = useLanguage()
+  const simple = useT(panelSimpleMessages)
   const [open, setOpen] = useState(true)
   const opener = useRef<HTMLElement | null>(null)
   const closing = useRef(false)
@@ -178,14 +192,19 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, readOnly, deta
   const viewedTicketId = useRef<string>()
   const formId = useId()
   const answerId = useId()
-  const update = useMutation({ mutationFn: (patch: TicketPatch) => updateTicket(ticket.id, patch), onSuccess: onUpdated })
+  const update = useMutation({
+    mutationFn: (patch: TicketPatch) => updateTicket(ticket.id, patch),
+    onSuccess: () => { onUpdated(); onChangeNotice(true) },
+    onError: () => onChangeNotice(false),
+  })
   const { mutate: markViewed } = useMutation({ mutationFn: markTicketViewed, onSuccess: onUpdated })
   const send = useMutation({
     mutationFn: (text: string) => answerTicket(ticket.id, text, addToKnowledge),
+    onError: onSendError,
     onSuccess: (_, text) => {
       setJustSent(text)
+      onSent(text)
       onUpdated()
-      onSent(ticket.channel)
     },
   })
   const busy = update.isPending || send.isPending || detailLoading
@@ -257,26 +276,6 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, readOnly, deta
                 </IconButton>
               </Dialog.Close>
             </div>
-            <div className="ticket-drawer-fields">
-              <TicketFieldPicker<Ticket['status']> label={t('drawer.status')} value={status} selectedLabel={t(`drawer.state.${status}`)}
-                options={statusItems} disabled={busy} readOnly={readOnly} tone={status} onChange={(next) => save({ status: next })} />
-              <TicketFieldPicker label={t('drawer.priority')} value={ticket.priority} selectedLabel={t(`drawer.priority.${ticket.priority}`)}
-                options={priorityItems} disabled={busy} readOnly={readOnly} tone={ticket.priority} onChange={(priority) => save({ priority })} />
-              <TicketFieldPicker label={t('drawer.assignee')} value={ticket.assignee_id ?? ''} selectedLabel={assignee?.label ?? t('drawer.unassigned')}
-                options={assignees} disabled={busy || staffUnavailable} readOnly={readOnly} onChange={(value) => save({ assignee_id: value || null })} />
-            </div>
-            {update.isError && (
-              <div className="ticket-drawer-state" role="alert">
-                <p className="ticket-drawer-error">{t('drawer.saveError')}</p>
-                <Button variant="secondary" size="sm" disabled={busy} onClick={() => update.variables && save(update.variables)}>{t('drawer.retry')}</Button>
-              </div>
-            )}
-            {staffError && (
-              <div className="ticket-drawer-state" role="alert">
-                <p className="ticket-drawer-error">{t('drawer.staffError')}</p>
-                <Button variant="secondary" size="sm" onClick={staffError}>{t('drawer.retry')}</Button>
-              </div>
-            )}
           </header>
           <div className="ticket-drawer-body">
             {detailLoading ? (
@@ -294,10 +293,8 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, readOnly, deta
                 {status === 'overdue' && (
                   <p className="ticket-drawer-overdue"><CircleAlert size={17} aria-hidden="true" /> {t('drawer.overdueBanner')}</p>
                 )}
-                <TicketDeadline ticket={displayTicket} now={now} disabled={busy} readOnly={readOnly} onUpdated={onUpdated} />
-                <TicketTimeline ticket={ticket} staff={staff} />
                 <TicketOriginal ticket={ticket} />
-                <SimilarTickets ticket={ticket} disabled={busy || Boolean(sent)} onReuse={readOnly ? undefined : insert} />
+                <TicketTimeline ticket={ticket} staff={staff} />
                 {(!readOnly || sent) && <section className="ticket-drawer-section ticket-drawer-answer">
                   <h3><Send size={16} aria-hidden="true" /> {sent ? t('drawer.answer') : <label htmlFor={answerId}>{t('drawer.answer')}</label>}</h3>
                   {sent ? <p className="ticket-drawer-original ticket-drawer-final-answer">{sent}</p> : (
@@ -305,14 +302,6 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, readOnly, deta
                       event.preventDefault()
                       if (!readOnly && answer.trim() && !busy && !sent) send.mutate(answer.trim())
                     }}>
-                      <div className="ticket-drawer-editor-tools">
-                        <Button variant="secondary" size="sm" disabled={busy || !ticket.draft_answer}
-                          onClick={() => ticket.draft_answer && insert(ticket.draft_answer)}>
-                          <Sparkles size={15} aria-hidden="true" /> {t('drawer.draft')}
-                        </Button>
-                        <TicketCitationPicker disabled={busy} onPick={insertCitation}
-                          onReturnToEditor={() => answerInput.current?.focus()} />
-                      </div>
                       <Textarea id={answerId} ref={answerInput} rows={6} placeholder={t('drawer.answerPlaceholder')}
                         disabled={send.isPending} value={answer} onChange={(event) => setAnswer(event.target.value)} />
                       <div className="ticket-drawer-knowledge">
@@ -327,9 +316,47 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, readOnly, deta
                           </Tooltip>
                         </TooltipProvider>
                       </div>
+                      <details className="simple-panel-details">
+                        <summary>{simple('simple.sources')}</summary>
+                        <div className="ticket-drawer-editor-tools">
+                          <Button variant="secondary" size="sm" disabled={busy || !ticket.draft_answer}
+                            onClick={() => ticket.draft_answer && insert(ticket.draft_answer)}>
+                            <Sparkles size={15} aria-hidden="true" /> {t('drawer.draft')}
+                          </Button>
+                          <TicketCitationPicker disabled={busy} onPick={insertCitation}
+                            onReturnToEditor={() => answerInput.current?.focus()} />
+                        </div>
+                        <SimilarTickets ticket={ticket} disabled={busy} onReuse={insert} />
+                      </details>
                     </form>
                   )}
                 </section>}
+                <details className="simple-panel-details simple-ticket-controls">
+                  <summary>{simple('simple.details')}</summary>
+                  <div className="ticket-drawer-fields">
+                    <TicketFieldPicker<Ticket['status']> label={t('drawer.status')} value={status} selectedLabel={t(`drawer.state.${status}`)}
+                      options={statusItems} disabled={busy} readOnly={readOnly} tone={status} onChange={(next) => save({ status: next })} />
+                    <TicketFieldPicker label={t('drawer.priority')} value={ticket.priority} selectedLabel={t(`drawer.priority.${ticket.priority}`)}
+                      options={priorityItems} disabled={busy} readOnly={readOnly} tone={ticket.priority} onChange={(priority) => save({ priority })} />
+                    <TicketFieldPicker label={t('drawer.assignee')} value={ticket.assignee_id ?? ''} selectedLabel={assignee?.label ?? t('drawer.unassigned')}
+                      options={assignees} disabled={busy || staffUnavailable} readOnly={readOnly} onChange={(value) => save({ assignee_id: value || null })} />
+                  </div>
+                  {update.isError && (
+                    <div className="ticket-drawer-state" role="alert">
+                      <p className="ticket-drawer-error">{t('drawer.saveError')}</p>
+                      <Button variant="secondary" size="sm" disabled={busy} onClick={() => update.variables && save(update.variables)}>{t('drawer.retry')}</Button>
+                    </div>
+                  )}
+                  {staffError && (
+                    <div className="ticket-drawer-state" role="alert">
+                      <p className="ticket-drawer-error">{t('drawer.staffError')}</p>
+                      <Button variant="secondary" size="sm" onClick={staffError}>{t('drawer.retry')}</Button>
+                    </div>
+                  )}
+                  <TicketDeadline ticket={displayTicket} now={now} disabled={busy} readOnly={readOnly}
+                    onUpdated={() => { onUpdated(); onChangeNotice(true) }} />
+                  <TicketFacts ticket={ticket} />
+                </details>
               </>
             )}
           </div>

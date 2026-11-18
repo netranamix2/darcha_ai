@@ -1,227 +1,187 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Columns3, ListFilter, Table2 } from 'lucide-react'
-import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
-import { lazy, Suspense, useDeferredValue, useMemo, useState, useSyncExternalStore } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Globe2, Instagram, Send } from 'lucide-react'
+import { useEffect } from 'react'
 import { useOutletContext, useSearchParams } from 'react-router'
-import { ApiError, getTicket, updateTicket } from '../api/client'
-import type { Channel, StaffMember, Ticket } from '../api/types'
+import { getTicket } from '../api/client'
+import type { Ticket } from '../api/types'
 import type { PanelContext } from '../components/PanelLayout'
 import { TicketDrawer } from '../components/tickets/TicketDrawer'
-import { TicketFilters } from '../components/tickets/TicketFilters'
-import type { TicketFilterValues } from '../components/tickets/TicketFilters'
-import { TicketStats } from '../components/tickets/TicketStats'
-import { TicketTable } from '../components/tickets/TicketViews'
-import { Button, GlassPanel, Skeleton } from '../components/ui'
+import { Button, GlassPanel, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui'
 import { inboxKey, ticketsKey, useStaffRecords, useTicketRecords } from '../hooks/usePanelCases'
 import { useTicketClock } from '../hooks/useTicketClock'
+import { panelSimpleMessages } from '../i18n/panel-simple'
 import { staffMessages } from '../i18n/staff'
+import { ticketDrawerMessages } from '../i18n/ticket-drawer'
 import { ticketPageMessages } from '../i18n/ticket-page'
-import type { Language } from '../i18n/locales'
 import { useLanguage } from '../i18n/useLanguage'
 import { useT } from '../i18n/useT'
-import { localizeCaseRegion, localizeCaseTopic } from '../lib/case-labels'
+import { localizeCaseTopic } from '../lib/case-labels'
 import { canEditCases } from '../lib/panel-sections'
-import './tickets-page.css'
+import { formatDayDuration, formatTicketDate, getDeadlineDays, getTicketStatus } from '../lib/ticket-time'
 
-const TicketKanban = lazy(async () => ({ default: (await import('../components/tickets/TicketKanban')).TicketKanban }))
-const mobileQuery = '(max-width: 800px)'
-const isNarrow = () => window.matchMedia(mobileQuery).matches
-const noTickets: Ticket[] = []
-const noStaff: StaffMember[] = []
-const initialFilters: TicketFilterValues = {
-  search: '', department: '', priority: '', assignee: '', region: '', mine: false,
-}
-const views = [
-  { id: 'kanban', label: 'tickets.kanban', icon: Columns3 },
-  { id: 'table', label: 'tickets.table', icon: Table2 },
-] as const
-const channelNames = {
-  web: 'tickets.channelWeb',
-  telegram: 'tickets.channelTelegram',
-  instagram: 'tickets.channelInstagram',
-} as const satisfies Record<Channel, string>
-const loadingBlocks = [0, 1] as const
+const statuses = ['new', 'in_progress', 'answered', 'overdue'] as const
+const channels = {
+  web: { Icon: Globe2, label: 'tickets.channelWeb' },
+  telegram: { Icon: Send, label: 'tickets.channelTelegram' },
+  instagram: { Icon: Instagram, label: 'tickets.channelInstagram' },
+} as const
 
-type View = (typeof views)[number]['id']
-type MovableStatus = Exclude<Ticket['status'], 'overdue'>
-
-function subscribeToWidth(callback: () => void) {
-  const query = window.matchMedia(mobileQuery)
-  query.addEventListener('change', callback)
-  return () => query.removeEventListener('change', callback)
-}
-
-function normalizeSearch(value: string) {
-  return value.trim().toLocaleLowerCase().replace(/[ʻʼ’`]/gu, "'")
-}
-
-function matchesTicket(ticket: Ticket, filters: TicketFilterValues, search: string, language: Language, currentStaffId?: string) {
-  if (filters.priority && ticket.priority !== filters.priority) return false
-  if (filters.department && ticket.department !== filters.department) return false
-  if (filters.mine && (!currentStaffId || ticket.assignee_id !== currentStaffId)) return false
-  if (filters.assignee && (filters.assignee === 'unassigned' ? ticket.assignee_id : ticket.assignee_id !== filters.assignee)) return false
-  if (filters.region && (filters.region === 'no-region' ? ticket.region : ticket.region !== filters.region)) return false
-  return !search || normalizeSearch(`${ticket.number} ${ticket.topic} ${localizeCaseTopic(ticket.topic, language)} ${ticket.summary}`).includes(search)
+function Deadline({ ticket, now }: { ticket: Ticket; now: number }) {
+  const t = useT(panelSimpleMessages)
+  const { language } = useLanguage()
+  if (ticket.status === 'answered') return <time dateTime={ticket.due_at}>{formatTicketDate(ticket.due_at, language)}</time>
+  const days = getDeadlineDays(ticket.due_at, now)
+  if (!Number.isFinite(days)) return <span>—</span>
+  const total = getDeadlineDays(ticket.due_at, Date.parse(ticket.created_at))
+  const progress = Math.max(0.04, Math.min(1, days / (total > 0 ? total : 15)))
+  return (
+    <div className="simple-ticket-deadline" data-urgent={days <= 3}>
+      <span>{t(days < 0 ? 'simple.late' : 'simple.remaining').replace('{days}', formatDayDuration(days, language))}</span>
+      <span className="simple-ticket-meter" aria-hidden="true"><span style={{ transform: 'scaleX(' + progress + ')' }} /></span>
+    </div>
+  )
 }
 
 export default function TicketsPage() {
-  const t = useT(ticketPageMessages)
+  const t = useT(panelSimpleMessages)
+  const tTicket = useT(ticketPageMessages)
+  const tDrawer = useT(ticketDrawerMessages)
+  const tStaff = useT(staffMessages)
   const { language } = useLanguage()
-  const [view, setView] = useState<View>('kanban')
-  const [filters, setFilters] = useState(initialFilters)
   const [params, setParams] = useSearchParams()
-  const isMobile = useSyncExternalStore(subscribeToWidth, isNarrow)
-  const reducedMotion = useReducedMotion()
   const { notify, role } = useOutletContext<PanelContext>()
   const readOnly = !canEditCases(role, 'tickets')
-  const tStaff = useT(staffMessages)
-  const queryClient = useQueryClient()
-  const ticketsQuery = useTicketRecords()
-  const staffQuery = useStaffRecords()
-  const now = Math.max(useTicketClock(), ticketsQuery.dataUpdatedAt)
-  const deferredFilters = useDeferredValue(filters)
-  const tickets = ticketsQuery.data ?? noTickets
-  const staff = staffQuery.data ?? noStaff
-  const selectedId = params.get('ticket')?.trim() || null
-  const detailKey = [...ticketsKey, 'detail', selectedId]
-  const detail = useQuery({
-    queryKey: detailKey,
-    queryFn: () => getTicket(selectedId ?? ''),
-    enabled: selectedId !== null,
-    retry: false,
-  })
-
-  function updateCases() {
-    void queryClient.invalidateQueries({ queryKey: ticketsKey })
-    void queryClient.invalidateQueries({ queryKey: inboxKey })
+  const client = useQueryClient()
+  const records = useTicketRecords()
+  const staff = useStaffRecords()
+  const now = Math.max(useTicketClock(), records.dataUpdatedAt)
+  const groups: Record<Ticket['status'], Ticket[]> = { new: [], in_progress: [], answered: [], overdue: [] }
+  for (const ticket of [...(records.data ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))) {
+    groups[getTicketStatus(ticket, now)].push(ticket)
   }
 
-  const movement = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: MovableStatus }) => updateTicket(id, { status }),
-    onSuccess: (_response, { id, status }) => {
-      queryClient.setQueryData<Ticket[]>(ticketsKey, (previous) =>
-        previous?.map((ticket) => ticket.id === id ? { ...ticket, status } : ticket),
-      )
-    },
-    onError: () => notify({ title: t('tickets.moveError'), variant: 'error' }),
-    onSettled: updateCases,
+  const requested = params.get('ticket')
+  const explicitStatus = statuses.find((status) => status === params.get('status'))
+  const demoTarget = !requested && params.has('answer') ? groups.new[0]?.id : undefined
+  useEffect(() => {
+    if (!demoTarget) return
+    setParams({ status: 'new', ticket: demoTarget }, { replace: true })
+  }, [demoTarget, setParams])
+  const selectedId = requested
+  const selectedSummary = records.data?.find(({ id }) => id === selectedId)
+  const detail = useQuery({
+    queryKey: [...ticketsKey, 'detail', selectedId],
+    queryFn: () => getTicket(selectedId ?? ''),
+    enabled: !!selectedId,
+    retry: false,
   })
-  const move = movement.isPending ? movement.variables : undefined
-  const selectedSummary = tickets.find((ticket) => ticket.id === selectedId)
-  const detailMissing = detail.error instanceof ApiError && detail.error.status === 404
-  const selected = detailMissing ? selectedSummary : detail.data ?? selectedSummary
-  const regions = useMemo(() => [...new Set(tickets.flatMap(({ region }) => region ? [region] : []))]
-    .sort((a, b) => localizeCaseRegion(a, language).localeCompare(localizeCaseRegion(b, language))), [language, tickets])
-  const currentStaffId = staff.find(({ is_current }) => is_current)?.id
-  const visible = useMemo(() => {
-    const search = normalizeSearch(deferredFilters.search)
-    return tickets
-      .filter((ticket) => matchesTicket(ticket, deferredFilters, search, language, currentStaffId))
-      .map((ticket) => move?.id === ticket.id ? { ...ticket, status: move.status } : ticket)
-  }, [currentStaffId, deferredFilters, language, move, tickets])
+  const selected = detail.data ?? selectedSummary
+  const active = explicitStatus ?? (selected ? getTicketStatus(selected, now) : 'new')
+  const people = staff.data ?? []
 
-  function selectTicket(ticket?: Ticket) {
-    setParams((current) => {
-      const next = new URLSearchParams(current)
-      if (ticket) next.set('ticket', ticket.id)
-      else next.delete('ticket')
-      return next
-    }, { replace: true })
+  function selectTab(status: Ticket['status']) {
+    setParams({ status }, { replace: true })
+  }
+
+  function invalidateCases() {
+    void client.invalidateQueries({ queryKey: ticketsKey })
+    void client.invalidateQueries({ queryKey: inboxKey })
   }
 
   return (
-    <section className="tickets-page" aria-labelledby="tickets-title">
-      <header className="tickets-heading">
-        <div>
-          <h1 id="tickets-title">{t('panel.tickets')}</h1>
-          <p>{t('tickets.subtitle')}{readOnly && ' ' + tStaff('staff.readOnlyNote')}</p>
-        </div>
-        {!isMobile && (
-          <LayoutGroup id="ticket-view">
-            <div role="group" aria-label={t('tickets.views')} className="tickets-view-toggle">
-              {views.map(({ id, label, icon: Icon }) => (
-                <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)}>
-                  {view === id && <motion.span className="tickets-view-marker" aria-hidden="true" layoutId={reducedMotion ? undefined : 'selected'} transition={{ duration: 0.2, ease: 'easeOut' }} />}
-                  <Icon aria-hidden="true" size={16} />
-                  {t(label)}
-                </button>
-              ))}
-            </div>
-          </LayoutGroup>
-        )}
+    <section className="simple-panel-page" aria-labelledby="tickets-title">
+      <header className="simple-panel-heading">
+        <h1 id="tickets-title">{t('panel.tickets')}</h1>
+        <p>{t('simple.ticketsHelp')}{readOnly && ' ' + tStaff('staff.readOnlyNote')}</p>
       </header>
-      {(!ticketsQuery.isError || ticketsQuery.data) && <TicketStats tickets={ticketsQuery.data} now={now} />}
-      <TicketFilters filters={filters} staff={staff} regions={regions} onChange={setFilters} />
-      {staffQuery.isPending ? (
-        <div role="status" aria-label={t('common.loading')}><Skeleton className="tickets-staff-loading" /></div>
-      ) : staffQuery.isError ? (
-        <GlassPanel blur={false} className="tickets-page-state" role="alert">
-          <AlertCircle aria-hidden="true" size={21} />
-          <p>{t('tickets.staffError')}</p>
-          <Button variant="secondary" size="sm" onClick={() => void staffQuery.refetch()}>{t('tickets.retry')}</Button>
-        </GlassPanel>
-      ) : null}
-      {ticketsQuery.isError && (
-        <GlassPanel blur={false} className="tickets-page-state" role="alert">
-          <AlertCircle aria-hidden="true" size={21} />
-          <p>{t('tickets.loadError')}</p>
-          <Button variant="secondary" size="sm" onClick={() => void ticketsQuery.refetch()}>{t('tickets.retry')}</Button>
-        </GlassPanel>
-      )}
-      {selectedId && !selected && (
-        detail.isError ? (
-          <GlassPanel blur={false} className="tickets-page-state" role="alert">
-            <AlertCircle aria-hidden="true" size={21} />
-            <p>{t('tickets.detailError')}</p>
-            <Button variant="secondary" size="sm" onClick={() => void detail.refetch()}>{t('tickets.retry')}</Button>
-            <Button variant="ghost" size="sm" onClick={() => selectTicket()}>{t('tickets.closeDetail')}</Button>
-          </GlassPanel>
-        ) : <div role="status" aria-label={t('common.loading')}><Skeleton className="tickets-staff-loading" /></div>
-      )}
-      {ticketsQuery.isPending ? (
-        <div className="tickets-loading" role="status" aria-label={t('common.loading')}>
-          {loadingBlocks.map((id) => <Skeleton key={id} className="tickets-loading-block" />)}
-        </div>
-      ) : ticketsQuery.data && (
-        <>
-          {visible.length === 0 && tickets.length > 0 && (
-            <div className="tickets-no-matches" role="status">
-              <ListFilter aria-hidden="true" size={18} />
-              <span>{t('tickets.noMatches')}</span>
-              <Button variant="ghost" size="sm" onClick={() => setFilters(initialFilters)}>{t('tickets.resetFilters')}</Button>
-            </div>
-          )}
-          {isMobile || view === 'table' ? (
-            <TicketTable tickets={visible} staff={staff} now={now} onOpen={selectTicket} />
+      <Tabs value={active} onValueChange={(value) => {
+        const next = statuses.find((status) => status === value)
+        if (next) selectTab(next)
+      }}>
+        <TabsList className="simple-panel-tabs simple-ticket-tabs" aria-label={t('panel.tickets')}>
+          {statuses.map((status) => (
+            <TabsTrigger value={status} key={status}>
+              {t(`simple.${status}`)} <span data-urgent={status === 'overdue'}>{groups[status].length}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <TabsContent value={active}>
+          {records.isError && !records.data ? (
+            <GlassPanel blur={false} className="simple-panel-state" role="alert">
+              <p>{tTicket('tickets.loadError')}</p>
+              <Button variant="secondary" onClick={() => void records.refetch()}>{t('simple.retry')}</Button>
+            </GlassPanel>
+          ) : records.isPending ? (
+            <div className="simple-panel-state" role="status" aria-label={t('common.loading')}><Skeleton /><Skeleton /></div>
           ) : (
-            <Suspense fallback={<div className="tickets-loading" role="status" aria-label={t('common.loading')}>
-              {loadingBlocks.map((id) => <Skeleton key={id} className="tickets-loading-block" />)}
-            </div>}>
-              <TicketKanban
-                tickets={visible}
-                staff={staff}
-                now={now}
-                onOpen={selectTicket}
-                onMove={readOnly ? undefined : (id, status) => { if (!movement.isPending) movement.mutate({ id, status }) }}
-              />
-            </Suspense>
+            <GlassPanel blur={false} variant="subtle" className="simple-ticket-surface">
+              {groups[active].length === 0 ? (
+                <div className="simple-panel-state"><p>{t('simple.noTickets')}</p><small>{t('simple.ticketHint')}</small></div>
+              ) : (
+                <table className="simple-ticket-table" aria-label={t('panel.tickets')}>
+                  <thead>
+                    <tr>
+                      <th scope="col">{t('simple.number')}</th><th scope="col">{t('simple.topic')}</th>
+                      <th scope="col">{t('simple.channel')}</th><th scope="col">{t('simple.deadline')}</th>
+                      <th scope="col">{tTicket('tickets.assignee')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {groups[active].map((ticket) => {
+                      const { Icon, label } = channels[ticket.channel]
+                      const number = ticket.number.startsWith('№') ? ticket.number : '№' + ticket.number
+                      const assignee = people.find(({ id }) => ticket.assignee_id === id)
+                      const open = () => setParams({ status: active, ticket: ticket.id }, { replace: true })
+                      return (
+                        <tr key={ticket.id} onClick={open}>
+                          <td className="simple-ticket-number">{number}</td>
+                          <td><button type="button" onClick={(event) => { event.stopPropagation(); open() }}>
+                            {localizeCaseTopic(ticket.topic, language)}<span className="sr-only"> {number}</span>
+                          </button></td>
+                          <td><span className="simple-ticket-channel" title={tTicket(label)}>
+                            <Icon size={17} aria-hidden="true" /> <span>{tTicket(label)}</span>
+                          </span></td>
+                          <td><Deadline ticket={ticket} now={now} /></td>
+                          <td>{assignee?.name ?? t('simple.unassigned')}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </GlassPanel>
           )}
-        </>
+        </TabsContent>
+      </Tabs>
+      {selectedId && !selected && (
+        <div className="simple-panel-state" role={detail.isError ? 'alert' : 'status'}>
+          {detail.isError ? <><p>{t('simple.missingTicket')}</p>
+            <Button variant="secondary" onClick={() => void detail.refetch()}>{t('simple.retry')}</Button></>
+            : <Skeleton aria-label={t('common.loading')} />}
+        </div>
       )}
       {selected && (
         <TicketDrawer
           key={selected.id}
           ticket={selected}
-          staff={staff}
+          staff={people}
           now={now}
           readOnly={readOnly}
           detailLoading={detail.isPending}
           detailError={detail.isError ? () => void detail.refetch() : undefined}
-          staffUnavailable={staffQuery.isPending || staffQuery.isError}
-          staffError={staffQuery.isError ? () => void staffQuery.refetch() : undefined}
-          onClose={() => selectTicket()}
-          onUpdated={updateCases}
-          onSent={(channel) => notify({ title: `${t('tickets.sentNotice')} · ${t(channelNames[channel])}`, variant: 'success' })}
+          staffUnavailable={staff.isPending || staff.isError}
+          staffError={staff.isError ? () => void staff.refetch() : undefined}
+          onClose={() => selectTab(active)}
+          onUpdated={invalidateCases}
+          onSendError={() => notify({ title: tDrawer('drawer.sendError'), variant: 'error' })}
+          onChangeNotice={(ok) => notify({ title: t(ok ? 'simple.saved' : 'simple.saveError'), variant: ok ? 'success' : 'error' })}
+          onSent={(answer) => {
+            client.setQueryData<Ticket[]>(ticketsKey, (items) =>
+              items?.map((item) => item.id === selected.id ? { ...item, status: 'answered', final_answer: answer } : item),
+            )
+            setParams({ status: 'answered', ticket: selected.id }, { replace: true })
+            notify({ title: tTicket('tickets.sentNotice'), variant: 'success' })
+          }}
         />
       )}
     </section>

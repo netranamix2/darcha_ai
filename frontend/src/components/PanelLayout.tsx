@@ -12,17 +12,19 @@ import { analyticsMessages } from '../i18n/analytics'
 import { staffMessages } from '../i18n/staff'
 import { ticketPageMessages } from '../i18n/ticket-page'
 import { useT } from '../i18n/useT'
-import { faqReportId, staffSections } from '../lib/panel-sections'
+import { staffSections } from '../lib/panel-sections'
 import { readStaffRole } from '../lib/staff-landing'
 import { getTicketStatus } from '../lib/ticket-time'
 import { AnimatedOutlet } from './AnimatedOutlet'
 import { Brand } from './Brand'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { PanelDemo } from './PanelDemo'
 import { PanelApiFooter } from './PanelApiFooter'
 import { PanelSearch } from './PanelSearch'
 import { SkipLink } from './SkipLink'
 import { Avatar, Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger, GlassPanel, IconButton, Toast, ToastProvider, ToastViewport } from './ui'
 import './staff-panel.css'
+import './panel-simple.css'
 
 type Notice = { title: string; description?: string; variant?: 'default' | 'success' | 'warning' | 'error' }
 type PanelNotify = (notice: Notice) => void
@@ -38,10 +40,8 @@ export default function PanelLayout() {
   const tStaff = useT(staffMessages)
   const [role] = useState(readStaffRole)
   const sections = staffSections(role)
-  const { pathname, hash } = useLocation()
-  const currentSection = pathname.replace(/\/$/u, '').toLowerCase()
-  const currentPath = role === 'manager' && currentSection === '/panel/analytics' && hash === '#' + faqReportId
-    ? currentSection + hash : currentSection
+  const { pathname } = useLocation()
+  const currentPath = pathname.replace(/\/$/u, '').toLowerCase()
   const roleLabel = role ? tStaff(`staff.role.${role}`) : ''
   const hasTickets = sections.some(({ id }) => id === 'tickets')
   const queryClient = useQueryClient()
@@ -122,6 +122,7 @@ export default function PanelLayout() {
           <GlassPanel className="panel-topbar">
             <PanelSearch sections={sections} />
             <div className="panel-actions">
+              <PanelDemo />
               <LanguageSwitcher compact />
               <Dropdown>
                 <DropdownTrigger asChild>

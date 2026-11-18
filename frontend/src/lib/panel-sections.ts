@@ -7,13 +7,13 @@ const sections = {
   inbox: { id: 'inbox', to: '/panel/inbox', label: 'panel.inbox', icon: Inbox },
   tickets: { id: 'tickets', to: '/panel/tickets', label: 'panel.tickets', icon: Ticket },
   analytics: { id: 'analytics', to: '/panel/analytics', label: 'panel.analytics', icon: ChartNoAxesCombined },
-  faq: { id: 'faq', to: '/panel/analytics#' + faqReportId, label: 'staff.faq', icon: BookOpen },
+  documents: { id: 'documents', to: '/panel/documents', label: 'panel.documents', icon: BookOpen },
 } as const
 
 const sectionsByRole = {
   operator: [sections.inbox],
   specialist: [sections.tickets],
-  manager: [sections.analytics, sections.faq, sections.inbox, sections.tickets],
+  manager: [sections.analytics, sections.inbox, sections.tickets, sections.documents],
 } as const
 const demoSections = [sections.inbox, sections.tickets, sections.analytics] as const
 

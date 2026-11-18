@@ -12,6 +12,7 @@ const PanelLayout = lazy(() => import('./components/PanelLayout'))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 const TicketsPage = lazy(() => import('./pages/TicketsPage'))
 const InboxPage = lazy(() => import('./pages/InboxPage'))
+const KnowledgeBasePage = lazy(() => import('./pages/KnowledgeBasePage'))
 const UiPage = lazy(() => import('./pages/UiPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="inbox" element={<InboxPage />} />
             <Route path="tickets" element={<TicketsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="documents" element={<KnowledgeBasePage />} />
           </Route>
         </Routes>
       </RouteBoundary>

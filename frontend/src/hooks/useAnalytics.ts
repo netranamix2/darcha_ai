@@ -15,8 +15,5 @@ function summaryQuery({ from, to }: { from: string; to: string }) {
 
 export function useAnalytics(days: number, now: number) {
   const current = useQuery({ ...summaryQuery(analyticsRange(days, now)), refetchInterval: 15_000 })
-  const previous = useQuery(summaryQuery(analyticsRange(days, now, days)))
-  const lastFourteen = useQuery(summaryQuery(analyticsRange(14, now)))
-
-  return { current, previous, lastFourteen }
+  return { current }
 }

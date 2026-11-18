@@ -10,6 +10,7 @@ const labels: Readonly<Record<string, TranslationKey>> = {
   '/panel/inbox': 'panel.inbox',
   '/panel/tickets': 'panel.tickets',
   '/panel/analytics': 'panel.analytics',
+  '/panel/documents': 'panel.documents',
   '/ui': 'meta.ui',
 }
 

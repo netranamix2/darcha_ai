@@ -1,39 +1,32 @@
 import { useMutation } from '@tanstack/react-query'
-import { ArrowRight } from 'lucide-react'
-import { useRef, type FormEvent } from 'react'
+import { ArrowRight, BarChart3, ChevronDown, Inbox, Ticket } from 'lucide-react'
+import { type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
-import { canResetDemoData, login } from '../api/client'
+import { login } from '../api/client'
+import type { StaffRole } from '../api/types'
 import { Brand } from '../components/Brand'
 import { Button, GlassPanel, Input } from '../components/ui'
 import { staffMessages } from '../i18n/staff'
 import { useT } from '../i18n/useT'
+import { demoAccounts, demoLoginEnabled } from '../lib/demo-login'
 import { rememberStaffRole, staffLanding } from '../lib/staff-landing'
 import './staff-login.css'
 
-const demoAccounts = [
-  { role: 'operator', username: 'operator', password: 'operator123' },
-  { role: 'specialist', username: 'specialist', password: 'specialist123' },
-  { role: 'manager', username: 'manager', password: 'manager123' },
-] as const
+const roleIcons = { operator: Inbox, specialist: Ticket, manager: BarChart3 } as const
+
+type Credentials = { email: string; password: string; demoRole?: StaffRole }
 
 export default function LoginPage() {
   const t = useT(staffMessages)
-  const emailInput = useRef<HTMLInputElement>(null)
-  const passwordInput = useRef<HTMLInputElement>(null)
-  const submitButton = useRef<HTMLButtonElement>(null)
   const navigate = useNavigate()
   const loginRequest = useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) => login(email, password),
+    mutationFn: ({ email, password }: Credentials) => login(email, password),
     gcTime: 0,
   })
+  const pendingRole = loginRequest.isPending ? loginRequest.variables.demoRole : undefined
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const credentials = new FormData(event.currentTarget)
-    loginRequest.mutate({
-      email: String(credentials.get('email') ?? '').trim(),
-      password: String(credentials.get('password') ?? ''),
-    }, {
+  function signIn(credentials: Credentials) {
+    loginRequest.mutate(credentials, {
       onSuccess: ({ role }) => {
         rememberStaffRole(role)
         void navigate(staffLanding(role), { replace: true })
@@ -41,50 +34,68 @@ export default function LoginPage() {
     })
   }
 
-  function fillDemo(account: (typeof demoAccounts)[number]) {
-    if (!emailInput.current || !passwordInput.current) return
-    emailInput.current.value = account.username
-    passwordInput.current.value = account.password
-    loginRequest.reset()
-    submitButton.current?.focus({ preventScroll: true })
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const data = new FormData(event.currentTarget)
+    signIn({ email: String(data.get('email') ?? '').trim(), password: String(data.get('password') ?? '') })
   }
+
+  const form = (
+    <form className="login-form" onSubmit={submit}>
+      <label>
+        <span>{t('login.email')}</span>
+        <Input name="email" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} required />
+      </label>
+      <label>
+        <span>{t('login.password')}</span>
+        <Input name="password" type="password" autoComplete="current-password" required />
+      </label>
+      <Button type="submit" variant={demoLoginEnabled ? 'secondary' : 'primary'}
+        loading={loginRequest.isPending && !pendingRole} disabled={loginRequest.isPending}>
+        {t('login.submit')}
+        <ArrowRight size={17} aria-hidden="true" />
+      </Button>
+    </form>
+  )
 
   return (
     <div className="login-page">
       <GlassPanel variant="elevated" className="login-card">
         <Brand />
         <h1>{t('login.heading')}</h1>
-        <p>{t('login.description')}</p>
-        <form className="login-form" onSubmit={submit}>
-          <label>
-            <span>{t('login.email')}</span>
-            <Input ref={emailInput} name="email" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} required />
-          </label>
-          <label>
-            <span>{t('login.password')}</span>
-            <Input ref={passwordInput} name="password" type="password" autoComplete="current-password" required />
-          </label>
-          {loginRequest.isError && <p className="form-error" role="alert">{t('login.error')}</p>}
-          <Button type="submit" ref={submitButton} loading={loginRequest.isPending}>
-            {loginRequest.isPending ? t('common.loading') : t('login.submit')}
-            {loginRequest.isPending ? null : <ArrowRight size={17} aria-hidden="true" />}
-          </Button>
-        </form>
-        {canResetDemoData() && (
-          <section className="staff-login-demo" aria-labelledby="staff-demo-title">
-            <h2 id="staff-demo-title">{t('staff.demo')}</h2>
+        <p>{t(demoLoginEnabled ? 'staff.demoPick' : 'login.description')}</p>
+        {demoLoginEnabled && (
+          <section className="staff-login-demo" aria-label={t('staff.demo')}>
             <ul>
-              {demoAccounts.map((account) => (
-                <li key={account.role}>
-                  <Button type="button" variant="secondary" className="staff-demo-card" disabled={loginRequest.isPending} onClick={() => fillDemo(account)}>
-                    <strong>{t(`staff.role.${account.role}`)}</strong>
-                    <span>{t(`staff.demo.${account.role}`)}</span>
-                  </Button>
-                </li>
-              ))}
+              {demoAccounts.map((account) => {
+                const Icon = roleIcons[account.role]
+                return (
+                  <li key={account.role}>
+                    <button type="button" className="staff-demo-card" disabled={loginRequest.isPending}
+                      aria-busy={pendingRole === account.role || undefined}
+                      onClick={() => signIn({ email: account.username, password: account.password, demoRole: account.role })}>
+                      <span className="staff-demo-icon" aria-hidden="true"><Icon size={18} /></span>
+                      <span className="staff-demo-text">
+                        <strong>{t(`staff.role.${account.role}`)}</strong>
+                        <span>{t(`staff.demo.${account.role}`)}</span>
+                      </span>
+                      <span className="staff-demo-go" aria-hidden="true">
+                        {pendingRole === account.role ? <span className="staff-demo-spinner" /> : <ArrowRight size={16} />}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           </section>
         )}
+        {loginRequest.isError && <p className="form-error" role="alert">{t('login.error')}</p>}
+        {demoLoginEnabled ? (
+          <details className="staff-login-other">
+            <summary>{t('staff.otherAccount')} <ChevronDown size={16} aria-hidden="true" /></summary>
+            {form}
+          </details>
+        ) : form}
       </GlassPanel>
     </div>
   )

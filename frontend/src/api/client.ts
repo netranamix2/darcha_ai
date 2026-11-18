@@ -242,6 +242,13 @@ export async function login(email: string, password: string): Promise<LoginReply
   })
 }
 
+export function logout() {
+  staffToken = undefined
+  staffId = ''
+  mockStaffSession = false
+  saveStaffSession(undefined, '')
+}
+
 export async function getInbox(level?: Level): Promise<InboxItem[]> {
   const path = '/api/inbox'
   return request(path, async () => {

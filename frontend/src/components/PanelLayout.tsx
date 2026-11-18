@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import { Home, LogIn, PanelLeftClose, PanelLeftOpen, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router'
-import { canResetDemoData, resetDemoData } from '../api/client'
+import { Link, useLocation, useNavigate } from 'react-router'
+import { canResetDemoData, logout, resetDemoData } from '../api/client'
 import type { StaffRole } from '../api/types'
 import { analyticsKey } from '../hooks/useAnalytics'
 import { usePanelCaseSubscription, useTicketRecords } from '../hooks/usePanelCases'
@@ -45,6 +45,7 @@ export default function PanelLayout() {
   const roleLabel = role ? tStaff(`staff.role.${role}`) : ''
   const hasTickets = sections.some(({ id }) => id === 'tickets')
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const { data: tickets } = useTicketRecords(hasTickets)
   const now = useTicketClock()
   usePanelCaseSubscription()
@@ -132,10 +133,12 @@ export default function PanelLayout() {
                 </DropdownTrigger>
                 <DropdownContent align="end" aria-label={t('panel.profile')}>
                   <DropdownLabel className="panel-menu-label">{roleLabel || t('panel.profile')}</DropdownLabel>
-                  <DropdownItem asChild>
-                    <Link to="/login">
-                      <LogIn size={16} aria-hidden="true" /> {tStaff('staff.switchAccount')}
-                    </Link>
+                  <DropdownItem onSelect={() => {
+                    logout()
+                    queryClient.clear()
+                    void navigate('/login', { replace: true })
+                  }}>
+                    <LogIn size={16} aria-hidden="true" /> {tStaff('staff.switchAccount')}
                   </DropdownItem>
                   <DropdownItem asChild>
                     <Link to="/">

@@ -2,6 +2,7 @@ import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/reac
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, createChatSession, getChatMessages, sendChatMessage, subscribeToCaseChanges } from '../api/client'
 import type { ChatMessage } from '../api/types'
+import { uuid } from '../lib/uuid'
 
 const sessionKey = 'darcha.chat.session'
 const pollInterval = 7_000
@@ -220,7 +221,7 @@ export function usePublicChat() {
     if (!trimmed || trimmed.length > messageLimit || isRestoring || (history.isError && !history.data && !isExpired(history.error))) return
     const now = Date.now()
     start({
-      message: { id: crypto.randomUUID(), role: 'user', text: trimmed, created_at: new Date(now).toISOString() },
+      message: { id: uuid(), role: 'user', text: trimmed, created_at: new Date(now).toISOString() },
       thinkingSince: now,
       generation: generation.current,
     })

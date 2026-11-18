@@ -62,6 +62,9 @@ const latin = {
   'conversation.restoreError': 'Suhbatni yuklab boʻlmadi. Qayta urinib koʻring.',
   'conversation.sendError': 'Xabar yuborilmadi. Qayta urinib koʻring.',
   'conversation.retry': 'Qayta urinish',
+  'conversation.sendErrorDetail': 'Server bilan bogʻlanib boʻlmadi. Internetni tekshirib, qayta yuboring.',
+  'conversation.close': 'Yopish',
+  'conversation.notifications': 'Bildirishnomalar',
 } as const
 
 type ChatDictionary = Record<keyof typeof latin, string>
@@ -128,6 +131,9 @@ const cyrillic = {
   'conversation.restoreError': 'Суҳбатни юклаб бўлмади. Қайта уриниб кўринг.',
   'conversation.sendError': 'Хабар юборилмади. Қайта уриниб кўринг.',
   'conversation.retry': 'Қайта уриниш',
+  'conversation.sendErrorDetail': 'Сервер билан боғланиб бўлмади. Интернетни текшириб, қайта юборинг.',
+  'conversation.close': 'Ёпиш',
+  'conversation.notifications': 'Билдиришномалар',
 } satisfies ChatDictionary
 
 const russian = {
@@ -192,6 +198,9 @@ const russian = {
   'conversation.restoreError': 'Не удалось загрузить переписку. Попробуйте ещё раз.',
   'conversation.sendError': 'Не удалось отправить сообщение. Попробуйте ещё раз.',
   'conversation.retry': 'Повторить попытку',
+  'conversation.sendErrorDetail': 'Не удалось связаться с сервером. Проверьте интернет и отправьте ещё раз.',
+  'conversation.close': 'Закрыть',
+  'conversation.notifications': 'Уведомления',
 } satisfies ChatDictionary
 
 export const chatMessages = {

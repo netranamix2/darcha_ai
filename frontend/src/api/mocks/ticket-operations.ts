@@ -9,6 +9,7 @@ import {
 import { dayMs } from './dates'
 import { inbox, responseSeconds, tickets } from './fixtures'
 import { currentStaff, departmentFor, similarResolvedTickets, staff, ticketExamples } from './ticket-examples'
+import { uuid } from '../../lib/uuid'
 
 const ratingDelay = 20_000
 const arrivalInterval = 40_000
@@ -188,7 +189,7 @@ export function resolveTicket(ticket: Ticket, answer: string, actor: string, cit
   const history = requireRecord(sessions, record.sessionId)
   const specialist = history.find(({ role, reply }) => role === 'specialist' && reply?.ticket_number === ticket.number)
   // Retried sends keep a single specialist reply per ticket, including a later correction.
-  const id = specialist?.id ?? crypto.randomUUID()
+  const id = specialist?.id ?? uuid()
   const message = {
     id,
     role: 'specialist',
@@ -228,7 +229,7 @@ export function processTicketActivity() {
     liveSchedule.nextArrivalAt = now + arrivalInterval
     const example = ticketExamples[Math.floor(now / arrivalInterval) % ticketExamples.length]
     const item: InboxItem = {
-      id: `IN-${crypto.randomUUID()}`,
+      id: `IN-${uuid()}`,
       channel: example.channel,
       text: example.text,
       created_at: new Date(now).toISOString(),

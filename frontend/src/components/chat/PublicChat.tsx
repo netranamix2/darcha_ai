@@ -1,12 +1,12 @@
 import { ArrowDown, CircleAlert, UserRound } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import { memo, useId, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { ChatMessage } from '../../api/types'
 import { usePublicChat } from '../../hooks/usePublicChat'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
 import { WindowMark } from '../Brand'
-import { Button, GlassPanel, Skeleton } from '../ui'
+import { Button, GlassPanel, Skeleton, Toast, ToastProvider, ToastViewport } from '../ui'
 import { ChatAnswer, ChatSources } from './ChatAnswer'
 import { ChatComposer } from './ChatComposer'
 import { ChatHeader } from './ChatHeader'
@@ -145,6 +145,21 @@ export default function PublicChat() {
   }
 
   const blocked = isRestoring || isSending || (error === 'restore' && !messages.length)
+  const [toastOpen, setToastOpen] = useState(false)
+
+  // A failed send must never be silent: besides the inline retry, show a toast.
+  useEffect(() => {
+    if (error === 'send') setToastOpen(true)
+  }, [error])
+
+  function safeSend(text: string) {
+    try {
+      send(text)
+    } catch (sendError) {
+      console.error('chat send failed', sendError)
+      setToastOpen(true)
+    }
+  }
 
   return (
     <GlassPanel variant="elevated" className="public-chat" role="region" aria-labelledby={titleId} data-thinking={isSending || undefined}>
@@ -186,7 +201,7 @@ export default function PublicChat() {
               {thinkingSince !== null && <ChatThinking key={thinkingSince} startedAt={thinkingSince} />}
             </>
           ) : (
-            <ChatPrompt disabled={blocked} onPrompt={send} />
+            <ChatPrompt disabled={blocked} onPrompt={safeSend} />
           )}
         </div>
         {unread && (
@@ -202,8 +217,19 @@ export default function PublicChat() {
             <Button size="sm" variant="secondary" disabled={isSending || isRestoring} onClick={retry}>{t('conversation.retry')}</Button>
           </div>
         )}
-        <ChatComposer key={resetKey} disabled={blocked} onSend={send} />
+        <ChatComposer key={resetKey} disabled={blocked} onSend={safeSend} />
       </div>
+      <ToastProvider label={t('conversation.notifications')} duration={6000}>
+        <Toast
+          open={toastOpen}
+          onOpenChange={setToastOpen}
+          variant="error"
+          title={t('conversation.sendError')}
+          description={t('conversation.sendErrorDetail')}
+          closeLabel={t('conversation.close')}
+        />
+        <ToastViewport label={t('conversation.notifications')} />
+      </ToastProvider>
     </GlassPanel>
   )
 }

@@ -14,6 +14,7 @@ import {
   answerCitations, convertInboxItem, createTicketForInbox, getMockKnowledgeBase, markDelivered, patchTicket,
   processTicketActivity, resolveTicket, viewTicket,
 } from './ticket-operations'
+import { uuid } from '../../lib/uuid'
 
 function pause() {
   const milliseconds = 400 + Math.floor(Math.random() * 801)
@@ -32,7 +33,7 @@ function newestFirst<T extends { created_at: string }>(items: T[]) {
 export async function createChatSession(apiFallback = false): Promise<ChatSession> {
   await pause()
   return withChatState(() => {
-    const sessionId = `${apiFallback ? 'demo-' : ''}${crypto.randomUUID()}`
+    const sessionId = `${apiFallback ? 'demo-' : ''}${uuid()}`
     sessions.set(sessionId, [])
     persistChatState()
     return { session_id: sessionId }
@@ -74,11 +75,11 @@ function recordMessage(sessionId: string, text: string, started: number, shadow:
     : classified
   const now = Date.now()
   const createdAt = new Date(now).toISOString()
-  const inboxId = `IN-${crypto.randomUUID()}`
+  const inboxId = `IN-${uuid()}`
   const topic = result.topic
 
   const reply: ChatReply = {
-    message_id: crypto.randomUUID(),
+    message_id: uuid(),
     answer: result.answer,
     citations: result.citations,
     level: result.level,
@@ -86,7 +87,7 @@ function recordMessage(sessionId: string, text: string, started: number, shadow:
     due_at: null,
   }
   const messages: ChatMessage[] = [
-    { id: crypto.randomUUID(), role: 'user', text: message, created_at: createdAt },
+    { id: uuid(), role: 'user', text: message, created_at: createdAt },
     { id: reply.message_id, role: 'assistant', text: reply.answer, created_at: createdAt, reply },
   ]
   if (classified.refused) {
@@ -191,7 +192,7 @@ export async function login(email: string, password: string): Promise<LoginReply
 
   const username = email.trim().toLowerCase().split('@')[0]
   const role: StaffRole = username === 'specialist' || username === 'manager' ? username : 'operator'
-  return { token: `demo-${crypto.randomUUID()}`, role }
+  return { token: `demo-${uuid()}`, role }
 }
 
 export async function getInbox(level?: Level): Promise<InboxItem[]> {

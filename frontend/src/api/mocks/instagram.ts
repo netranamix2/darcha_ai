@@ -2,6 +2,7 @@ import type { ChatReply, InstagramComment, InstagramFeed, InstagramTrace } from 
 import { abusiveWords, determineReply } from './chat'
 import type { MockLocale } from './chat'
 import { createChatSession, readChatMessages, sendChatMessage } from './index'
+import { uuid } from '../../lib/uuid'
 
 const storageKey = 'darcha:instagram-sandbox:v1'
 const postId = 'sandbox-post'
@@ -150,7 +151,7 @@ export async function postInstagramComment(author: string, text: string): Promis
   const { session_id } = await createChatSession()
   const reply = await sendChatMessage(session_id, text, { channel: 'instagram' })
   const info = determineReply(text)
-  const id = `ig-${crypto.randomUUID()}`
+  const id = `ig-${uuid()}`
   const comment: StoredComment = {
     id, author, text, created_at: receivedAt, is_bot: false, replies: [], session_id,
   }

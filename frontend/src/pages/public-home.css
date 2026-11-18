@@ -620,3 +620,18 @@
   white-space: nowrap;
 }
 .landing-channel-demo:hover { background: rgba(36, 83, 230, 0.26); }
+
+/* Chat must always fit the viewport (no horizontal scroll at 1440 / 1024 / 768 / 390):
+   every ancestor may shrink, long words and links wrap, the header wraps instead of pushing out. */
+.landing-chat,
+.landing-chat > *,
+.chat-window,
+.chat-window > .public-chat { min-inline-size: 0; max-inline-size: 100%; }
+.chat-window .chat-header { flex-wrap: wrap; row-gap: 0.5rem; }
+.chat-window .chat-identity { flex: 1 1 12rem; }
+.chat-window .chat-identity h2,
+.chat-window .chat-identity p { overflow-wrap: anywhere; }
+.chat-window .chat-region { flex: 0 1 auto; max-inline-size: 100%; }
+.chat-window .chat-bubble,
+.chat-window .chat-message,
+.chat-window .chat-message a { overflow-wrap: anywhere; min-inline-size: 0; }

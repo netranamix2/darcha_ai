@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.base import deliver
+from app.pipeline.templates import format_sources
 from app.db.models import Alert, Citizen, Classification, Message, Response, Ticket, Topic
 from app.db.session import session_scope
 from app.pipeline import templates
@@ -24,7 +25,7 @@ from app.tickets import notify
 from app.tickets.service import create_ticket
 
 log = logging.getLogger("pipeline")
-PRIVATE_PUSH = {"telegram_dm", "instagram_dm"}   # get a "being prepared" note on yellow
+PRIVATE_PUSH = {"telegram_dm", "instagram_dm", "telegram_group"}   # "being prepared" note on yellow
 
 
 async def _citizen(s: AsyncSession, inb: InboundMessage, lang: str, phone_hash: str | None) -> Citizen:
@@ -87,9 +88,8 @@ async def handle(inb: InboundMessage, *, send: bool = True) -> dict:
         ticket: Ticket | None = None
         if decision.action == "answer":
             reply_text = ans.answer
-            urls = list(dict.fromkeys(c["url"] for c in ans.citations if c.get("url")))
-            if urls and inb.channel not in {"web", "api", "eval"}:   # web shows citations itself
-                reply_text += "\n\n📎 " + "\n".join(urls)
+            if ans.citations and inb.channel not in {"web", "api", "eval"}:   # web shows citations itself
+                reply_text += "\n\n" + format_sources(ans.citations, norm.lang, norm.script)
         elif decision.action == "template":
             kind = "template"
             reply_text = templates.render(decision.template, norm.lang, norm.script)

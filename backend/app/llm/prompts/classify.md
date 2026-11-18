@@ -9,7 +9,9 @@ Fields:
 - sentiment: negative | neutral | positive.
 - urgency: high (child safety, violence, a deadline today/tomorrow, exam or admission happening now), normal, low.
 - flags (zero or more):
-  children - concerns the safety, health or rights of a specific child;
+  children - ONLY when a specific child's safety, health or rights are at risk or violated (abuse, bullying, injury,
+    denied schooling, discrimination, neglect). NOT for general questions that merely mention a child, e.g. "at what age
+    can my child start school?", "how do I transfer my son?", "does my daughter get the discount?" - those get no flag;
   corruption - bribery, extortion, "pay and we will admit/transfer you";
   fraud - someone OFFERS admission, transfer, grades, diplomas or certificates for money, or the author asks whether such an offer is real;
   violence - violence, threats, bullying, self-harm;

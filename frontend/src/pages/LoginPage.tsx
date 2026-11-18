@@ -6,6 +6,7 @@ import { login } from '../api/client'
 import { WindowMark } from '../components/Brand'
 import { Button, GlassPanel, Input } from '../components/ui'
 import { useT } from '../i18n/useT'
+import { rememberStaffRole, staffLanding } from '../lib/staff-landing'
 
 export default function LoginPage() {
   const t = useT()
@@ -22,7 +23,10 @@ export default function LoginPage() {
       email: String(credentials.get('email') ?? '').trim(),
       password: String(credentials.get('password') ?? ''),
     }, {
-      onSuccess: () => { void navigate('/panel/inbox', { replace: true }) },
+      onSuccess: ({ role }) => {
+        rememberStaffRole(role)
+        void navigate(staffLanding(role), { replace: true })
+      },
     })
   }
 

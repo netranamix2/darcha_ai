@@ -104,24 +104,51 @@ export interface AnalyticsAlert {
   kind: 'spike' | 'fraud'
   text: string
   created_at: string
+  // TODO(backend): include the linked Inbox item on individual alerts.
+  inbox_id?: string | null
+}
+
+export interface AnalyticsDay {
+  date: string
+  total: number
+  ai_resolved_pct?: number
+  avg_response_sec?: number
+  overdue?: number
 }
 
 export interface AnalyticsSummary {
   total: number
   ai_resolved_pct: number
   avg_response_sec: number
+  response_time_kind?: 'median'
   overdue: number
   by_channel: { channel: Channel; count: number }[]
   by_level: { level: Level; count: number }[]
   sentiment_daily: { date: string; positive: number; neutral: number; negative: number }[]
-  top_topics: { topic: string; count: number }[]
+  top_topics: { topic: string; count: number; growth_pct?: number }[]
   by_region: { region: string | null; count: number }[]
   alerts: AnalyticsAlert[]
+  // TODO(backend): add daily AI share, average response time and overdue count.
+  daily?: AnalyticsDay[]
+}
+
+export interface BackendAnalyticsSummary {
+  total: number
+  by_channel: Partial<Record<Channel, number>>
+  by_level: Partial<Record<Level | 'pending', number>>
+  by_region: Record<string, number>
+  top_topics: AnalyticsSummary['top_topics']
+  per_day: { date: string; count: number }[]
+  auto_answer_rate: number | null
+  response_time_s: { p50: number | null }
+  tickets: { overdue: number }
 }
 
 export interface FaqReport {
   period: string
   generated_at: string
+  from?: string
+  to?: string
   clusters: {
     id: string
     label: string
@@ -131,8 +158,32 @@ export interface FaqReport {
     examples: string[]
     no_answer_in_kb: boolean
     explainer_draft: string
+    // TODO(backend): track change in questions after an explainer is published.
+    effect_pct?: number
+    label_ru?: string
+    translations?: Partial<Record<'uz-cyrl' | 'ru', { label?: string; confusion?: string; explainer_draft?: string }>>
   }[]
 }
+
+export interface BackendFaqReport {
+  period: string
+  from: string
+  to: string
+  created_at: string
+  clusters: {
+    id: number | string
+    label: string
+    label_ru: string | null
+    what_is_unclear: string
+    size: number
+    trend: { change?: number }
+    examples: string[]
+    unanswered_in_kb: boolean
+    explainer_draft: { post?: string }
+  }[]
+}
+
+export type CaseChangeKind = 'update' | 'reset' | 'report'
 
 export type StaffRole = 'operator' | 'specialist' | 'manager'
 

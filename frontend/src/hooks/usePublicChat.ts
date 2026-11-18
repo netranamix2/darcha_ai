@@ -153,19 +153,21 @@ export function usePublicChat() {
 
   useEffect(() => {
     if (!sessionId) return
-    return subscribeToCaseChanges(() => {
+    return subscribeToCaseChanges((kind) => {
+      if (kind === 'report') return
       void queryClient.invalidateQueries({ queryKey: historyKey(sessionId), exact: true })
     })
   }, [queryClient, sessionId])
 
   useEffect(() => {
-    if (sessionId && !history.data && isExpired(history.error) && currentSession.current === sessionId) {
+    if (sessionId && isExpired(history.error) && currentSession.current === sessionId) {
       discardSession(sessionId)
       currentSession.current = null
+      sent.current.clear()
       setSessionId(null)
       setStreamingMessageId(null)
     }
-  }, [history.data, history.error, sessionId])
+  }, [history.error, sessionId])
 
   useLayoutEffect(() => {
     if (!sessionId || !history.data) return
@@ -180,12 +182,13 @@ export function usePublicChat() {
 
   const committed = history.data ?? emptyHistory
   const { resolvedMessageIds } = useMemo(() => conversationStatus(committed), [committed])
-  const attempt = sendRequest.isPending || sendRequest.isError ? sendRequest.variables : undefined
+  const sendFailed = sendRequest.isError && !isExpired(sendRequest.error)
+  const attempt = sendRequest.isPending || sendFailed ? sendRequest.variables : undefined
   const messages = useMemo(() => (
     attempt && !committed.some(({ id }) => id === attempt.message.id) ? [...committed, attempt.message] : committed
   ), [attempt, committed])
   const isRestoring = Boolean(sessionId) && history.isPending && !sendRequest.isPending
-  const error = sendRequest.isError ? 'send' : history.isError && !isExpired(history.error) ? 'restore' : null
+  const error = sendFailed ? 'send' : history.isError && !isExpired(history.error) ? 'restore' : null
 
   function start(attempt: SendAttempt) {
     if (inFlight.current) return

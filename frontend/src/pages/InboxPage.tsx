@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, Globe2, Inbox, Instagram, Send, Ticket as TicketIcon } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useOutletContext } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useOutletContext, useSearchParams } from 'react-router'
 import { convertInboxToTicket } from '../api/client'
 import type { Channel, InboxItem, Ticket } from '../api/types'
 import type { PanelNotify } from '../components/PanelLayout'
@@ -21,21 +21,29 @@ const channels = {
 
 const empty: InboxItem[] = []
 
-function AppealedRow({ appeal, pending, disabled, onConvert }: {
+function AppealedRow({ appeal, selected, pending, disabled, onConvert }: {
   appeal: InboxItem
+  selected: boolean
   pending: boolean
   disabled: boolean
   onConvert: () => void
 }) {
   const t = useT(inboxMessages)
   const { language } = useLanguage()
+  const row = useRef<HTMLElement>(null)
   const { icon: ChannelIcon, label } = channels[appeal.channel]
   const target = appeal.ticket_id
     ? `/panel/tickets?${new URLSearchParams({ ticket: appeal.ticket_id })}`
     : '/panel/tickets'
 
+  useEffect(() => {
+    if (!selected) return
+    row.current?.focus({ preventScroll: true })
+    row.current?.scrollIntoView({ block: 'center' })
+  }, [selected])
+
   return (
-    <article className="inbox-record">
+    <article className="inbox-record" ref={row} tabIndex={selected ? -1 : undefined} data-highlighted={selected || undefined}>
       <div className="inbox-record-icon"><ChannelIcon aria-hidden="true" size={20} /></div>
       <div className="inbox-record-body">
         <div className="inbox-record-meta">
@@ -61,6 +69,8 @@ function AppealedRow({ appeal, pending, disabled, onConvert }: {
 
 export default function InboxPage() {
   const [tab, setTab] = useState<'all' | 'tickets'>('all')
+  const [params] = useSearchParams()
+  const selected = params.get('item')
   const t = useT(inboxMessages)
   const notify = useOutletContext<PanelNotify>()
   const queryClient = useQueryClient()
@@ -119,6 +129,7 @@ export default function InboxPage() {
                   <AppealedRow
                     key={appeal.id}
                     appeal={appeal}
+                    selected={appeal.id === selected}
                     pending={conversion.isPending && conversion.variables === appeal.id}
                     disabled={conversion.isPending}
                     onConvert={() => conversion.mutate(appeal.id)}

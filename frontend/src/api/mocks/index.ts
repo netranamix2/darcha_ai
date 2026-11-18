@@ -2,22 +2,26 @@ import { ApiError } from '../errors'
 import type { ChatMessage, ChatReply, ChatSession, FaqReport, InboxItem, Level, LoginReply, StaffRole, Ticket, TicketPatch } from '../types'
 import { determineReply } from './chat'
 import {
-  answeredTopics, cases, nonBlank, persistChatState, requireRecord, sessions, ticketFallbackDelay, withChatState,
+  answeredTopics, cases, nonBlank, persistChatState, reports, requireRecord, resetChatState,
+  sessions, ticketFallbackDelay, withChatState,
 } from './chat-state'
 import type { ChatCase } from './chat-state'
 import { inbox, responseSeconds, tickets } from './fixtures'
-import { buildFaqReport, summarizeAnalytics } from './reports'
+import { buildFaqReport, startOfWeek, summarizeAnalytics } from './reports'
 import { currentStaff, staff } from './ticket-examples'
 import {
   answerCitations, convertInboxItem, createTicketForInbox, getMockKnowledgeBase, markDelivered, patchTicket,
   processTicketActivity, resolveTicket, viewTicket,
 } from './ticket-operations'
 
-const reports = new Map<string, FaqReport>()
-
 function pause() {
   const milliseconds = 400 + Math.floor(Math.random() * 801)
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds))
+}
+
+export async function resetDemoData(): Promise<void> {
+  await pause()
+  return withChatState(resetChatState)
 }
 
 function newestFirst<T extends { created_at: string }>(items: T[]) {
@@ -275,16 +279,22 @@ export async function getAnalyticsSummary(from: string, to: string) {
 export async function getFaqReport(period: string): Promise<FaqReport> {
   await pause()
   return withChatState(() => {
-    const report = reports.get(period) ?? buildFaqReport(period, answeredTopics)
-    reports.set(period, report)
-    return structuredClone(report)
+    const report = reports.get(period)
+    const current = period !== 'week' || Date.parse(report?.from ?? '') === startOfWeek(Date.now())
+    if (report && current) return structuredClone(report)
+
+    const next = buildFaqReport(period, answeredTopics)
+    reports.set(period, next)
+    persistChatState()
+    return structuredClone(next)
   })
 }
 
 export async function runFaqReport(): Promise<void> {
   await pause()
   await withChatState(() => {
-    const periods = reports.size ? Array.from(reports.keys()) : ['7d']
+    const periods = new Set(['week', ...reports.keys()])
     for (const period of periods) reports.set(period, buildFaqReport(period, answeredTopics))
+    persistChatState('report')
   })
 }

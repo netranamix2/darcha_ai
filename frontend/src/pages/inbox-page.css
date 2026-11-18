@@ -60,6 +60,16 @@
   background: var(--control-fill);
 }
 
+.inbox-record[data-highlighted="true"] {
+  border-color: color-mix(in srgb, var(--color-primary) 57%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.inbox-record[data-highlighted="true"] p {
+  display: block;
+  white-space: pre-wrap;
+}
+
 .inbox-record-icon {
   display: grid;
   place-items: center;

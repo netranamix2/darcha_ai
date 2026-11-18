@@ -1,7 +1,11 @@
+import { analyticsDateBoundary, analyticsSummary, faqReport } from './analytics-response'
 import { ApiError } from './errors'
 import { subscribeToMockCaseChanges } from './mocks/case-events'
 import type {
   AnalyticsSummary,
+  BackendAnalyticsSummary,
+  BackendFaqReport,
+  CaseChangeKind,
   ChatMessage,
   ChatReply,
   ChatSession,
@@ -25,9 +29,18 @@ function loadMocks() {
   return import('./mocks/index')
 }
 
-export function subscribeToCaseChanges(listener: () => void): () => void {
+export function subscribeToCaseChanges(listener: (kind: CaseChangeKind) => void): () => void {
   if (apiUrl) return () => {}
   return subscribeToMockCaseChanges(listener)
+}
+
+export function canResetDemoData() {
+  return !apiUrl
+}
+
+export async function resetDemoData(): Promise<void> {
+  if (!canResetDemoData()) throw new ApiError(405, 'Demo reset is unavailable')
+  return (await loadMocks()).resetDemoData()
 }
 
 interface RequestOptions {
@@ -161,14 +174,16 @@ export async function answerTicket(id: string, text: string, addToKb: boolean): 
 
 export async function getAnalyticsSummary(from: string, to: string): Promise<AnalyticsSummary> {
   if (!apiUrl) return (await loadMocks()).getAnalyticsSummary(from, to)
-  const query = new URLSearchParams({ from, to })
-  return read(`/api/analytics/summary?${query}`, { staff: true })
+  const query = new URLSearchParams({ from: analyticsDateBoundary(from), to: analyticsDateBoundary(to, true) })
+  const response = await read<AnalyticsSummary | BackendAnalyticsSummary>(`/api/analytics/summary?${query}`, { staff: true })
+  return analyticsSummary(response)
 }
 
 export async function getFaqReport(period: string): Promise<FaqReport> {
   if (!apiUrl) return (await loadMocks()).getFaqReport(period)
   const query = new URLSearchParams({ period })
-  return read(`/api/reports/faq?${query}`, { staff: true })
+  const response = await read<FaqReport | BackendFaqReport>(`/api/reports/faq?${query}`, { staff: true })
+  return faqReport(response)
 }
 
 export async function runFaqReport(): Promise<void> {

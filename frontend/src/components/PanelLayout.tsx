@@ -1,9 +1,13 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
-import { Bell, Home, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Bell, Home, PanelLeftClose, PanelLeftOpen, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router'
+import { canResetDemoData, resetDemoData } from '../api/client'
+import { analyticsKey } from '../hooks/useAnalytics'
 import { usePanelCaseSubscription, useTicketRecords } from '../hooks/usePanelCases'
 import { useTicketClock } from '../hooks/useTicketClock'
+import { analyticsMessages } from '../i18n/analytics'
 import { ticketPageMessages } from '../i18n/ticket-page'
 import { useT } from '../i18n/useT'
 import { panelSections } from '../lib/panel-sections'
@@ -13,7 +17,7 @@ import { Brand } from './Brand'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { PanelSearch } from './PanelSearch'
 import { SkipLink } from './SkipLink'
-import { Avatar, Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownTrigger, GlassPanel, IconButton, Toast, ToastProvider, ToastViewport } from './ui'
+import { Avatar, Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger, GlassPanel, IconButton, Toast, ToastProvider, ToastViewport } from './ui'
 
 type Notice = { title: string; description?: string; variant?: 'default' | 'success' | 'warning' | 'error' }
 export type PanelNotify = (notice: Notice) => void
@@ -24,6 +28,8 @@ export default function PanelLayout() {
   const seen = useRef<Set<string> | null>(null)
   const reducedMotion = useReducedMotion()
   const t = useT(ticketPageMessages)
+  const tDemo = useT(analyticsMessages)
+  const queryClient = useQueryClient()
   const { data: tickets } = useTicketRecords(true)
   const now = useTicketClock()
   usePanelCaseSubscription()
@@ -34,6 +40,16 @@ export default function PanelLayout() {
   const notify = useCallback<PanelNotify>((next) => {
     setNotices((previous) => [...previous.slice(-2), { ...next, id: (previous.at(-1)?.id ?? 0) + 1 }])
   }, [])
+  const reset = useMutation({
+    mutationFn: resetDemoData,
+    onMutate: () => { seen.current = null },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: analyticsKey })
+      void queryClient.invalidateQueries({ queryKey: ['faq'] })
+      notify({ title: tDemo('analytics.demoRestored'), variant: 'success' })
+    },
+    onError: () => notify({ title: tDemo('analytics.demoResetError'), variant: 'error' }),
+  })
 
   useEffect(() => {
     if (!tickets) return
@@ -116,6 +132,14 @@ export default function PanelLayout() {
                       <Home size={16} aria-hidden="true" /> {t('common.home')}
                     </Link>
                   </DropdownItem>
+                  {canResetDemoData() && (
+                    <>
+                      <DropdownSeparator />
+                      <DropdownItem disabled={reset.isPending} onSelect={() => reset.mutate()}>
+                        <RotateCcw aria-hidden="true" size={16} /> {tDemo('analytics.resetDemo')}
+                      </DropdownItem>
+                    </>
+                  )}
                 </DropdownContent>
               </Dropdown>
             </div>

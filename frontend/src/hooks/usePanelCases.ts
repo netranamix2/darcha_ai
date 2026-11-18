@@ -36,7 +36,8 @@ export function useStaffRecords() {
 export function usePanelCaseSubscription() {
   const client = useQueryClient()
 
-  useEffect(() => subscribeToCaseChanges(() => {
+  useEffect(() => subscribeToCaseChanges((kind) => {
+    if (kind === 'report') return
     void client.invalidateQueries({ queryKey: ticketsKey })
     void client.invalidateQueries({ queryKey: inboxKey })
   }), [client])

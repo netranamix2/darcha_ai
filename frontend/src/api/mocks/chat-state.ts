@@ -1,7 +1,8 @@
-import type { ChatMessage, Citation, InboxItem, Ticket } from '../types'
+import type { CaseChangeKind, ChatMessage, Citation, FaqReport, InboxItem, Ticket } from '../types'
 import { ApiError } from '../errors'
+import { createAnalyticsFixtures } from './analytics-fixtures'
 import { caseStorageKey, publishMockCaseChanges } from './case-events'
-import { inbox, responseSeconds, tickets } from './fixtures'
+import { freshCaseFixtures, inbox, responseSeconds, tickets } from './fixtures'
 import { departmentFor } from './ticket-examples'
 
 const firstTicketNumber = 1045
@@ -34,6 +35,7 @@ interface Snapshot {
 
 interface SharedSnapshot {
   version: 2
+  change?: CaseChangeKind
   sessions: Snapshot['sessions']
   cases: Array<[string, ChatCase]>
   inbox: InboxItem[]
@@ -43,18 +45,31 @@ interface SharedSnapshot {
   answeredTopics: string[]
   nextTicketNumber: number
   nextArrivalAt: number | null
+  analyticsSeedAt?: number
+  reports?: Array<[string, FaqReport]>
 }
 
 export const sessions = new Map<string, ChatMessage[]>()
 export const cases = new Map<string, ChatCase>()
 export const ratings = new Map<string, number>()
 export const answeredTopics = new Set<string>()
+export const reports = new Map<string, FaqReport>()
 export const liveSchedule = { nextArrivalAt: null as number | null }
-const initialInbox = structuredClone([...inbox.values()])
-const initialTickets = structuredClone([...tickets.values()])
-const initialResponseSeconds = [...responseSeconds]
+const initialTime = Date.now()
 let nextTicketNumber = firstTicketNumber
 let lastStored: string | null | undefined
+let analyticsSeedAt = initialTime
+
+function seedAnalytics(now: number) {
+  analyticsSeedAt = now
+  for (const { item, seconds } of createAnalyticsFixtures(now)) {
+    if (inbox.has(item.id)) continue
+    inbox.set(item.id, item)
+    if (seconds !== undefined) responseSeconds.set(item.id, seconds)
+  }
+}
+
+seedAnalytics(initialTime)
 
 export function takeTicketNumber() {
   return nextTicketNumber++
@@ -119,6 +134,15 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
 
+function isFaqReport(value: unknown): value is FaqReport {
+  return isRecord(value) && typeof value.period === 'string' && typeof value.generated_at === 'string' &&
+    Array.isArray(value.clusters) && value.clusters.every((cluster: unknown) => isRecord(cluster) &&
+      typeof cluster.id === 'string' && typeof cluster.label === 'string' && typeof cluster.count === 'number' &&
+      typeof cluster.growth_pct === 'number' && typeof cluster.confusion === 'string' &&
+      typeof cluster.no_answer_in_kb === 'boolean' && typeof cluster.explainer_draft === 'string' &&
+      Array.isArray(cluster.examples) && cluster.examples.every((example: unknown) => typeof example === 'string'))
+}
+
 function isEntryList<Value>(value: unknown, check: (entry: unknown) => entry is Value): value is Array<[string, Value]> {
   return Array.isArray(value) && value.every((entry: unknown) => (
     Array.isArray(entry) && typeof entry[0] === 'string' && check(entry[1])
@@ -153,6 +177,8 @@ function readSnapshot(raw: string): Snapshot | SharedSnapshot | null {
         answeredTopics: value.answeredTopics,
         nextTicketNumber: nextNumber,
         nextArrivalAt: value.nextArrivalAt,
+        analyticsSeedAt: isFiniteNumber(value.analyticsSeedAt) ? value.analyticsSeedAt : undefined,
+        reports: isEntryList(value.reports, isFaqReport) ? value.reports : [],
       }
     }
     if (!value.cases.every(isStoredCase)) return null
@@ -167,16 +193,19 @@ function replaceMap<Key, Value>(map: Map<Key, Value>, records: Iterable<[Key, Va
   for (const [key, value] of records) map.set(key, value)
 }
 
-function restoreFixtures() {
-  replaceMap(inbox, structuredClone(initialInbox).map((item) => [item.id, item]))
-  replaceMap(tickets, structuredClone(initialTickets).map((ticket) => [ticket.id, ticket]))
-  replaceMap(responseSeconds, initialResponseSeconds)
+function restoreFixtures(now = Date.now()) {
+  const initial = freshCaseFixtures(now)
+  replaceMap(inbox, initial.inbox.map((item) => [item.id, item]))
+  replaceMap(tickets, initial.tickets.map((ticket) => [ticket.id, ticket]))
+  replaceMap(responseSeconds, initial.responseSeconds)
   cases.clear()
   sessions.clear()
   ratings.clear()
   answeredTopics.clear()
+  reports.clear()
   nextTicketNumber = firstTicketNumber
   liveSchedule.nextArrivalAt = null
+  seedAnalytics(now)
 }
 
 function restore() {
@@ -187,10 +216,11 @@ function restore() {
     return
   }
 
-  if (raw === lastStored || (!raw && lastStored === undefined)) return
+  if (raw === lastStored) return
   lastStored = raw
   if (!raw) {
     restoreFixtures()
+    persistChatState()
     return
   }
   const saved = readSnapshot(raw)
@@ -207,6 +237,13 @@ function restore() {
     answeredTopics.clear()
     for (const topic of saved.answeredTopics) answeredTopics.add(topic)
     liveSchedule.nextArrivalAt = saved.nextArrivalAt
+    replaceMap(reports, saved.reports ?? [])
+    if (saved.analyticsSeedAt === undefined) {
+      seedAnalytics(Date.now())
+      persistChatState()
+    } else {
+      analyticsSeedAt = saved.analyticsSeedAt
+    }
     return
   }
 
@@ -236,11 +273,13 @@ function restore() {
     }
     if (typeof seconds === 'number') responseSeconds.set(item.id, seconds)
   }
+  persistChatState()
 }
 
-export function persistChatState() {
+export function persistChatState(change: CaseChangeKind = 'update') {
   const raw = JSON.stringify({
     version: 2,
+    change,
     sessions: [...sessions],
     cases: [...cases],
     inbox: [...inbox.values()],
@@ -250,6 +289,8 @@ export function persistChatState() {
     answeredTopics: [...answeredTopics],
     nextTicketNumber,
     nextArrivalAt: liveSchedule.nextArrivalAt,
+    analyticsSeedAt,
+    reports: [...reports],
   } satisfies SharedSnapshot)
   if (raw === lastStored) return
   try {
@@ -258,7 +299,12 @@ export function persistChatState() {
   } catch {
     // Keep this tab working when storage is blocked or full.
   }
-  publishMockCaseChanges()
+  publishMockCaseChanges(change)
+}
+
+export function resetChatState() {
+  restoreFixtures()
+  persistChatState('reset')
 }
 
 export async function withChatState<Result>(task: () => Result): Promise<Result> {

@@ -172,8 +172,7 @@
   line-height: 1.18;
 }
 
-.login-card > p,
-.panel-placeholder p {
+.login-card > p {
   margin-top: 0.55rem;
   color: var(--color-secondary);
   font-size: var(--text-ui);
@@ -425,47 +424,6 @@
 .panel-profile-button:hover,
 .panel-profile-button[data-state="open"] {
   background: var(--control-fill-hover);
-}
-
-.panel-page {
-  padding: clamp(1.45rem, 5vw, 3.5rem) 0.1rem 1.5rem;
-}
-
-.panel-page-heading {
-  margin-bottom: 1.25rem;
-}
-
-.panel-page-heading p {
-  margin-bottom: 0.35rem;
-  color: var(--color-secondary);
-  font-size: var(--text-ui);
-  font-weight: 600;
-}
-
-.panel-page-heading h1 {
-  font-size: var(--text-title);
-  line-height: var(--text-title--line-height);
-}
-
-.panel-placeholder {
-  min-height: 16rem;
-  padding: clamp(1.35rem, 4.5vw, 2.8rem);
-}
-
-.panel-placeholder-icon {
-  display: grid;
-  width: 3.25rem;
-  height: 3.25rem;
-  margin-bottom: 0.95rem;
-  place-items: center;
-  border: 1px solid rgb(102 154 254 / 28%);
-  border-radius: 1rem;
-  background: rgb(47 123 255 / 12%);
-  color: var(--color-focus);
-}
-
-.panel-placeholder h2 {
-  font-size: var(--text-heading);
 }
 
 @media (max-width: 800px) {

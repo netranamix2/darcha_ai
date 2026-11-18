@@ -1,4 +1,4 @@
-import type { AnalyticsAlert, Channel, InboxItem, Sentiment, Ticket, TicketEvent } from '../types'
+import type { Channel, InboxItem, Sentiment, Ticket, TicketEvent } from '../types'
 import { cite, determineReply, topics } from './chat'
 import { dayMs } from './dates'
 import { currentStaff, departmentFor, similarResolvedTickets, staff, ticketExamples } from './ticket-examples'
@@ -267,9 +267,22 @@ for (const item of inbox.values()) {
   if (answered) responseSeconds.set(item.id, (Date.parse(answered.created_at) - Date.parse(item.created_at)) / 1_000)
 }
 
-export const spikeAlert: AnalyticsAlert = {
-  id: 'AL-1001',
-  kind: 'spike',
-  text: 'Oʻqishni koʻchirish boʻyicha savollar soni oshdi.',
-  created_at: new Date(now - 48 * hourMs).toISOString(),
+const originalFixtures = structuredClone({
+  inbox: [...inbox.values()],
+  tickets: [...tickets.values()],
+  responseSeconds: [...responseSeconds],
+})
+
+export function freshCaseFixtures(at: number) {
+  const result = structuredClone(originalFixtures)
+  const offset = at - now
+  const shifted = (value: string) => new Date(Date.parse(value) + offset).toISOString()
+
+  for (const item of result.inbox) item.created_at = shifted(item.created_at)
+  for (const ticket of result.tickets) {
+    ticket.created_at = shifted(ticket.created_at)
+    ticket.due_at = shifted(ticket.due_at)
+    for (const event of ticket.events ?? []) event.created_at = shifted(event.created_at)
+  }
+  return result
 }

@@ -1,11 +1,11 @@
-import { ChevronDown, Search } from 'lucide-react'
+import { ChevronDown, Search, SlidersHorizontal } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { StaffMember, Ticket, TicketDepartment } from '../../api/types'
 import { ticketPageMessages } from '../../i18n/ticket-page'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
 import { localizeCaseRegion } from '../../lib/case-labels'
-import { Input } from '../ui'
+import { GlassPanel, Input } from '../ui'
 
 export interface TicketFilterValues {
   search: string
@@ -37,8 +37,9 @@ function FilterSelect({ label, value, onChange, children }: {
 }) {
   return (
     <label className="ticket-filter-field">
+      <span>{label}</span>
       <span className="ticket-select-frame">
-        <select aria-label={label} value={value} onChange={(event) => onChange(event.currentTarget.value)}>{children}</select>
+        <select value={value} onChange={(event) => onChange(event.currentTarget.value)}>{children}</select>
         <ChevronDown aria-hidden="true" size={14} />
       </span>
     </label>
@@ -56,11 +57,11 @@ export function TicketFilters({ filters, staff, regions, onChange }: {
   const currentStaff = staff.some(({ is_current }) => is_current)
 
   return (
-    <div role="group" aria-label={t('tickets.filters')} className="tickets-filters">
+    <GlassPanel blur={false} variant="subtle" role="group" aria-label={t('tickets.filters')} className="tickets-filters">
       <label className="ticket-filter-field ticket-filter-search">
+        <span>{t('tickets.search')}</span>
         <Input
           type="search"
-          aria-label={t('tickets.search')}
           placeholder={t('tickets.searchPlaceholder')}
           startIcon={<Search aria-hidden="true" />}
           value={filters.search}
@@ -86,6 +87,8 @@ export function TicketFilters({ filters, staff, regions, onChange }: {
         <option value="no-region">{t('tickets.noRegion')}</option>
       </FilterSelect>
       <label className="ticket-filter-mine">
+        <SlidersHorizontal size={15} aria-hidden="true" />
+        <span>{t('tickets.mine')}</span>
         <input
           type="checkbox"
           role="switch"
@@ -93,8 +96,8 @@ export function TicketFilters({ filters, staff, regions, onChange }: {
           disabled={!currentStaff}
           onChange={(event) => onChange({ ...filters, mine: event.currentTarget.checked })}
         />
-        <span>{t('tickets.mine')}</span>
+        <span className="ticket-filter-switch" aria-hidden="true" />
       </label>
-    </div>
+    </GlassPanel>
   )
 }

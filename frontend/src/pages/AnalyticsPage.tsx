@@ -1,8 +1,9 @@
-import { CircleAlert } from 'lucide-react'
+import { CircleAlert, Clock3 } from 'lucide-react'
+import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import { lazy, Suspense, useState } from 'react'
 import { AnalyticsKpis } from '../components/analytics/AnalyticsKpis'
 import { AnalyticsOperations } from '../components/analytics/AnalyticsOperations'
-import { Button, Skeleton } from '../components/ui'
+import { Button, GlassPanel, Skeleton } from '../components/ui'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { useTicketClock } from '../hooks/useTicketClock'
 import { analyticsMessages } from '../i18n/analytics'
@@ -21,6 +22,7 @@ export default function AnalyticsPage() {
   const [days, setDays] = useState<Period>(7)
   const t = useT(analyticsMessages)
   const { language } = useLanguage()
+  const reducedMotion = useReducedMotion()
   const now = useTicketClock()
   const { current, previous, lastFourteen } = useAnalytics(days, now)
   const summary = current.data
@@ -34,15 +36,26 @@ export default function AnalyticsPage() {
             <p>{t('analytics.subtitle')}</p>
           </div>
           <div className="analytics-heading-controls">
-            <div role="group" aria-label={t('analytics.period')} className="analytics-period">
-              {periods.map((value) => (
-                <button key={value} type="button" aria-pressed={value === days} onClick={() => setDays(value)}>
-                  {t('analytics.periodDays').replace('{days}', String(value))}
-                </button>
-              ))}
-            </div>
+            <LayoutGroup id="analytics-period">
+              <div role="group" aria-label={t('analytics.period')} className="analytics-period">
+                {periods.map((value) => (
+                  <button key={value} type="button" aria-pressed={value === days} onClick={() => setDays(value)}>
+                    {value === days && (
+                      <motion.span
+                        className="analytics-period-marker"
+                        aria-hidden="true"
+                        layoutId={reducedMotion ? undefined : 'selected'}
+                        transition={{ type: 'spring', duration: 0.28, bounce: 0.12 }}
+                      />
+                    )}
+                    {t('analytics.periodDays').replace('{days}', String(value))}
+                  </button>
+                ))}
+              </div>
+            </LayoutGroup>
             {summary && (
               <p className="analytics-last-updated">
+                <Clock3 aria-hidden="true" size={14} />
                 {t('analytics.updated')}
                 <time dateTime={new Date(current.dataUpdatedAt).toISOString()}>{analyticsTimestamp(current.dataUpdatedAt, language)}</time>
               </p>
@@ -50,20 +63,20 @@ export default function AnalyticsPage() {
           </div>
         </header>
         {current.isError && (
-          <div className="analytics-load-error" role="alert">
+          <GlassPanel blur={false} className="analytics-load-error" role="alert">
             <CircleAlert aria-hidden="true" size={21} />
             <p>{t('analytics.loadError')}</p>
             <Button variant="secondary" size="sm" onClick={() => void current.refetch()}>{t('analytics.retry')}</Button>
-          </div>
+          </GlassPanel>
         )}
         {summary ? (
           <>
             {previous.isError && (
-              <div className="analytics-load-error" role="alert">
+              <GlassPanel blur={false} className="analytics-load-error" role="alert">
                 <CircleAlert aria-hidden="true" size={21} />
                 <p>{t('analytics.comparisonError')}</p>
                 <Button variant="secondary" size="sm" onClick={() => void previous.refetch()}>{t('analytics.retry')}</Button>
-              </div>
+              </GlassPanel>
             )}
             <AnalyticsKpis summary={summary} previous={previous.data} comparisonLoading={previous.isPending} />
             <Suspense fallback={<div role="status" aria-label={t('common.loading')}><Skeleton className="analytics-loading-chart" /></div>}>

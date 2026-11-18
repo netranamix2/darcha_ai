@@ -1,4 +1,4 @@
-import { CircleAlert } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, ChartNoAxesCombined, ChartPie, CircleAlert, MapPin, MessagesSquare } from 'lucide-react'
 import { useId, useMemo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, Pie, PieChart, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -11,7 +11,7 @@ import type { Language } from '../../i18n/locales'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
 import { localizeCaseRegion, localizeCaseTopic } from '../../lib/case-labels'
-import { Button, Skeleton } from '../ui'
+import { Button, GlassPanel, Skeleton } from '../ui'
 import './analytics-charts.css'
 
 const levels = [
@@ -21,9 +21,9 @@ const levels = [
 ] as const satisfies ReadonlyArray<{ level: Level; label: keyof typeof analyticsChartMessages['uz-latn']; color: string }>
 
 const sentimentSeries = [
-  { key: 'positive', label: 'charts.positive', color: 'var(--color-primary)' },
-  { key: 'neutral', label: 'charts.neutral', color: 'var(--color-secondary)' },
-  { key: 'negative', label: 'charts.negative', color: 'var(--color-saffron)' },
+  { key: 'positive', label: 'charts.positive', color: 'var(--color-green)' },
+  { key: 'neutral', label: 'charts.neutral', color: 'var(--color-focus)' },
+  { key: 'negative', label: 'charts.negative', color: 'var(--color-red)' },
 ] as const satisfies ReadonlyArray<{ key: Sentiment; label: keyof typeof analyticsChartMessages['uz-latn']; color: string }>
 
 const channelNames = {
@@ -34,30 +34,29 @@ const channelNames = {
 
 type Rank = { key: string; label: string; count: number; growth?: number }
 const chartGrid = 'var(--color-border)'
-const axisTick = { fill: 'var(--color-secondary)', fontSize: 11, fontFamily: 'var(--font-mono)' }
-const chartMargin = { top: 20, right: 8, bottom: 0, left: 0 }
-const channelHeight = 228
-const donutSize = 160
-const sentimentHeight = 216
-const rankHeight = 51
+const axisTick = { fill: 'var(--color-secondary)', fontSize: 12, fontFamily: 'var(--font-ui)' }
+const chartMargin = { top: 18, right: 10, bottom: 0, left: 0 }
+const rankHeight = 47
 const rankMargin = { top: 0, right: 0, bottom: 0, left: 0 }
 const tooltipStyle = { zIndex: 4 }
 
-function ChartSection({ title, detail, className = '', children }: {
+function ChartCard({ title, icon, detail, className = '', children }: {
   title: string
+  icon: ReactNode
   detail?: string
   className?: string
   children: ReactNode
 }) {
   const titleId = useId()
   return (
-    <section className={`analytics-chart-section ${className}`} aria-labelledby={titleId}>
+    <GlassPanel className={`analytics-chart-card ${className}`} blur={false} role="region" aria-labelledby={titleId}>
       <header className="analytics-chart-heading">
+        <span className="analytics-chart-icon" aria-hidden="true">{icon}</span>
         <h2 id={titleId}>{title}</h2>
         {detail && <span className="analytics-chart-detail">{detail}</span>}
       </header>
       {children}
-    </section>
+    </GlassPanel>
   )
 }
 
@@ -91,31 +90,37 @@ function EmptyChart() {
 
 function ChannelChart({ byChannel, locale }: { byChannel: AnalyticsSummary['by_channel']; locale: string }) {
   const t = useT(analyticsChartMessages)
+  const gradient = useId()
   const names = Object.keys(channelNames) as Channel[]
   const data = names.map((channel) => ({ name: t(channelNames[channel]), count: byChannel.find((row) => row.channel === channel)?.count ?? 0 }))
   const formatter = new Intl.NumberFormat(locale, { notation: 'compact' })
   const title = t('charts.channels')
 
   return (
-    <ChartSection title={title}>
+    <ChartCard title={title} icon={<BarChart3 size={17} />}>
       {data.some(({ count }) => count > 0) ? (
         <div className="analytics-channel-plot">
-          <ResponsiveContainer width="100%" height={channelHeight} minWidth={0}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
             <BarChart accessibilityLayer aria-label={title} data={data} margin={chartMargin} barCategoryGap="25%">
-              <CartesianGrid vertical={false} stroke={chartGrid} />
+              <defs>
+                <linearGradient id={gradient} x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-focus)" stopOpacity={0.98} />
+                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.36} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke={chartGrid} strokeDasharray="3 5" />
               <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={false} tickMargin={9} interval={0} />
               <YAxis tick={axisTick} tickLine={false} axisLine={false} width={35} tickCount={4} allowDecimals={false}
                 tickFormatter={(value: number) => formatter.format(value)} />
-              <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} cursor={{ fill: 'var(--color-row)' }} wrapperStyle={tooltipStyle} isAnimationActive={false} />
-              <Bar className="analytics-chart-columns" name={t('charts.total')} dataKey="count" fill="var(--color-primary)" radius={[1, 1, 0, 0]} maxBarSize={62} isAnimationActive={false}>
-                <LabelList dataKey="count" position="top" fill="var(--color-text)" fontFamily="var(--font-mono)" fontSize={12}
-                  formatter={(value) => formatter.format(Number(value))} />
+              <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} cursor={{ fill: 'var(--control-fill)' }} wrapperStyle={tooltipStyle} isAnimationActive={false} />
+              <Bar className="analytics-chart-columns" name={t('charts.total')} dataKey="count" fill={`url(#${gradient})`} radius={[7, 7, 2, 2]} maxBarSize={76} isAnimationActive={false}>
+                <LabelList dataKey="count" position="top" fill="var(--color-text)" fontSize={13} fontWeight={650} formatter={(value) => formatter.format(Number(value))} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       ) : <EmptyChart />}
-    </ChartSection>
+    </ChartCard>
   )
 }
 
@@ -130,15 +135,17 @@ function LevelChart({ summary, locale }: { summary: AnalyticsSummary; locale: st
     fill: color,
   }))
   return (
-    <ChartSection title={title}>
+    <ChartCard title={title} icon={<ChartPie size={17} />}>
       {data.some(({ count }) => count > 0) ? (
         <div className="analytics-donut-layout">
           <div className="analytics-donut-plot">
-            <PieChart width={donutSize} height={donutSize} accessibilityLayer aria-label={title}>
-              <Pie className="analytics-chart-ring" data={data} dataKey="count" nameKey="name" startAngle={90} endAngle={-270}
-                innerRadius={59} outerRadius={76} paddingAngle={2} cornerRadius={0} stroke="none" isAnimationActive={false} />
-              <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} wrapperStyle={tooltipStyle} isAnimationActive={false} />
-            </PieChart>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+              <PieChart accessibilityLayer aria-label={title}>
+                <Pie className="analytics-chart-ring" data={data} dataKey="count" nameKey="name" startAngle={90} endAngle={-270}
+                  innerRadius="73%" outerRadius="96%" paddingAngle={3} cornerRadius={4} stroke="none" isAnimationActive={false} />
+                <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} wrapperStyle={tooltipStyle} isAnimationActive={false} />
+              </PieChart>
+            </ResponsiveContainer>
             <div className="analytics-donut-center">
               <strong>{formatter.format(summary.ai_resolved_pct)}%</strong>
               <span>{t('charts.shortAi')}</span>
@@ -155,7 +162,7 @@ function LevelChart({ summary, locale }: { summary: AnalyticsSummary; locale: st
           </ul>
         </div>
       ) : <EmptyChart />}
-    </ChartSection>
+    </ChartCard>
   )
 }
 
@@ -179,7 +186,7 @@ function SentimentChart({ data, language, loading, onRetry }: {
   }
 
   return (
-    <ChartSection title={title} detail={t('charts.last14')} className="analytics-sentiment-section">
+    <ChartCard title={title} detail={t('charts.last14')} icon={<ChartNoAxesCombined size={17} />} className="analytics-sentiment-card">
       {onRetry && (
         <div className="analytics-load-error" role="alert">
           <CircleAlert size={18} aria-hidden="true" />
@@ -192,17 +199,17 @@ function SentimentChart({ data, language, loading, onRetry }: {
       ) : chronological.some(({ positive, neutral, negative }) => positive + neutral + negative > 0) ? (
         <>
           <div className="analytics-sentiment-plot">
-            <ResponsiveContainer width="100%" height={sentimentHeight} minWidth={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <AreaChart accessibilityLayer aria-label={title} data={chronological} margin={chartMargin}>
                 <defs>
-                  {sentimentSeries.map(({ key, color }) => (
+                  {sentimentSeries.map(({ key, color }, index) => (
                     <linearGradient key={key} id={`${id}-${key}`} x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor={color} stopOpacity={0.16} />
-                      <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+                      <stop offset="0%" stopColor={color} stopOpacity={0.48 - index * 0.05} />
+                      <stop offset="100%" stopColor={color} stopOpacity={0.1} />
                     </linearGradient>
                   ))}
                 </defs>
-                <CartesianGrid vertical={false} stroke={chartGrid} />
+                <CartesianGrid vertical={false} stroke={chartGrid} strokeDasharray="3 5" />
                 <XAxis dataKey="date" tickFormatter={tickDate} minTickGap={26} tick={axisTick} tickMargin={10} tickLine={false} axisLine={false} />
                 <YAxis tick={axisTick} tickMargin={4} tickLine={false} axisLine={false} width={31} tickCount={4} allowDecimals={false}
                   tickFormatter={(value: number) => numeric.format(value)} />
@@ -225,7 +232,7 @@ function SentimentChart({ data, language, loading, onRetry }: {
           </ul>
         </>
       ) : !onRetry && <EmptyChart />}
-    </ChartSection>
+    </ChartCard>
   )
 }
 
@@ -233,27 +240,35 @@ function RankBar({ x, y, width, height, fill }: BarShapeProps) {
   return <Rectangle className="analytics-rank-mark" x={x} y={y + 11} width={width} height={height} fill={fill} radius={4} />
 }
 
-function RankedBars({ rows, title, locale, unspecified, region = false }: {
+function RankedBars({ rows, title, icon, locale, unspecified, region = false }: {
   rows: Rank[]
   title: string
+  icon: ReactNode
   locale: string
   unspecified?: number
   region?: boolean
 }) {
   const t = useT(analyticsChartMessages)
+  const gradient = useId()
   const format = new Intl.NumberFormat(locale)
   const growthFormat = new Intl.NumberFormat(locale, { maximumFractionDigits: 1, signDisplay: 'exceptZero' })
   return (
-    <ChartSection title={title} className={region ? 'analytics-ranking-regions' : undefined}>
+    <ChartCard title={title} icon={icon} className={region ? 'analytics-ranking-card analytics-ranking-regions' : 'analytics-ranking-card'}>
       {rows.length > 0 ? (
         <div className="analytics-ranking" tabIndex={region && rows.length > 5 ? 0 : undefined} style={{ '--analytics-rank-height': `${rankHeight}px` } as CSSProperties}>
-          <div className="analytics-ranking-plot">
-            <ResponsiveContainer width="100%" height={rows.length * rankHeight} minWidth={0}>
+          <div className="analytics-ranking-plot" style={{ height: rows.length * rankHeight }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <BarChart accessibilityLayer aria-label={title} layout="vertical" data={rows} margin={rankMargin}>
+                <defs>
+                  <linearGradient id={gradient} x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={region ? 0.4 : 0.52} />
+                    <stop offset="100%" stopColor={region ? 'var(--color-cyan)' : 'var(--color-focus)'} stopOpacity={region ? 0.72 : 0.92} />
+                  </linearGradient>
+                </defs>
                 <XAxis hide type="number" domain={[0, (max: number) => Math.max(1, max)]} />
                 <YAxis hide type="category" dataKey="label" />
-                <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} cursor={{ fill: 'var(--color-row)' }} wrapperStyle={tooltipStyle} isAnimationActive={false} />
-                <Bar dataKey="count" name={t('charts.total')} shape={RankBar} fill="var(--color-primary)" barSize={3} isAnimationActive={false} />
+                <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} cursor={{ fill: 'var(--control-fill)' }} wrapperStyle={tooltipStyle} isAnimationActive={false} />
+                <Bar dataKey="count" name={t('charts.total')} shape={RankBar} fill={`url(#${gradient})`} barSize={6} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -263,6 +278,7 @@ function RankedBars({ rows, title, locale, unspecified, region = false }: {
                 <span className="analytics-ranking-name" title={label}>{label}</span>
                 {growth !== undefined && (
                   <span className="analytics-ranking-growth" title={t('charts.previous')}>
+                    {growth > 0 ? <ArrowUpRight size={12} aria-hidden="true" /> : growth < 0 ? <ArrowDownRight size={12} aria-hidden="true" /> : <ArrowRight size={12} aria-hidden="true" />}
                     {growthFormat.format(growth)}%
                   </span>
                 )}
@@ -278,7 +294,7 @@ function RankedBars({ rows, title, locale, unspecified, region = false }: {
           <strong>{format.format(unspecified)}</strong>
         </div>
       )}
-    </ChartSection>
+    </ChartCard>
   )
 }
 
@@ -308,8 +324,8 @@ export function AnalyticsCharts({ summary, previous, sentiment, sentimentLoading
       <ChannelChart byChannel={summary.by_channel} locale={locale} />
       <LevelChart summary={summary} locale={locale} />
       <SentimentChart data={sentiment ?? []} language={language} loading={sentimentLoading} onRetry={onSentimentRetry} />
-      <RankedBars rows={topics} title={t('charts.topics')} locale={locale} />
-      <RankedBars rows={regions} title={t('charts.regions')} locale={locale} unspecified={unspecified} region />
+      <RankedBars rows={topics} title={t('charts.topics')} icon={<MessagesSquare size={17} />} locale={locale} />
+      <RankedBars rows={regions} title={t('charts.regions')} icon={<MapPin size={17} />} locale={locale} unspecified={unspecified} region />
     </div>
   )
 }

@@ -1,11 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MotionConfig } from 'motion/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
-import '@fontsource-variable/source-serif-4/standard.css'
-import '@fontsource/ibm-plex-sans/400.css'
-import '@fontsource/ibm-plex-sans/600.css'
-import '@fontsource/ibm-plex-mono/400.css'
+import '@fontsource-variable/inter'
+import '@fontsource-variable/manrope'
 import './theme/theme.css'
 import './theme/shell.css'
 import App from './App'
@@ -19,9 +18,11 @@ createRoot(root).render(
   <StrictMode>
     <LanguageProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <MotionConfig reducedMotion="user">
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </MotionConfig>
       </QueryClientProvider>
     </LanguageProvider>
   </StrictMode>,

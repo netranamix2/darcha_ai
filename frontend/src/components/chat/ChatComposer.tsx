@@ -1,16 +1,12 @@
-import { ArrowUp } from 'lucide-react'
+import { ArrowUp, MicOff } from 'lucide-react'
 import { useState } from 'react'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
-import { ChatRegion } from './ChatRegion'
+import { IconButton, Textarea, Tooltip, TooltipProvider } from '../ui'
 
 const messageLimit = 1000
 
-export function ChatComposer({ disabled, sessionId, onSend }: {
-  disabled: boolean
-  sessionId: string | null
-  onSend: (text: string) => void
-}) {
+export function ChatComposer({ disabled, onSend }: { disabled: boolean; onSend: (text: string) => void }) {
   const [draft, setDraft] = useState('')
   const t = useT(chatMessages)
   const ready = Boolean(draft.trim()) && !disabled
@@ -24,9 +20,10 @@ export function ChatComposer({ disabled, sessionId, onSend }: {
     }}>
       <div className="chat-compose-row">
         <div className="chat-textarea-grow" data-mirror={draft}>
-          <textarea
+          <Textarea
             className="chat-textarea"
-            rows={2}
+            containerClassName="chat-textarea-container"
+            rows={1}
             value={draft}
             maxLength={messageLimit}
             aria-label={t('conversation.placeholder')}
@@ -39,17 +36,22 @@ export function ChatComposer({ disabled, sessionId, onSend }: {
             }}
           />
         </div>
-        <button type="submit" aria-label={t('conversation.send')} disabled={!ready} className="chat-send">
-          <ArrowUp aria-hidden="true" size={21} strokeWidth={1.5} />
-        </button>
+        <TooltipProvider>
+          <Tooltip content={t('conversation.soon')} side="top">
+            <span className="chat-mic-trigger" tabIndex={0}>
+              <IconButton disabled type="button" aria-label={t('conversation.mic')} className="chat-mic">
+                <MicOff aria-hidden="true" size={17} />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </TooltipProvider>
+        <IconButton type="submit" variant="primary" aria-label={t('conversation.send')} disabled={!ready} className="chat-send">
+          <ArrowUp aria-hidden="true" size={20} />
+        </IconButton>
       </div>
       <div className="chat-compose-meta">
-        <ChatRegion sessionId={sessionId} />
-        {draft.length > 0 && (
-          <output aria-live="off" className="chat-character-count" data-full={draft.length === messageLimit}>
-            {draft.length}/{messageLimit}
-          </output>
-        )}
+        <p className="chat-keys"><span>{t('conversation.sendHint')}</span><span>{t('conversation.newlineHint')}</span></p>
+        <output aria-live="off" className="chat-character-count" data-full={draft.length === messageLimit}>{draft.length}/{messageLimit}</output>
       </div>
     </form>
   )

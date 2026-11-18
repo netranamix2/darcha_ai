@@ -1,77 +1,72 @@
-import { ArrowDown } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
-import { memo, useLayoutEffect, useRef, useState } from 'react'
+import { ArrowDown, CircleAlert, UserRound } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
+import { memo, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { ChatMessage } from '../../api/types'
 import { usePublicChat } from '../../hooks/usePublicChat'
-import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { chatMessages } from '../../i18n/chat'
-import { publicHomeMessages } from '../../i18n/public-home'
 import { useT } from '../../i18n/useT'
-import { WindowMark } from '../Brand'
-import { CitationFootnotes } from '../CitationFootnotes'
-import { Skeleton } from '../ui'
+import { Button, GlassPanel, Skeleton } from '../ui'
+import { ChatAnswer, ChatSources } from './ChatAnswer'
 import { ChatComposer } from './ChatComposer'
-import { ChatFeedback } from './ChatFeedback'
+import { ChatHeader, ChatOrb } from './ChatHeader'
 import { ChatPrompt } from './ChatPrompt'
 import { ChatFraud, ChatPending, ChatTicket } from './ChatStatus'
 import { ChatThinking } from './ChatThinking'
 import './chat.css'
 
-function AssistantReply({ message, resolved }: { message: ChatMessage; resolved: boolean }) {
+const settleSpring = { type: 'spring', visualDuration: 0.32, bounce: 0.1 } as const
+
+function AssistantReply({ message, stream, animate, resolved }: {
+  message: ChatMessage
+  stream: boolean
+  animate: boolean
+  resolved: boolean
+}) {
   const { reply } = message
+
   if (reply?.warning === 'fraud') {
     return (
       <>
-        <ChatFraud />
+        <ChatFraud animate={animate} />
         {reply.ticket_number && <ChatTicket reply={reply} createdAt={message.created_at} resolved={resolved} />}
       </>
     )
   }
   if (reply?.level === 'red') return <ChatTicket reply={reply} createdAt={message.created_at} resolved={resolved} />
   if (reply?.level === 'yellow') return <ChatPending />
-  return (
-    <>
-      <p className="chat-answer-text">{reply?.answer ?? message.text}</p>
-      {reply?.citations.length ? (
-        <>
-          <CitationFootnotes citations={reply.citations} />
-          <ChatFeedback messageId={message.id} />
-        </>
-      ) : null}
-    </>
-  )
+  return <ChatAnswer messageId={message.id} content={reply?.answer ?? message.text} citations={reply?.citations ?? []} stream={stream} />
 }
 
-const ChatLine = memo(function ChatLine({ message, animate, resolved }: {
+const ChatLine = memo(function ChatLine({ message, stream, animate, resolved }: {
   message: ChatMessage
+  stream: boolean
   animate: boolean
   resolved: boolean
 }) {
   const t = useT(chatMessages)
-  const specialist = message.role === 'specialist'
+  const { reply } = message
 
   return (
     <motion.li
       className={'chat-message chat-message--' + message.role}
-      initial={animate ? { y: 6, opacity: 0 } : false}
+      initial={animate ? { y: 8, opacity: 0 } : false}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={settleSpring}
     >
       {message.role === 'user' ? (
-        <p className="chat-user-text">{message.text}</p>
-      ) : (
+        <div className="chat-bubble chat-bubble--user"><p>{message.text}</p></div>
+      ) : message.role === 'specialist' ? (
         <>
-          <WindowMark />
-          <div className="chat-reply-body">
-            <p className="chat-speaker">{t(specialist ? 'conversation.specialist' : 'brand.name')}</p>
-            {specialist ? (
-              <>
-                <p className="chat-answer-text">{message.text}</p>
-                {message.reply?.citations.length ? <CitationFootnotes citations={message.reply.citations} /> : null}
-              </>
-            ) : <AssistantReply message={message} resolved={resolved} />}
+          <div className="chat-bubble chat-bubble--specialist">
+            <div className="chat-specialist-label"><UserRound size={15} aria-hidden="true" />{t('conversation.specialist')}</div>
+            <p>{message.text}</p>
           </div>
+          {reply && <ChatSources citations={reply.citations} />}
         </>
+      ) : (
+        <div className="chat-reply-stack">
+          <AssistantReply message={message} stream={stream} animate={animate} resolved={resolved} />
+        </div>
       )}
     </motion.li>
   )
@@ -83,43 +78,40 @@ function isAtLatest(viewport: HTMLDivElement) {
 
 export default function PublicChat() {
   const {
-    sessionId, resetKey, messages, isRestoring, isSending, thinkingSince, resolvedMessageIds, error, send, retry,
+    sessionId, resetKey, messages, isRestoring, isSending, thinkingSince, streamingMessageId, resolvedMessageIds, error, send, retry,
   } = usePublicChat()
   const t = useT(chatMessages)
-  const tHome = useT(publicHomeMessages)
+  const titleId = useId()
   const reducedMotion = useReducedMotion()
   const viewport = useRef<HTMLDivElement>(null)
   const followsLatest = useRef(true)
   const scrollDeadline = useRef(0)
   const loaded = useRef(false)
-  const previousLatest = useRef<ChatMessage>()
+  const lastContent = useRef<[string | undefined, string | null]>()
   const [unread, setUnread] = useState(false)
-  const latest = messages.at(-1)
-  const hasConversation = Boolean(latest || isRestoring || thinkingSince !== null)
+  const latestId = messages.at(-1)?.id
   const animateIncoming = loaded.current && !reducedMotion
 
   useLayoutEffect(() => {
-    if (!latest) {
+    if (isRestoring || !viewport.current) return
+    const element = viewport.current
+    const changed = !lastContent.current || latestId !== lastContent.current[0] || streamingMessageId !== lastContent.current[1]
+    const smooth = loaded.current && !reducedMotion && element.scrollHeight > element.clientHeight
+    lastContent.current = [latestId, streamingMessageId]
+    loaded.current = true
+    if (!latestId) {
       followsLatest.current = true
       scrollDeadline.current = 0
-      previousLatest.current = undefined
       setUnread(false)
     }
-    if (isRestoring) return
-    const element = viewport.current
-    const changed = latest !== previousLatest.current
-    const smooth = loaded.current && !reducedMotion && Boolean(element && element.scrollHeight > element.clientHeight)
-    loaded.current = true
-    previousLatest.current = latest
-    if (!element) return
 
     if (followsLatest.current) {
       scrollDeadline.current = smooth ? performance.now() + 500 : 0
       element.scrollTo({ top: element.scrollHeight, behavior: smooth ? 'smooth' : 'instant' })
-    } else if (latest && changed) {
+    } else if (latestId && changed) {
       setUnread(true)
     }
-  }, [isRestoring, isSending, latest, reducedMotion, resetKey])
+  }, [isRestoring, isSending, latestId, reducedMotion, resetKey, streamingMessageId])
 
   function handleScroll(element: HTMLDivElement) {
     if (isAtLatest(element)) {
@@ -143,77 +135,63 @@ export default function PublicChat() {
   const blocked = isRestoring || isSending || (error === 'restore' && !messages.length)
 
   return (
-    <section className="public-chat" data-conversation={hasConversation || undefined} aria-label={t('conversation.thread')}>
-      {hasConversation && <h1 className="sr-only">{tHome('public.heading')}</h1>}
-      <AnimatePresence initial={false}>
-        {!hasConversation && (
-          <motion.header
-            className="chat-hero"
-            exit={reducedMotion ? undefined : { y: -6, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-          >
-            <p className="chat-ministry">{tHome('public.ministry')}</p>
-            <h1>{tHome('public.heading')}</h1>
-            <p className="chat-hero-description">{tHome('public.description')}</p>
-          </motion.header>
-        )}
-      </AnimatePresence>
-      {hasConversation && (
-        <div className="chat-transcript-frame">
-          <div
-            ref={viewport}
-            className="chat-transcript"
-            role="log"
-            aria-relevant="additions text"
-            aria-label={t('conversation.thread')}
-            tabIndex={0}
-            onScroll={(event) => handleScroll(event.currentTarget)}
-            onWheel={(event) => { if (event.deltaY < 0) scrollDeadline.current = 0 }}
-            onTouchStart={() => { scrollDeadline.current = 0 }}
-            onKeyDown={(event) => {
-              if (event.target === event.currentTarget && ['ArrowUp', 'PageUp', 'Home'].includes(event.key)) scrollDeadline.current = 0
-            }}
-          >
-            {isRestoring ? (
-              <div className="chat-restoring" role="status" aria-label={t('conversation.restoring')}>
-                <Skeleton className="chat-restoring-line" />
-                <Skeleton className="chat-restoring-line" />
-              </div>
-            ) : (
-              <>
-                <ol className="chat-message-list" role="list">
-                  {messages.map((message) => (
-                    <ChatLine
-                      key={message.id}
-                      message={message}
-                      animate={animateIncoming}
-                      resolved={resolvedMessageIds.has(message.id)}
-                    />
-                  ))}
-                </ol>
-                {thinkingSince !== null && <ChatThinking key={thinkingSince} startedAt={thinkingSince} />}
-              </>
-            )}
-          </div>
-          {unread && (
-            <button type="button" className="chat-jump" onClick={goToLatest}>
-              {t('conversation.newMessage')} <ArrowDown size={14} strokeWidth={1.5} aria-hidden="true" />
-            </button>
+    <GlassPanel variant="elevated" className="public-chat" role="region" aria-labelledby={titleId} data-thinking={isSending || undefined}>
+      <ChatHeader titleId={titleId} sessionId={sessionId} />
+      <div className="chat-transcript-frame">
+        <div
+          ref={viewport}
+          className="chat-transcript"
+          role="log"
+          aria-relevant="additions"
+          aria-label={t('conversation.thread')}
+          tabIndex={0}
+          onScroll={(event) => handleScroll(event.currentTarget)}
+          onWheel={(event) => { if (event.deltaY < 0) scrollDeadline.current = 0 }}
+          onTouchStart={() => { scrollDeadline.current = 0 }}
+          onKeyDown={(event) => {
+            if (event.target === event.currentTarget && ['ArrowUp', 'PageUp', 'Home'].includes(event.key)) scrollDeadline.current = 0
+          }}
+        >
+          {isRestoring ? (
+            <div className="chat-restoring" role="status">
+              <span className="chat-restoring-status"><ChatOrb />{t('conversation.restoring')}</span>
+              <Skeleton className="chat-restoring-line" />
+              <Skeleton className="chat-restoring-line" />
+            </div>
+          ) : messages.length || thinkingSince !== null ? (
+            <>
+              <ol className="chat-message-list">
+                {messages.map((message) => (
+                  <ChatLine
+                    key={message.id}
+                    message={message}
+                    stream={!reducedMotion && streamingMessageId === message.id}
+                    animate={animateIncoming}
+                    resolved={resolvedMessageIds.has(message.id)}
+                  />
+                ))}
+              </ol>
+              {thinkingSince !== null && <ChatThinking key={thinkingSince} startedAt={thinkingSince} />}
+            </>
+          ) : (
+            <ChatPrompt disabled={blocked} onPrompt={send} />
           )}
         </div>
-      )}
+        {unread && (
+          <Button size="sm" variant="secondary" className="chat-jump" onClick={goToLatest}>
+            {t('conversation.newMessage')} <ArrowDown size={14} aria-hidden="true" />
+          </Button>
+        )}
+      </div>
       <div className="chat-footer">
         {error && (
           <div className="chat-error">
-            <p role="alert">{t(error === 'restore' ? 'conversation.restoreError' : 'conversation.sendError')}</p>
-            <button className="public-inline-action" type="button" disabled={isSending || isRestoring} onClick={retry}>
-              {t('conversation.retry')}
-            </button>
+            <p role="alert"><CircleAlert size={17} aria-hidden="true" />{t(error === 'restore' ? 'conversation.restoreError' : 'conversation.sendError')}</p>
+            <Button size="sm" variant="secondary" disabled={isSending || isRestoring} onClick={retry}>{t('conversation.retry')}</Button>
           </div>
         )}
-        <ChatComposer key={resetKey} disabled={blocked} sessionId={sessionId} onSend={send} />
+        <ChatComposer key={resetKey} disabled={blocked} onSend={send} />
       </div>
-      {!hasConversation && <ChatPrompt disabled={blocked} onPrompt={send} />}
-    </section>
+    </GlassPanel>
   )
 }

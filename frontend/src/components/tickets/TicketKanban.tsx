@@ -11,16 +11,16 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import type { CollisionDetection, DragEndEvent, KeyboardCoordinateGetter } from '@dnd-kit/core'
-import { GripVertical, Inbox as InboxIcon } from 'lucide-react'
+import { GripVertical, Inbox as InboxIcon, MapPin } from 'lucide-react'
+import { useReducedMotion } from 'motion/react'
 import { useId, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { StaffMember, Ticket } from '../../api/types'
-import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { useLanguage } from '../../i18n/useLanguage'
 import { localizeCaseRegion, localizeCaseTopic } from '../../lib/case-labels'
 import { getTicketStatus } from '../../lib/ticket-time'
-import { AssigneeMarker, TicketDeadline } from './TicketViewParts'
-import { channels, isMovableStatus, laneOrder, movableLanes, openTicketLabel, priorities, statusLabels, useTicketViewT } from './ticket-view-config'
+import { AssigneeMarker, ChannelMarker, PriorityMarker, TicketDeadline } from './TicketViewParts'
+import { isMovableStatus, laneOrder, movableLanes, openTicketLabel, statusLabels, useTicketViewT } from './ticket-view-config'
 import type { MovableStatus, Status, TicketViewProps } from './ticket-view-config'
 
 function TicketCardBody({ ticket, member, now }: { ticket: Ticket; member?: StaffMember; now: number }) {
@@ -32,12 +32,14 @@ function TicketCardBody({ ticket, member, now }: { ticket: Ticket; member?: Staf
     <>
       <span className="ticket-card-kicker">
         <span className="ticket-card-number">{ticket.number}</span>
-        {ticket.priority === 'high' && <span className="ticket-card-priority">{t(priorities.high.label)}</span>}
+        <PriorityMarker priority={ticket.priority} />
       </span>
       <span className="ticket-card-topic" title={topic}>{topic}</span>
+      <span className="ticket-card-summary" title={ticket.summary}>{ticket.summary}</span>
       <span className="ticket-card-meta">
-        <span className="ticket-card-context" title={region + ' · ' + t(channels[ticket.channel].label)}>
-          {region} · {t(channels[ticket.channel].label)}
+        <span className="ticket-card-context">
+          <ChannelMarker channel={ticket.channel} />
+          <span className="ticket-card-region" title={region}><MapPin size={13} aria-hidden="true" /><span>{region}</span></span>
         </span>
         <AssigneeMarker member={member} />
       </span>
@@ -109,7 +111,7 @@ function BoardLane({ status, tickets, members, now, onOpen }: {
         <span className="ticket-board-count">{tickets.length}</span>
       </header>
       {tickets.length ? (
-        <ul className="ticket-board-stack">
+        <ul className="ticket-board-stack glass-stagger">
           {tickets.map((ticket) => (
             <BoardCard
               key={ticket.id}

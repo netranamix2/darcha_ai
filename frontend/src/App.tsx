@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
+import { AuroraBackground } from './components/AuroraBackground'
 import { PublicLayout } from './components/PublicLayout'
 import { RouteBoundary, RouteLoading } from './components/RouteFeedback'
 import { RouteMetadata } from './components/RouteMetadata'
@@ -21,6 +22,7 @@ function PanelStart() {
 export default function App() {
   return (
     <>
+      <AuroraBackground />
       <RouteMetadata />
       <RouteBoundary>
         <Routes>

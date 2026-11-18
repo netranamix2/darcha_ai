@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import { Bell, Home, PanelLeftClose, PanelLeftOpen, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router'
@@ -17,7 +18,7 @@ import { LanguageSwitcher } from './LanguageSwitcher'
 import { PanelApiFooter } from './PanelApiFooter'
 import { PanelSearch } from './PanelSearch'
 import { SkipLink } from './SkipLink'
-import { Avatar, Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger, IconButton, Toast, ToastProvider, ToastViewport } from './ui'
+import { Avatar, Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger, GlassPanel, IconButton, Toast, ToastProvider, ToastViewport } from './ui'
 
 type Notice = { title: string; description?: string; variant?: 'default' | 'success' | 'warning' | 'error' }
 export type PanelNotify = (notice: Notice) => void
@@ -26,6 +27,7 @@ export default function PanelLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const [notices, setNotices] = useState<(Notice & { id: number })[]>([])
   const seen = useRef<Set<string> | null>(null)
+  const reducedMotion = useReducedMotion()
   const t = useT(ticketPageMessages)
   const tDemo = useT(analyticsMessages)
   const queryClient = useQueryClient()
@@ -62,7 +64,7 @@ export default function PanelLayout() {
     <div className="panel-shell" data-collapsed={collapsed}>
       <SkipLink />
       <aside className="panel-sidebar">
-        <div className="panel-sidebar-surface">
+        <GlassPanel className="panel-sidebar-surface">
           <div className="panel-sidebar-brand">
             <Brand compact={collapsed} />
             <IconButton
@@ -76,27 +78,41 @@ export default function PanelLayout() {
               <CollapseIcon size={18} aria-hidden="true" />
             </IconButton>
           </div>
-          <nav id="panel-navigation" className="panel-nav" aria-label={t('panel.nav')}>
-            {panelSections.map(({ id, label, icon: SectionIcon }) => (
-              <NavLink key={id} to={`/panel/${id}`} aria-label={t(label)} title={collapsed ? t(label) : undefined}>
-                <SectionIcon size={16} aria-hidden="true" />
-                <span className="panel-nav-text">{t(label)}</span>
-                {id === 'tickets' && newCount > 0 && <span className="panel-nav-count" aria-hidden="true">{newCount}</span>}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
+          <LayoutGroup>
+            <nav id="panel-navigation" className="panel-nav" aria-label={t('panel.nav')}>
+              {panelSections.map(({ id, label, icon: SectionIcon }) => (
+                <NavLink key={id} to={`/panel/${id}`} aria-label={t(label)} title={collapsed ? t(label) : undefined}>
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <motion.span
+                          aria-hidden="true"
+                          className="panel-nav-indicator"
+                          layoutId={reducedMotion ? undefined : 'panel-nav-indicator'}
+                          transition={{ type: 'spring', duration: 0.32, bounce: 0.12 }}
+                        />
+                      )}
+                      <SectionIcon size={19} aria-hidden="true" />
+                      <span className="panel-nav-text">{t(label)}</span>
+                      {id === 'tickets' && newCount > 0 && <span className="panel-nav-count" aria-hidden="true">{newCount}</span>}
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </nav>
+          </LayoutGroup>
+        </GlassPanel>
       </aside>
       <div className="panel-workspace">
         <header className="panel-header">
-          <div className="panel-topbar">
+          <GlassPanel className="panel-topbar">
             <PanelSearch />
             <div className="panel-actions">
               <LanguageSwitcher compact />
               <Dropdown>
                 <DropdownTrigger asChild>
                   <IconButton aria-label={t('panel.notifications')} title={t('panel.notifications')}>
-                    <Bell size={16} aria-hidden="true" />
+                    <Bell size={19} aria-hidden="true" />
                   </IconButton>
                 </DropdownTrigger>
                 <DropdownContent align="end" aria-label={t('panel.notifications')}>
@@ -128,7 +144,7 @@ export default function PanelLayout() {
                 </DropdownContent>
               </Dropdown>
             </div>
-          </div>
+          </GlassPanel>
         </header>
         <main id="main-content" className="panel-main" tabIndex={-1}>
           <AnimatedOutlet context={notify} />

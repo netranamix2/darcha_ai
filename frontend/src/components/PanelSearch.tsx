@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useT } from '../i18n/useT'
 import { panelSections } from '../lib/panel-sections'
@@ -8,22 +8,10 @@ import { Input } from './ui'
 export function PanelSearch() {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
-  const input = useRef<HTMLInputElement>(null)
   const t = useT()
   const navigate = useNavigate()
   const searchTerm = query.trim().toLocaleLowerCase()
   const sections = panelSections.filter(({ label }) => t(label).toLocaleLowerCase().includes(searchTerm))
-
-  useEffect(() => {
-    function focusSearch(event: KeyboardEvent) {
-      if ((!event.metaKey && !event.ctrlKey) || event.key.toLowerCase() !== 'k') return
-      event.preventDefault()
-      input.current?.focus()
-      input.current?.select()
-    }
-    window.addEventListener('keydown', focusSearch)
-    return () => window.removeEventListener('keydown', focusSearch)
-  }, [])
 
   function closeResults() {
     setQuery('')
@@ -49,7 +37,6 @@ export function PanelSearch() {
       }}
     >
       <Input
-        ref={input}
         containerClassName="panel-search-field"
         startIcon={<Search aria-hidden="true" />}
         aria-label={t('panel.search')}
@@ -62,7 +49,6 @@ export function PanelSearch() {
           setOpen(true)
         }}
       />
-      {!query && <kbd className="panel-search-shortcut" aria-hidden="true">⌘K</kbd>}
       {open && searchTerm && (
         <div className="panel-search-results">
           {sections.length ? (

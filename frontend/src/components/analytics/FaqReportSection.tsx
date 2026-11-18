@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown } from 'lucide-react'
+import {
+  ArrowDownRight, ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Check, ChevronDown,
+  Clock3, Copy, FileText, Inbox, Layers3, PenLine, Printer, Quote, RefreshCw, Send,
+  TriangleAlert,
+} from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { ApiError, getFaqReport, runFaqReport, subscribeToCaseChanges } from '../../api/client'
@@ -9,16 +13,16 @@ import { localeCodes } from '../../i18n/locales'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
 import { analyticsTimestamp } from '../../lib/analytics-date'
-import { Button, Skeleton } from '../ui'
+import { Button, GlassPanel, Skeleton } from '../ui'
 import './faq-report.css'
 
 const reportKey = ['faq', 'week'] as const
 const timeZone = 'Asia/Tashkent'
 const calendarDate = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: 'numeric', day: 'numeric' })
 const reportPhases = [
-  'faq.collecting',
-  'faq.clustering',
-  'faq.writing',
+  { label: 'faq.collecting', Icon: Inbox },
+  { label: 'faq.clustering', Icon: Layers3 },
+  { label: 'faq.writing', Icon: PenLine },
 ] as const
 
 type Cluster = FaqReport['clusters'][number]
@@ -52,7 +56,19 @@ function ReportProgress() {
     }
   }, [])
 
-  return <p className="faq-progress" role="status">{t(reportPhases[step])}</p>
+  return (
+    <div className="faq-progress">
+      <p className="sr-only" role="status">{t(reportPhases[step].label)}</p>
+      <ol aria-hidden="true">
+        {reportPhases.map(({ label, Icon }, index) => (
+          <li key={label} data-phase={index === step ? 'current' : index < step ? 'complete' : 'upcoming'}>
+            <span>{index < step ? <Check /> : <Icon />}</span>
+            {t(label)}
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
 }
 
 function Explainer({ draft }: { draft: string }) {
@@ -79,15 +95,17 @@ function Explainer({ draft }: { draft: string }) {
         aria-expanded={expanded}
         onClick={() => setExpanded((open) => !open)}
       >
+        <FileText aria-hidden="true" />
         {t('faq.draft')}
-        <ChevronDown className="faq-draft-chevron" size={16} strokeWidth={1.5} aria-hidden="true" />
+        <ChevronDown className="faq-draft-chevron" aria-hidden="true" />
       </button>
       <div className="faq-draft-preview" id={draftId}>
         <div className="faq-preview-header">
-          <h4>{t('faq.preview')}</h4>
-          <button type="button" className="faq-copy" onClick={() => void copyDraft()}>
+          <h4><Send aria-hidden="true" /> {t('faq.preview')}</h4>
+          <Button size="sm" variant="ghost" className="faq-copy" onClick={() => void copyDraft()}>
+            {status === 'copied' ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
             {t(status === 'copied' ? 'faq.copied' : 'faq.copy')}
-          </button>
+          </Button>
         </div>
         <p className="faq-preview-text">{draft}</p>
         {status === 'error' && <p className="faq-copy-feedback" role="status">{t('faq.copyError')}</p>}
@@ -97,7 +115,7 @@ function Explainer({ draft }: { draft: string }) {
   )
 }
 
-function ClusterEntry({ cluster, index }: { cluster: Cluster; index: number }) {
+function ClusterCard({ cluster, index }: { cluster: Cluster; index: number }) {
   const { language } = useLanguage()
   const t = useT(faqReportMessages)
   const titleId = useId()
@@ -109,6 +127,8 @@ function ClusterEntry({ cluster, index }: { cluster: Cluster; index: number }) {
   const percent = new Intl.NumberFormat(locale, { style: 'percent', signDisplay: 'exceptZero', maximumFractionDigits: 1 })
   const count = new Intl.NumberFormat(locale).format(cluster.count)
   const growth = percent.format(cluster.growth_pct / 100)
+  const change = cluster.growth_pct > 0 ? 'up' : cluster.growth_pct < 0 ? 'down' : 'steady'
+  const GrowthIcon = change === 'up' ? ArrowUpRight : change === 'down' ? ArrowDownRight : ArrowRight
   const examples = cluster.examples.slice(0, 2)
   const effect = cluster.effect_pct
 
@@ -116,16 +136,24 @@ function ClusterEntry({ cluster, index }: { cluster: Cluster; index: number }) {
     <article
       className="faq-cluster"
       aria-labelledby={titleId}
-      style={{ '--faq-stagger': `${Math.min(index, 6) * 30}ms` } as CSSProperties}
+      style={{ '--faq-stagger': `${Math.min(index, 6) * 42}ms` } as CSSProperties}
     >
-      <header className="faq-cluster-header">
-        <h3 id={titleId}>{title}</h3>
-        <div className="faq-cluster-metric">
-          <span><strong>{count}</strong> {t('faq.count')}</span>
-          <span className="faq-growth" role="img" aria-label={t('faq.growth').replace('{value}', growth)}>{growth}</span>
+      <GlassPanel blur={false} className="faq-cluster-panel">
+        <div className="faq-cluster-header">
+          <h3 id={titleId}>{title}</h3>
+          <span className="faq-growth" role="img" aria-label={t('faq.growth').replace('{value}', growth)}>
+            <GrowthIcon aria-hidden="true" /> {growth}
+          </span>
         </div>
-      </header>
-      <div className="faq-cluster-content">
+        <div className="faq-cluster-metric">
+          <strong>{count}</strong>
+          <span>{t('faq.count')}</span>
+        </div>
+        {cluster.no_answer_in_kb && (
+          <span className="faq-knowledge-gap">
+            <TriangleAlert aria-hidden="true" /> {t('faq.noKnowledge')}
+          </span>
+        )}
         {(confusion || examples.length > 0) && (
           <div className="faq-cluster-evidence">
             {confusion && (
@@ -139,17 +167,23 @@ function ClusterEntry({ cluster, index }: { cluster: Cluster; index: number }) {
                 <h4>{t('faq.examples')}</h4>
                 <ul className="faq-examples">
                   {examples.map((example, exampleIndex) => (
-                    <li key={exampleIndex}><q dir="auto">{example}</q></li>
+                    <li key={exampleIndex}>
+                      <Quote aria-hidden="true" />
+                      <q dir="auto">{example}</q>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
           </div>
         )}
-        {cluster.no_answer_in_kb && <p className="faq-knowledge-gap">{t('faq.noKnowledge')}</p>}
-        {effect != null && <p className="faq-effect">{t('faq.effect').replace('{value}', percent.format(effect / 100))}</p>}
+        {effect != null && (
+          <p className="faq-effect">
+            <ArrowDownRight aria-hidden="true" /> {t('faq.effect').replace('{value}', percent.format(effect / 100))}
+          </p>
+        )}
         {draft && <Explainer draft={draft} />}
-      </div>
+      </GlassPanel>
     </article>
   )
 }
@@ -189,21 +223,22 @@ export function FaqReportSection() {
     <section className="faq-report" aria-labelledby={titleId} data-printable={report ? 'true' : undefined}>
       <header className="faq-report-header">
         <div>
-          <h2 id={titleId}>{t('faq.title')}</h2>
+          <h2 id={titleId}><BookOpen aria-hidden="true" /> {t('faq.title')}</h2>
           {(period || generatedLabel) && (
             <div className="faq-report-meta">
-              {period && <span>{period}</span>}
+              {period && <span><CalendarDays aria-hidden="true" /> {period}</span>}
               {generatedLabel && (
-                <span>{t('faq.generated')} <time dateTime={report?.generated_at}>{generatedLabel}</time></span>
+                <span><Clock3 aria-hidden="true" /> {t('faq.generated')} <time dateTime={report?.generated_at}>{generatedLabel}</time></span>
               )}
             </div>
           )}
         </div>
         <div className="faq-report-actions">
           <Button variant="secondary" size="sm" disabled={!report || rebuild.isPending} onClick={() => window.print()}>
-            {t('faq.print')}
+            <Printer aria-hidden="true" /> {t('faq.print')}
           </Button>
           <Button size="sm" loading={rebuild.isPending} disabled={reportQuery.isLoading} onClick={() => rebuild.mutate()}>
+            {!rebuild.isPending && <RefreshCw aria-hidden="true" />}
             {t('faq.rebuild')}
           </Button>
         </div>
@@ -224,16 +259,16 @@ export function FaqReportSection() {
         </div>
       )}
       {reportQuery.isError && !rebuild.isPending && (!missing || !report) && (
-        <div className="faq-report-feedback" role={missing ? 'status' : 'alert'}>
+        <GlassPanel blur={false} className="faq-report-feedback" role={missing ? 'status' : 'alert'}>
           <span>{t(missing ? 'faq.noReport' : 'faq.loadError')}</span>
           {!missing && <Button variant="secondary" size="sm" onClick={() => void reportQuery.refetch()}>{t('faq.retry')}</Button>}
-        </div>
+        </GlassPanel>
       )}
       {report && (clusters.length ? (
-        <div className="faq-report-list" aria-busy={rebuild.isPending}>
-          {clusters.map((cluster, index) => <ClusterEntry key={cluster.id} cluster={cluster} index={index} />)}
+        <div key={report.generated_at} className="faq-report-grid" aria-busy={rebuild.isPending}>
+          {clusters.map((cluster, index) => <ClusterCard key={cluster.id} cluster={cluster} index={index} />)}
         </div>
-      ) : <p className="faq-report-feedback">{t('faq.noClusters')}</p>)}
+      ) : <GlassPanel blur={false} className="faq-report-feedback">{t('faq.noClusters')}</GlassPanel>)}
     </section>
   )
 }

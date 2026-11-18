@@ -4,21 +4,6 @@ import { useLanguage } from '../i18n/useLanguage'
 import { useT } from '../i18n/useT'
 import { Dropdown, DropdownContent, DropdownRadioGroup, DropdownRadioItem, DropdownTrigger } from './ui'
 
-export function LanguageLinks() {
-  const { language, setLanguage } = useLanguage()
-  const t = useT()
-
-  return (
-    <div className="language-links" role="group" aria-label={t('language.label')}>
-      {languages.map((option) => (
-        <button key={option} type="button" lang={localeCodes[option]} aria-label={t(`language.${option}`)} aria-pressed={option === language} onClick={() => setLanguage(option)}>
-          {t(`language.short.${option}`)}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const { language, setLanguage } = useLanguage()
   const t = useT()

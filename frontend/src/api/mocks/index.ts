@@ -1,7 +1,6 @@
 import { ApiError } from '../errors'
 import type { ChatMessage, ChatReply, ChatSession, FaqReport, InboxItem, Level, LoginReply, StaffRole, Ticket, TicketPatch } from '../types'
-import { determineReply, publicRegulations } from './chat'
-import type { MockLocale } from './chat'
+import { determineReply } from './chat'
 import {
   answeredTopics, cases, nonBlank, persistChatState, reports, requireRecord, resetChatState,
   sessions, ticketFallbackDelay, withChatState,
@@ -18,11 +17,6 @@ import {
 function pause() {
   const milliseconds = 400 + Math.floor(Math.random() * 801)
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds))
-}
-
-export async function getPublicRegulations(locale: MockLocale) {
-  await pause()
-  return publicRegulations(locale)
 }
 
 export async function resetDemoData(): Promise<void> {
@@ -89,15 +83,6 @@ function recordMessage(sessionId: string, text: string, started: number, shadow:
     ticket_number: null,
     due_at: null,
   }
-  const messages: ChatMessage[] = [
-    { id: crypto.randomUUID(), role: 'user', text: message, created_at: createdAt },
-    { id: reply.message_id, role: 'assistant', text: reply.answer, created_at: createdAt, reply },
-  ]
-  if (classified.refused) {
-    history.push(...messages)
-    persistChatState()
-    return structuredClone(reply)
-  }
   const record: ChatCase = {
     sessionId,
     shadow,
@@ -142,7 +127,10 @@ function recordMessage(sessionId: string, text: string, started: number, shadow:
 
   if (result.level === 'green') responseSeconds.set(inboxId, (now - started) / 1000)
 
-  history.push(...messages)
+  history.push(
+    { id: crypto.randomUUID(), role: 'user', text: message, created_at: createdAt },
+    { id: reply.message_id, role: 'assistant', text: reply.answer, created_at: createdAt, reply },
+  )
   cases.set(inboxId, record)
   persistChatState()
   return structuredClone(reply)

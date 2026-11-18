@@ -1,17 +1,18 @@
+import { CircleDot, Clock3, Hourglass, Timer, TriangleAlert } from 'lucide-react'
 import type { Ticket } from '../../api/types'
 import { localeCodes } from '../../i18n/locales'
 import { ticketPageMessages } from '../../i18n/ticket-page'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
 import { getDeadlineDays, getTicketStatus } from '../../lib/ticket-time'
-import { Skeleton } from '../ui'
+import { GlassPanel, Skeleton, ViewportCounter } from '../ui'
 
 const metrics = [
-  { key: 'new', label: 'tickets.new' },
-  { key: 'in_progress', label: 'tickets.inProgress' },
-  { key: 'due', label: 'tickets.dueSoon' },
-  { key: 'overdue', label: 'tickets.overdue' },
-  { key: 'average', label: 'tickets.average' },
+  { key: 'new', label: 'tickets.new', tone: 'blue', icon: CircleDot },
+  { key: 'in_progress', label: 'tickets.inProgress', tone: 'blue', icon: Timer },
+  { key: 'due', label: 'tickets.dueSoon', tone: 'amber', icon: Hourglass },
+  { key: 'overdue', label: 'tickets.overdue', tone: 'red', icon: TriangleAlert },
+  { key: 'average', label: 'tickets.average', tone: 'blue', icon: Clock3 },
 ] as const
 
 function measure(tickets: Ticket[], now: number) {
@@ -46,24 +47,24 @@ export function TicketStats({ tickets, now }: { tickets: Ticket[] | undefined; n
   const t = useT(ticketPageMessages)
   const { language } = useLanguage()
   const stats = tickets ? measure(tickets, now) : undefined
-  const formatter = new Intl.NumberFormat(localeCodes[language])
 
   return (
-    <dl className="tickets-stats" aria-busy={!stats}>
-      {metrics.map(({ key, label }) => {
+    <dl className="tickets-stats glass-stagger" aria-busy={!stats}>
+      {metrics.map(({ key, label, tone, icon: Icon }) => {
         const count = stats?.[key]
         return (
-          <div className="ticket-metric" data-metric={key} key={key}>
-            <dt className="ticket-metric-label">{t(label)}</dt>
+          <GlassPanel blur={false} variant="subtle" className="ticket-metric" data-tone={tone} key={key}>
+            <dt className="ticket-metric-label"><Icon aria-hidden="true" size={16} /> {t(label)}</dt>
             <dd className="ticket-metric-value">
               {count === undefined ? <Skeleton className="ticket-metric-skeleton" /> : count === null ? '—' : (
                 <>
-                  <span>{formatter.format(count)}</span>
+                  <ViewportCounter value={count} locale={localeCodes[language]} />
                   {key === 'average' && <span>{t('tickets.hours')}</span>}
                 </>
               )}
             </dd>
-          </div>
+            {key === 'due' && <dd className="ticket-metric-hint">{t('tickets.dueSoonHint')}</dd>}
+          </GlassPanel>
         )
       })}
     </dl>

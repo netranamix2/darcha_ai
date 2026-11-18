@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, ListFilter } from 'lucide-react'
+import { AlertCircle, Columns3, ListFilter, Table2 } from 'lucide-react'
+import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import { lazy, Suspense, useDeferredValue, useMemo, useState, useSyncExternalStore } from 'react'
 import { useOutletContext, useSearchParams } from 'react-router'
 import { ApiError, getTicket, updateTicket } from '../api/client'
@@ -29,8 +30,8 @@ const initialFilters: TicketFilterValues = {
   search: '', department: '', priority: '', assignee: '', region: '', mine: false,
 }
 const views = [
-  { id: 'kanban', label: 'tickets.kanban' },
-  { id: 'table', label: 'tickets.table' },
+  { id: 'kanban', label: 'tickets.kanban', icon: Columns3 },
+  { id: 'table', label: 'tickets.table', icon: Table2 },
 ] as const
 const channelNames = {
   web: 'tickets.channelWeb',
@@ -68,6 +69,7 @@ export default function TicketsPage() {
   const [filters, setFilters] = useState(initialFilters)
   const [params, setParams] = useSearchParams()
   const isMobile = useSyncExternalStore(subscribeToWidth, isNarrow)
+  const reducedMotion = useReducedMotion()
   const notify = useOutletContext<PanelNotify>()
   const queryClient = useQueryClient()
   const ticketsQuery = useTicketRecords()
@@ -131,13 +133,17 @@ export default function TicketsPage() {
           <p>{t('tickets.subtitle')}</p>
         </div>
         {!isMobile && (
-          <div role="group" aria-label={t('tickets.views')} className="tickets-view-toggle">
-            {views.map(({ id, label }) => (
-              <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)}>
-                {t(label)}
-              </button>
-            ))}
-          </div>
+          <LayoutGroup id="ticket-view">
+            <div role="group" aria-label={t('tickets.views')} className="tickets-view-toggle">
+              {views.map(({ id, label, icon: Icon }) => (
+                <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)}>
+                  {view === id && <motion.span className="tickets-view-marker" aria-hidden="true" layoutId={reducedMotion ? undefined : 'selected'} transition={{ type: 'spring', duration: 0.28, bounce: 0.12 }} />}
+                  <Icon aria-hidden="true" size={16} />
+                  {t(label)}
+                </button>
+              ))}
+            </div>
+          </LayoutGroup>
         )}
       </header>
       {(!ticketsQuery.isError || ticketsQuery.data) && <TicketStats tickets={ticketsQuery.data} now={now} />}

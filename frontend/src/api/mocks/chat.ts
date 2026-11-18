@@ -8,8 +8,6 @@ interface TopicReference {
   title: LocalizedText
   ref: LocalizedText
   documentId: number
-  number: string | LocalizedText
-  date: string
 }
 
 interface MockTopic {
@@ -40,8 +38,6 @@ export const topics = {
         ru: 'Постановление № 578, приложение 3, пункты 14–15',
       },
       documentId: 7726569,
-      number: '578',
-      date: '2025-09-13',
     },
     overview: {
       'uz-latn': 'Davlat oliygohlari oʻrtasida oʻqishni koʻchirish arizasi vazirlikning rasmiy sayti yoki Yagona interaktiv davlat xizmatlari portali orqali roʻyxatdan oʻtkaziladi. Nizomda arizaga qoʻshiladigan hujjatlar, jumladan akademik maʼlumotnoma yoki transkript nusxasi koʻrsatilgan.',
@@ -62,8 +58,6 @@ export const topics = {
         ru: 'Постановление № 578, приложение 3, глава 5',
       },
       documentId: 7726569,
-      number: '578',
-      date: '2025-09-13',
     },
     overview: {
       'uz-latn': 'Oʻqishni qayta tiklash uchun arizaga akademik maʼlumotnoma, reyting daftarchasi yoki transkript nusxasi ilova qilinadi. Ariza qabul qilish muddatlari Nizomning 42-bandida keltirilgan.',
@@ -88,8 +82,6 @@ export const topics = {
         ru: 'Положение № 2431, пункт 22',
       },
       documentId: 2137212,
-      number: '2431',
-      date: '2013-02-26',
     },
     overview: {
       'uz-latn': 'Oliy taʼlim uchun kontrakt toʻlovining ulushlari va muddatlari 2431-son Nizomning 22-bandida koʻrsatilgan. Toʻlov jadvalingizni oliygoh bilan tuzgan shartnomangizdan ham tekshiring.',
@@ -114,8 +106,6 @@ export const topics = {
         ru: 'Постановление № 572, приложение 1',
       },
       documentId: 5641270,
-      number: '572',
-      date: '2021-09-17',
     },
     overview: {
       'uz-latn': 'Pedagoglar attestatsiyasi boʻyicha ariza va baholash tartibi 572-son qarorning 1-ilovasida bayon qilingan. Oʻz holatingiz boʻyicha attestatsiya turini aniqlashtiring.',
@@ -140,8 +130,6 @@ export const topics = {
         ru: 'Постановление № 666, приложение 2, глава 3',
       },
       documentId: 3866498,
-      number: '666',
-      date: '2018-08-15',
     },
     overview: {
       'uz-latn': 'Davlat maktablari oʻquvchilari formasi boʻyicha talablar 666-son qarorga ilova qilingan Nizomda keltirilgan. Muayyan maktabdagi kiyinish tartibini maʼmuriyatdan aniqlashtiring.',
@@ -152,7 +140,7 @@ export const topics = {
   },
 } satisfies Record<string, MockTopic>
 
-export const appealSource: TopicReference = {
+const appealSource: TopicReference = {
   title: {
     'uz-latn': 'Jismoniy va yuridik shaxslarning murojaatlari toʻgʻrisida',
     'uz-cyrl': 'Жисмоний ва юридик шахсларнинг мурожаатлари тўғрисида',
@@ -164,8 +152,6 @@ export const appealSource: TopicReference = {
     ru: 'Закон № ЗРУ-445, статья 28',
   },
   documentId: 3336169,
-  number: { 'uz-latn': 'OʻRQ-445', 'uz-cyrl': 'ЎРҚ-445', ru: 'ЗРУ-445' },
-  date: '2017-09-11',
 }
 
 const replyText = {
@@ -185,14 +171,9 @@ const replyText = {
     ru: 'Просьба заплатить за обещание поступления может быть признаком мошенничества. Не переводите деньги и не сообщайте данные карты. Сообщение передано специалисту для проверки.',
   },
   clarify: {
-    'uz-latn': 'Savolingizga aniq javob berish uchun taʼlim muassasasi nomini va qaysi masala boʻyicha yordam kerakligini yozing.',
-    'uz-cyrl': 'Саволингизга аниқ жавоб бериш учун таълим муассасаси номини ва қайси масала бўйича ёрдам кераклигини ёзинг.',
-    ru: 'Чтобы ответить точнее, укажите учебное заведение и опишите, в чём нужна помощь.',
-  },
-  refusal: {
-    'uz-latn': 'Iltimos, savolingizni taʼlimga oid tarzda yozing — men meʼyoriy hujjatlar asosida yordam beraman.',
-    'uz-cyrl': 'Илтимос, саволингизни таълимга оид тарзда ёзинг — мен меъёрий ҳужжатлар асосида ёрдам бераман.',
-    ru: 'Пожалуйста, задайте вопрос об образовании. Я помогу разобраться, опираясь на нормативные документы.',
+    'uz-latn': 'Savolingizga aniq javob berish uchun taʼlim muassasasi nomini va qaysi masala boʻyicha yordam kerakligini yozing. Murojaatlarni koʻrib chiqish tartibi quyidagi hujjatda keltirilgan.',
+    'uz-cyrl': 'Саволингизга аниқ жавоб бериш учун таълим муассасаси номини ва қайси масала бўйича ёрдам кераклигини ёзинг. Мурожаатларни кўриб чиқиш тартиби қуйидаги ҳужжатда келтирилган.',
+    ru: 'Чтобы ответить точнее, укажите учебное заведение и опишите, в чём нужна помощь. Порядок рассмотрения обращений приведён в документе ниже.',
   },
   specialist: {
     'uz-latn': 'Murojaatingizni koʻrib chiqdim. Vaziyatni aniqlashtirish uchun taʼlim muassasasi nomini va hodisa sanasini shu suhbatda yozishingiz mumkin.',
@@ -203,30 +184,15 @@ const replyText = {
 
 function detectLocale(text: string): MockLocale {
   if (!/\p{Script=Cyrillic}/u.test(text)) return 'uz-latn'
-  if (/[ўқғҳ]|салом|мактаб|ариза|менга|олий|педагоглар|аттестацияси|қабул|тентак|жинни|(?:^|\s)пул(?:$|\s)/i.test(text)) return 'uz-cyrl'
+  if (/[ўқғҳ]|салом|мактаб|ариза|менга|олий|педагоглар|аттестацияси|қабул|(?:^|\s)пул(?:$|\s)/i.test(text)) return 'uz-cyrl'
   return 'ru'
 }
 
 export function cite(source: TopicReference, locale: MockLocale): Citation {
   const prefix = { 'uz-latn': 'uz/', 'uz-cyrl': '', ru: 'ru/' }[locale]
   const latinMarker = locale === 'uz-cyrl' ? '' : '-'
-  return {
-    title: source.title[locale],
-    ref: source.ref[locale],
-    url: `https://lex.uz/${prefix}docs/${latinMarker}${source.documentId}`,
-    document_number: typeof source.number === 'string' ? source.number : source.number[locale],
-    document_date: source.date,
-  }
+  return { title: source.title[locale], ref: source.ref[locale], url: `https://lex.uz/${prefix}docs/${latinMarker}${source.documentId}` }
 }
-
-export function publicRegulations(locale: MockLocale): Citation[] {
-  const sources = [topics.transfer.source, topics.contract.source, topics.certification.source, topics.uniform.source, appealSource]
-  return sources.map((source) => cite(source, locale))
-}
-
-const abusiveWords = /(?<!\p{L})(?:a[hx]moq|аҳмоқ|ахмоқ|tentak|тентак|jinni|жинни|siktir|сиктир|go't|гўт|haromi|ҳароми|бл(?:я|яд\p{L}*)|сука|мудак\p{L}*|долбо[её]б\p{L}*|хуй\p{L}*|ху[еяи]\p{L}*|пизд\p{L}*|[ёе]б(?:ан|ат|лан|уч)\p{L}*|дебил\p{L}*|идиот\p{L}*|дурак\p{L}*)(?!\p{L})/iu
-const educationTopic = /ta'lim|talaba|maktab|o'quv|o'qish|dars|pedagog|o'qituv|otm\b|universitet|institut|oliygoh|kollej|imtihon|shahodatnoma|stipendiy|таълим|талаба|мактаб|ўқув|ўқиш|дарс|педагог|ўқитув|университет|институт|олийгоҳ|коллеж|имтиҳон|образован|уч(?:ё|е)б|ученик|школ|студент|учител|преподав|(?:^|[^\p{L}])вуз|колледж|экзамен|каникул|сессия|стипенди|абитуриент/iu
-const unrelatedUse = /парол|уч[её]тн\p{L}* запис|восстанов\p{L}* файл|перевод \p{L}*(?:слов|текст)|контракт на (?:аренду|поставку)|банковск\p{L}* перевод|parol|файл|akkaunt|ijara shartnoma|погод|ob-havo/iu
 
 function isFraud(text: string) {
   if (/firibgar|фирибгар|мошенни|\bpora\b|пора (бер|сўра)|взятк|kontraktsiz (o'qishga )?kirit|контрактсиз (ўқишга )?кирит/i.test(text)) return true
@@ -235,23 +201,17 @@ function isFraud(text: string) {
   const hasMoney = words.some((word) => /^(pul|пул)(m?ni|и?ни|ga|га|dan|дан|lar|лар)?$|^деньг|^денег$/i.test(word))
   const admission = /qabul|kirish|kirit|поступ|зачисл|қабул|кириш|кирит/i.test(text)
   const solicitation = /so'radi|so'ray|so'rashyap|сўради|сўраяп|требу|прос[ия]|вымага/i.test(text)
-  return hasMoney && admission && (solicitation || !topics.contract.pattern.test(text))
+  return hasMoney && (words.length === 1 || solicitation || (admission && !topics.contract.pattern.test(text)))
 }
 
 export function determineReply(text: string, forceEscalation = false) {
   const locale = detectLocale(text)
   const normalized = text.toLowerCase().replace(/[ʻʼ‘’`´]/g, "'")
-  const unrelated = unrelatedUse.test(normalized)
-  const topic = unrelated ? undefined : Object.values(topics).find(({ pattern }) => pattern.test(normalized))
-  const fraud = !unrelated && isFraud(normalized)
-  const refused = !forceEscalation && (abusiveWords.test(normalized) || (!fraud && !topic && !educationTopic.test(normalized)))
-  if (refused) {
-    const answer = replyText.refusal[locale]
-    return { locale, topic: 'Boshqa murojaatlar', level: 'green' as const, answer, citations: [], fraud: false, followUp: answer, refused }
-  }
+  const topic = Object.values(topics).find(({ pattern }) => pattern.test(normalized))
+  const fraud = isFraud(normalized)
   const escalated = forceEscalation || fraud || /shikoyat|şikoyat|шикоят|жалоб|rad etildi|рад этилди|отказал|muddati o'tdi|муддати ўтди|просроч/i.test(normalized)
   const level: Level = escalated ? 'red' : topic?.level ?? 'yellow'
-  const source = escalated ? appealSource : topic?.source
+  const source = escalated ? appealSource : topic?.source ?? appealSource
   let answer = replyText.pending[locale]
 
   if (escalated) answer = (fraud ? replyText.fraud : replyText.escalated)[locale]
@@ -259,5 +219,5 @@ export function determineReply(text: string, forceEscalation = false) {
 
   const label = fraud ? 'Qabuldagi firibgarlik' : topic?.label ?? 'Boshqa murojaatlar'
   const followUp = escalated ? replyText.specialist[locale] : topic?.overview[locale] ?? replyText.clarify[locale]
-  return { locale, topic: label, level, answer, citations: source ? [cite(source, locale)] : [], fraud, followUp, refused }
+  return { locale, topic: label, level, answer, citations: [cite(source, locale)], fraud, followUp }
 }

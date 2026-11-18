@@ -1,5 +1,5 @@
 import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, createChatSession, getChatMessages, sendChatMessage, subscribeToCaseChanges } from '../api/client'
 import type { ChatMessage } from '../api/types'
 
@@ -86,6 +86,9 @@ export function usePublicChat() {
   const generation = useRef(0)
   const inFlight = useRef(false)
   const sent = useRef(new Map<string, ChatMessage>())
+  const seenGreen = useRef(new Set<string>())
+  const hydratedSession = useRef<string | null>(null)
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
   const [resetKey, setResetKey] = useState(0)
 
   const clearSession = useCallback((id: string | null) => {
@@ -94,8 +97,11 @@ export function usePublicChat() {
     currentSession.current = null
     inFlight.current = false
     sent.current.clear()
+    seenGreen.current.clear()
+    hydratedSession.current = null
     setResetKey(++generation.current)
     setSessionId(null)
+    setStreamingMessageId(null)
   }, [])
 
   const sendRequest = useMutation({
@@ -128,6 +134,9 @@ export function usePublicChat() {
     onSuccess: ({ id, reply }, { message, generation: requested }) => {
       if (requested !== generation.current) return
       sent.current.set(reply.message_id, message)
+      if (reply.level === 'green') {
+        setStreamingMessageId(reply.message_id)
+      }
       queryClient.setQueryData<ChatMessage[]>(historyKey(id), (previous = emptyHistory) => [
         ...previous,
         message,
@@ -179,6 +188,17 @@ export function usePublicChat() {
     }
   }, [clearSession, history.error, resetSend, sessionId])
 
+  useLayoutEffect(() => {
+    if (!sessionId || !history.data) return
+    const green = history.data.filter(({ role, reply }) => role === 'assistant' && reply?.level === 'green')
+    if (hydratedSession.current === sessionId) {
+      const latest = green.filter(({ id }) => !seenGreen.current.has(id)).at(-1)
+      if (latest) setStreamingMessageId(latest.id)
+    }
+    hydratedSession.current = sessionId
+    seenGreen.current = new Set(green.map(({ id }) => id))
+  }, [history.data, sessionId])
+
   const committed = history.data ?? emptyHistory
   const { resolvedMessageIds } = useMemo(() => conversationStatus(committed), [committed])
   const sendFailed = sendRequest.isError && sendRequest.variables?.generation === generation.current && !isExpired(sendRequest.error)
@@ -222,6 +242,7 @@ export function usePublicChat() {
     isRestoring,
     isSending: sendRequest.isPending,
     thinkingSince: sendRequest.isPending ? attempt?.thinkingSince ?? null : null,
+    streamingMessageId,
     resolvedMessageIds,
     error,
     send,

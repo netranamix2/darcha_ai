@@ -32,8 +32,20 @@ function AssistantReply({ message, stream, resolved }: {
       </>
     )
   }
-  if (reply?.level === 'red') return <ChatTicket reply={reply} createdAt={message.created_at} resolved={resolved} />
+  if (reply?.level === 'red') {
+    // Live replies put the general rule (or an urgent safety notice) before the ticket notice; keep that text.
+    // The notice may be transliterated (ДР-…), so match the ticket's numeric tail.
+    const tail = reply.ticket_number?.match(/\d+$/u)?.[0]
+    const lead = reply.answer.split(/\n{2,}/u).filter((part) => !tail || !part.includes(tail)).join('\n\n').trim()
+    return (
+      <>
+        {lead && <ChatAnswer messageId={message.id} content={lead} citations={reply.citations} stream={false} />}
+        <ChatTicket reply={reply} createdAt={message.created_at} resolved={resolved} />
+      </>
+    )
+  }
   if (reply?.level === 'yellow') return <ChatPending />
+  if (reply && !reply.answer.trim() && !reply.citations.length) return null
   return <ChatAnswer messageId={message.id} content={reply?.answer ?? message.text} citations={reply?.citations ?? []} stream={stream} />
 }
 

@@ -88,7 +88,7 @@ export function ChatAnswer({ messageId, content, citations, stream }: {
         <ReplyText key={stream ? 'stream' : 'static'} content={content} stream={stream} />
       </div>
       <ChatSources citations={citations} />
-      <ChatFeedback messageId={messageId} />
+      {citations.length > 0 && <ChatFeedback messageId={messageId} />}
     </>
   )
 }

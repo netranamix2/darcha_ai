@@ -59,9 +59,15 @@ function webUrl(value: unknown) {
 }
 
 function citations(value: unknown): Citation[] {
+  const seen = new Set<string>()
   return rows(value).flatMap((entry) => {
     const title = stringValue(entry.title)
-    return title ? [{ title, ref: stringValue(entry.ref), url: webUrl(entry.url) }] : []
+    const ref = stringValue(entry.ref)
+    // The backend can cite the same document section several times (one per retrieved chunk).
+    const key = `${title}|${ref}`
+    if (!title || seen.has(key)) return []
+    seen.add(key)
+    return [{ title, ref, url: webUrl(entry.url) }]
   })
 }
 
@@ -101,7 +107,9 @@ export function chatReply(value: unknown, fallbackId = ''): ChatReply {
     level: level(data.level),
     ticket_number: optionalString(data.ticket_number),
     due_at: optionalString(data.due_at),
-    warning: data.warning === 'fraud' ? 'fraud' : undefined,
+    // The backend sends the fraud warning as a fixed red-level template that starts with "⚠️".
+    warning: data.warning === 'fraud' || (data.level === 'red' && /^\s*⚠/u.test(stringValue(data.answer ?? data.text)))
+      ? 'fraud' : undefined,
   }
 }
 

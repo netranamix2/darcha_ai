@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, Globe2, Inbox, Instagram, Phone, Send } from 'lucide-react'
+import { ArrowRight, ChevronDown, Globe2, Inbox, Instagram, Phone, Send } from 'lucide-react'
+import { useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { getPublicKnowledgeBase } from '../../api/client'
 import { publicHomeMessages } from '../../i18n/public-home'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
+import { instagramDemoPath, scrollToChat, telegramBotUrl } from '../../lib/channels'
 import { Button, GlassPanel, Skeleton } from '../ui'
 import { PublicSection } from './PublicSection'
 
@@ -24,10 +26,35 @@ const levels = [
   { tone: 'red', title: 'public.ticketTitle', body: 'public.ticketBody' },
 ] as const
 const channels = [
-  { label: 'public.channelTelegram', Icon: Send },
-  { label: 'public.channelWeb', Icon: Globe2 },
-  { label: 'public.channelInstagram', Icon: Instagram },
+  { label: 'public.channelTelegram', Icon: Send, kind: 'telegram' },
+  { label: 'public.channelWeb', Icon: Globe2, kind: 'web' },
+  { label: 'public.channelInstagram', Icon: Instagram, kind: 'instagram' },
 ] as const
+
+function ChannelCard({ label, Icon, kind }: (typeof channels)[number]) {
+  const t = useT(publicHomeMessages)
+  const reducedMotion = useReducedMotion()
+  const content = (
+    <>
+      <Icon size={16} aria-hidden="true" />
+      <span className="landing-channel-name">{t(label)}</span>
+      <span className="landing-channel-open" aria-hidden="true">{t('public.channelOpen')} <ArrowRight size={14} /></span>
+    </>
+  )
+  if (kind === 'telegram') {
+    return telegramBotUrl
+      ? <a className="landing-channel-link" href={telegramBotUrl} target="_blank" rel="noopener noreferrer">{content}</a>
+      : <span className="landing-channel-link" data-disabled="">{content}</span>
+  }
+  if (kind === 'web') {
+    return (
+      <a className="landing-channel-link" href="#chat" onClick={(event) => { if (scrollToChat(reducedMotion)) event.preventDefault() }}>
+        {content}
+      </a>
+    )
+  }
+  return <Link className="landing-channel-link" to={instagramDemoPath}>{content}</Link>
+}
 const questions = [
   { question: 'public.faqOfficial', answer: 'public.faqOfficialAnswer' },
   { question: 'public.faqPrivacy', answer: 'public.faqPrivacyAnswer' },
@@ -109,13 +136,8 @@ export function PublicOverview({ afterHow }: { afterHow?: ReactNode }) {
       <PublicSection id="channels" title={t('public.channelsTitle')}>
         <div className="landing-channel-diagram">
           <ul className="landing-channel-inputs">
-            {channels.map(({ label, Icon }) => (
-              <li key={label}>
-                <Icon size={16} aria-hidden="true" />{t(label)}
-                {label === 'public.channelInstagram'
-                  ? <Link className="landing-channel-demo" to="/demo/instagram">{t('public.channelInstagramDemo')} →</Link>
-                  : null}
-              </li>
+            {channels.map((channel) => (
+              <li key={channel.label}><ChannelCard {...channel} /></li>
             ))}
           </ul>
           <span className="landing-channel-join" aria-hidden="true" />
@@ -152,7 +174,7 @@ export function PublicFooter({ botUrl }: { botUrl: string | null }) {
     <footer className="public-footer">
       <div className="public-footer-links">
         <a href="tel:1006"><Phone size={16} aria-hidden="true" /> {t('public.hotline')} <strong>1006</strong></a>
-        {botUrl && <a href={botUrl}><Send size={16} aria-hidden="true" /> {t('public.telegram')}</a>}
+        {botUrl && <a href={botUrl} target="_blank" rel="noopener noreferrer"><Send size={16} aria-hidden="true" /> {t('public.telegram')}</a>}
       </div>
       <p>{t('public.disclaimer')}</p>
     </footer>

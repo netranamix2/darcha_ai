@@ -1,5 +1,7 @@
+import { Instagram, Send } from 'lucide-react'
 import { Link, useLocation } from 'react-router'
 import { useT } from '../i18n/useT'
+import { instagramDemoPath, telegramBotUrl } from '../lib/channels'
 import { AnimatedOutlet } from './AnimatedOutlet'
 import { Brand } from './Brand'
 import { LanguageSwitcher } from './LanguageSwitcher'
@@ -27,6 +29,17 @@ export function PublicLayout() {
           </nav>
         )}
         <div className="public-actions">
+          <div className="public-channel-icons">
+            {telegramBotUrl && (
+              <a className="public-channel-icon" href={telegramBotUrl} target="_blank" rel="noopener noreferrer"
+                aria-label={t('header.telegram')} title={t('header.telegram')}>
+                <Send size={17} aria-hidden="true" />
+              </a>
+            )}
+            <Link className="public-channel-icon" to={instagramDemoPath} aria-label={t('header.instagram')} title={t('header.instagram')}>
+              <Instagram size={17} aria-hidden="true" />
+            </Link>
+          </div>
           <LanguageSwitcher />
           <Link className="staff-link" to="/login">{t('header.staff')}</Link>
         </div>

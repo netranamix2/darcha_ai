@@ -241,11 +241,14 @@
 
 .landing-channel-inputs { display: grid; gap: 0.75rem; }
 
-.landing-channel-inputs li {
-  position: relative;
+.landing-channel-inputs li { position: relative; display: flex; }
+
+.landing-channel-link {
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 0.5rem;
+  min-inline-size: 0;
   min-block-size: 2.875rem;
   padding-inline: 0.75rem;
   border: 1px solid var(--color-border);
@@ -253,9 +256,49 @@
   background: var(--glass-fill-subtle);
   color: var(--color-text);
   font-size: var(--text-caption);
+  text-decoration: none;
+  transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
-.landing-channel-inputs li svg { flex: none; color: var(--color-secondary); }
+.landing-channel-link > svg { flex: none; color: var(--color-secondary); transition: color 160ms var(--ease-out); }
+.landing-channel-name { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.landing-channel-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-inline-start: auto;
+  color: var(--color-focus);
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+a.landing-channel-link:hover,
+a.landing-channel-link:focus-visible {
+  border-color: rgb(143 183 255 / 45%);
+  background: rgb(47 123 255 / 10%);
+}
+
+a.landing-channel-link:hover > svg,
+a.landing-channel-link:focus-visible > svg { color: var(--color-focus); }
+
+a.landing-channel-link:hover .landing-channel-open,
+a.landing-channel-link:focus-visible .landing-channel-open { opacity: 1; transform: none; }
+
+/* Touch screens have no hover: keep the hint visible. */
+@media (hover: none) {
+  .landing-channel-open { opacity: 0.85; transform: none; }
+}
+
+.landing-channel-link[data-disabled] .landing-channel-open { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-channel-link, .landing-channel-open, .landing-channel-link > svg { transition: none; }
+}
 
 .landing-channel-inputs li::after,
 .landing-channel-join::after {
@@ -608,18 +651,6 @@
   .landing-channel-inbox h3 { font-size: var(--text-caption); }
 }
 
-.landing-channel-demo {
-  margin-inline-start: auto;
-  padding: 0.125rem 0.5rem;
-  border-radius: 999px;
-  background: rgba(36, 83, 230, 0.16);
-  color: var(--color-primary);
-  font-size: 0.75rem;
-  font-weight: 650;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.landing-channel-demo:hover { background: rgba(36, 83, 230, 0.26); }
 
 /* Chat must always fit the viewport (no horizontal scroll at 1440 / 1024 / 768 / 390):
    every ancestor may shrink, long words and links wrap, the header wraps instead of pushing out. */
@@ -635,3 +666,8 @@
 .chat-window .chat-bubble,
 .chat-window .chat-message,
 .chat-window .chat-message a { overflow-wrap: anywhere; min-inline-size: 0; }
+
+/* Hero channel buttons: icon + label */
+.public-hero-actions { flex-wrap: wrap; }
+.public-hero-actions a { gap: 0.5rem; }
+.public-hero-actions a > svg { flex: none; }

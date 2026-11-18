@@ -20,6 +20,21 @@ VIEW = require("manager", "operator", "specialist")
 EXCLUDED = ("eval", "api", "virtual_reception")
 
 
+def _outcome(m: Message, main) -> str | None:
+    """Who answered: ai (bot reply sent), specialist (approved draft or ticket answer), waiting; None = ignored."""
+    if any(r.kind == "specialist" and r.status == "sent" for r in m.responses):
+        return "specialist"
+    if not main:
+        return "waiting"
+    if main.level == "none" or main.status == "skipped":
+        return None
+    if main.level == "yellow":
+        return "specialist" if main.status in ("sent", "approved") else "waiting"
+    if main.level in ("green", "gray") and main.status == "sent":
+        return "ai"
+    return "waiting"
+
+
 def _pct(values: list[float], q: float) -> float | None:
     return round(float(np.percentile(values, q)), 1) if values else None
 
@@ -38,6 +53,8 @@ async def summary(from_: datetime | None = Query(None, alias="from"), to: dateti
 
     levels, types, sentiment, regions, topics, channels = (Counter() for _ in range(6))
     per_day: dict[str, int] = defaultdict(int)
+    outcomes: Counter = Counter()
+    per_day_outcome: dict[str, Counter] = defaultdict(Counter)
     green_latency, ratings = [], []
     for m in msgs:
         main = next((r for r in m.responses if r.kind != "holding" and r.kind != "specialist"), None)
@@ -45,6 +62,10 @@ async def summary(from_: datetime | None = Query(None, alias="from"), to: dateti
         levels[lvl] += 1
         channels[m.channel] += 1
         per_day[m.received_at.date().isoformat()] += 1
+        who = _outcome(m, main)
+        if who:
+            outcomes[who] += 1
+            per_day_outcome[m.received_at.date().isoformat()][who] += 1
         if main and main.level == "green" and main.latency_ms is not None:
             green_latency.append(main.latency_ms / 1000)
         ratings += [r.rating for r in m.responses if r.rating]
@@ -70,7 +91,11 @@ async def summary(from_: datetime | None = Query(None, alias="from"), to: dateti
         "by_channel": dict(channels), "by_level": dict(levels), "by_type": dict(types),
         "sentiment": dict(sentiment), "by_region": dict(regions.most_common()),
         "top_topics": [{"topic": k, "count": v} for k, v in topics.most_common(10)],
-        "per_day": [{"date": d, "count": per_day[d]} for d in sorted(per_day)],
+        "per_day": [{"date": d, "count": per_day[d], "ai": per_day_outcome[d]["ai"],
+                     "specialist": per_day_outcome[d]["specialist"], "waiting": per_day_outcome[d]["waiting"]}
+                    for d in sorted(per_day)],
+        # ai + specialist + waiting = total minus ignored messages (level "none")
+        "by_outcome": {k: outcomes[k] for k in ("ai", "specialist", "waiting")},
         "auto_answer_rate": round(levels.get("green", 0) / answerable, 3) if answerable else None,
         "response_time_s": {"p50": _pct(green_latency, 50), "p95": _pct(green_latency, 95)},
         "tickets": {

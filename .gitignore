@@ -27,3 +27,6 @@ frontend/dist/
 .DS_Store
 data/comments/private/
 data/documents/lex/_cache/
+
+# local key scratch files
+*_api.txt

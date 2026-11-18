@@ -357,12 +357,14 @@ export async function getKnowledgeBase(): Promise<Citation[]> {
 
 // TODO(backend): Expose an anonymous catalog of active regulations. The existing documents endpoint requires staff access.
 export async function getPublicKnowledgeBase(language: Language): Promise<KnowledgeDocument[]> {
+  if (apiUrl) enterMixedMode()
   return (await loadMocks()).getPublicKnowledgeBase(language)
 }
 
 export async function markTicketViewed(id: string): Promise<void> {
   const mock = mockStaffSession || id.startsWith('T-')
-  // TODO(backend): POST /api/tickets/{id}/view
+  // TODO(backend): POST /api/tickets/{id}/view. Until it exists, a live ticket simply has no "viewed" audit event.
+  if (apiUrl && !mock) return
   return request('/api/tickets/{id}/view', async () => {
     await fetchApi(`/api/tickets/${encodeURIComponent(id)}/view`, { method: 'POST', staff: true })
   }, async () => {

@@ -2,7 +2,9 @@ import { ChevronDown, Search, SlidersHorizontal } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { StaffMember, Ticket, TicketDepartment } from '../../api/types'
 import { ticketPageMessages } from '../../i18n/ticket-page'
+import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
+import { localizeCaseRegion } from '../../lib/case-labels'
 import { GlassPanel, Input } from '../ui'
 
 export interface TicketFilterValues {
@@ -51,6 +53,7 @@ export function TicketFilters({ filters, staff, regions, onChange }: {
   onChange: (filters: TicketFilterValues) => void
 }) {
   const t = useT(ticketPageMessages)
+  const { language } = useLanguage()
   const currentStaff = staff.some(({ is_current }) => is_current)
 
   return (
@@ -80,7 +83,7 @@ export function TicketFilters({ filters, staff, regions, onChange }: {
       </FilterSelect>
       <FilterSelect label={t('tickets.region')} value={filters.region} onChange={(region) => onChange({ ...filters, region })}>
         <option value="">{t('tickets.allRegions')}</option>
-        {regions.map((region) => <option key={region} value={region}>{region}</option>)}
+        {regions.map((region) => <option key={region} value={region}>{localizeCaseRegion(region, language)}</option>)}
         <option value="no-region">{t('tickets.noRegion')}</option>
       </FilterSelect>
       <label className="ticket-filter-mine">

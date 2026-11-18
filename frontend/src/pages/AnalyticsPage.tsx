@@ -26,7 +26,6 @@ export default function AnalyticsPage() {
   const now = useTicketClock()
   const { current, previous, lastFourteen } = useAnalytics(days, now)
   const summary = current.data
-  const sentiment = lastFourteen.data?.sentiment_daily ?? []
 
   return (
     <section className="analytics-page" aria-labelledby="analytics-title">
@@ -63,20 +62,34 @@ export default function AnalyticsPage() {
             )}
           </div>
         </header>
-        {summary ? (
-          <>
-            <AnalyticsKpis key={days} summary={summary} previous={previous.data} />
-            <Suspense fallback={<Skeleton className="analytics-loading-chart" />}>
-              <AnalyticsCharts key={days} summary={summary} previous={previous.data} sentiment={sentiment} />
-            </Suspense>
-          </>
-        ) : current.isError ? (
+        {current.isError && (
           <GlassPanel blur={false} className="analytics-load-error" role="alert">
             <CircleAlert aria-hidden="true" size={21} />
             <p>{t('analytics.loadError')}</p>
             <Button variant="secondary" size="sm" onClick={() => void current.refetch()}>{t('analytics.retry')}</Button>
           </GlassPanel>
-        ) : (
+        )}
+        {summary ? (
+          <>
+            {previous.isError && (
+              <GlassPanel blur={false} className="analytics-load-error" role="alert">
+                <CircleAlert aria-hidden="true" size={21} />
+                <p>{t('analytics.comparisonError')}</p>
+                <Button variant="secondary" size="sm" onClick={() => void previous.refetch()}>{t('analytics.retry')}</Button>
+              </GlassPanel>
+            )}
+            <AnalyticsKpis summary={summary} previous={previous.data} comparisonLoading={previous.isPending} />
+            <Suspense fallback={<div role="status" aria-label={t('common.loading')}><Skeleton className="analytics-loading-chart" /></div>}>
+              <AnalyticsCharts
+                summary={summary}
+                previous={previous.data}
+                sentiment={lastFourteen.data?.sentiment_daily}
+                sentimentLoading={lastFourteen.isPending}
+                onSentimentRetry={lastFourteen.isError ? () => void lastFourteen.refetch() : undefined}
+              />
+            </Suspense>
+          </>
+        ) : current.isPending && (
           <div className="analytics-loading" role="status" aria-label={t('common.loading')}>
             <div>
               {loadingMetrics.map((metric) => <Skeleton key={metric} className="analytics-loading-metric" />)}
@@ -86,7 +99,7 @@ export default function AnalyticsPage() {
         )}
         <AnalyticsOperations summary={summary} days={days} />
       </div>
-      <Suspense fallback={<Skeleton className="analytics-loading-chart" />}>
+      <Suspense fallback={<div role="status" aria-label={t('common.loading')}><Skeleton className="analytics-loading-chart" /></div>}>
         <FaqReportSection />
       </Suspense>
     </section>

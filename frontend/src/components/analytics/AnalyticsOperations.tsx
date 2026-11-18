@@ -67,6 +67,8 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
   const { language } = useLanguage()
   const headingId = useId()
   const recent = useMemo(() => [...alerts].sort((first, second) => second.created_at.localeCompare(first.created_at)), [alerts])
+  const number = useMemo(() => new Intl.NumberFormat(localeCodes[language]), [language])
+  const growth = useMemo(() => new Intl.NumberFormat(localeCodes[language], { style: 'percent', signDisplay: 'exceptZero' }), [language])
 
   return (
     <GlassPanel blur={false} className="analytics-alerts" role="region" aria-labelledby={headingId}>
@@ -80,6 +82,9 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
             const fraud = alert.kind === 'fraud'
             const AlertIcon = fraud ? ShieldAlert : TrendingUp
             const canOpen = fraud && alert.inbox_id
+            const text = !fraud && alert.appeal_count != null && alert.growth_pct != null
+              ? t('analytics.spikeDetail').replace('{count}', number.format(alert.appeal_count)).replace('{growth}', growth.format(alert.growth_pct / 100))
+              : alert.text
             const body = (
               <>
                 <span className="analytics-alert-mark"><AlertIcon aria-hidden="true" size={17} /></span>
@@ -88,7 +93,7 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
                     <strong>{t(fraud ? 'analytics.fraud' : 'analytics.spike')}</strong>
                     <time dateTime={alert.created_at}>{analyticsTimestamp(alert.created_at, language)}</time>
                   </span>
-                  <span className="analytics-alert-text">{alert.text}</span>
+                  <span className="analytics-alert-text">{text}</span>
                 </span>
                 {canOpen && <ArrowUpRight className="analytics-alert-link-icon" size={17} aria-hidden="true" />}
               </>

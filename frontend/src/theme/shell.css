@@ -129,10 +129,64 @@
 }
 
 .route-loading {
-  padding: 3rem 1rem;
+  display: grid;
+  gap: 0.9rem;
+  padding: clamp(1.25rem, 3vw, 2.5rem) 0.15rem;
+}
+
+#root > .route-loading,
+.public-main .route-loading {
+  width: min(calc(100% - 2rem), 60rem);
+  margin-inline: auto;
+}
+
+.route-heading-skeleton {
+  width: min(15rem, 70%);
+  height: 2.1rem;
+}
+
+.route-body-skeleton {
+  min-height: min(40svh, 18rem);
+  border-radius: var(--radius-panel);
+}
+
+.route-failure {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  width: min(calc(100% - 2rem), 34rem);
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+.route-failure > svg { color: var(--color-red); }
+
+.not-found-marker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   color: var(--color-secondary);
-  text-align: center;
-  font-size: var(--text-ui);
+  font: 650 var(--text-ui) / 1.2 var(--font-mono);
+}
+
+.panel-api-footer {
+  display: flex;
+  justify-content: end;
+  padding-block: 0.4rem 0.65rem;
+  color: var(--color-secondary);
+  font: 550 var(--text-caption) / 1.3 var(--font-mono);
+}
+
+.panel-api-footer span {
+  padding: 0.28rem 0.53rem;
+  border: 1px solid var(--control-border);
+  border-radius: 999px;
+  background: var(--glass-fill-subtle);
+}
+
+@media print {
+  .panel-api-footer { display: none; }
 }
 
 .skip-link {

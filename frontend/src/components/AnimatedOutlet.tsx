@@ -1,16 +1,15 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { Suspense } from 'react'
 import { useLocation, useOutlet } from 'react-router'
-import { useT } from '../i18n/useT'
+import { RouteLoading } from './RouteFeedback'
 
 export function AnimatedOutlet({ context }: { context?: unknown }) {
   const currentPage = useOutlet(context)
   const { pathname } = useLocation()
   const reducedMotion = useReducedMotion()
-  const t = useT()
 
   return (
-    <Suspense fallback={<p className="route-loading" role="status">{t('common.loading')}</p>}>
+    <Suspense fallback={<RouteLoading />}>
       <motion.div
         key={pathname}
         initial={reducedMotion ? false : { opacity: 0, y: 8 }}

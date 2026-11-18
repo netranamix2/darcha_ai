@@ -28,32 +28,41 @@ function newestFirst<T extends { created_at: string }>(items: T[]) {
   return items.sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
 
-export async function createChatSession(): Promise<ChatSession> {
+export async function createChatSession(apiFallback = false): Promise<ChatSession> {
   await pause()
   return withChatState(() => {
-    const sessionId = crypto.randomUUID()
+    const sessionId = `${apiFallback ? 'demo-' : ''}${crypto.randomUUID()}`
     sessions.set(sessionId, [])
     persistChatState()
     return { session_id: sessionId }
   })
 }
 
-export async function getChatMessages(sessionId: string): Promise<ChatMessage[]> {
+export async function getChatMessages(sessionId: string, allowMissing = false): Promise<ChatMessage[]> {
   await pause()
+  return readChatMessages(sessionId, allowMissing)
+}
+
+export function readChatMessages(sessionId: string, allowMissing: boolean): Promise<ChatMessage[]> {
   return withChatState(() => {
-    const messages = requireRecord(sessions, sessionId)
+    const messages = allowMissing ? sessions.get(sessionId) ?? [] : requireRecord(sessions, sessionId)
     deliverReadyReplies(sessionId)
     return structuredClone(messages)
   })
 }
 
-export async function sendChatMessage(sessionId: string, text: string): Promise<ChatReply> {
+export async function sendChatMessage(
+  sessionId: string, text: string, { shadow = false, allowMissing = false } = {},
+): Promise<ChatReply> {
   const started = Date.now()
   await pause()
-  return withChatState(() => recordMessage(sessionId, text, started))
+  return withChatState(() => {
+    if (allowMissing && !sessions.has(sessionId)) sessions.set(sessionId, [])
+    return recordMessage(sessionId, text, started, shadow)
+  })
 }
 
-function recordMessage(sessionId: string, text: string, started: number): ChatReply {
+function recordMessage(sessionId: string, text: string, started: number, shadow: boolean): ChatReply {
   const history = requireRecord(sessions, sessionId)
   const message = nonBlank(text)
   deliverReadyReplies(sessionId)
@@ -76,6 +85,7 @@ function recordMessage(sessionId: string, text: string, started: number): ChatRe
   }
   const record: ChatCase = {
     sessionId,
+    shadow,
     messageId: reply.message_id,
     ticketId: null,
     followUp: result.level === 'green' ? null : {
@@ -100,7 +110,9 @@ function recordMessage(sessionId: string, text: string, started: number): ChatRe
       lang: result.locale === 'ru' ? 'ru' : 'uz',
       script: result.locale === 'uz-latn' ? 'latin' : 'cyrillic',
     },
-    draft: null,
+    draft: result.level === 'yellow'
+      ? { answer: result.followUp, citations: result.citations, confidence: 0.62 }
+      : null,
     status: result.level === 'green' ? 'sent' : 'draft',
   }
   inbox.set(inboxId, item)
@@ -181,8 +193,8 @@ export async function approveResponse(id: string): Promise<void> {
   await pause()
   await withChatState(() => {
     const item = requireRecord(inbox, id)
-    if (!item.draft || item.status === 'sent' || item.ticket_id) throw new ApiError(409, 'No pending response to approve')
-    if (item.status === 'approved') return
+    if (!item.draft || item.ticket_id || item.status === 'rejected') throw new ApiError(409, 'No pending response to approve')
+    if (item.status === 'approved' || item.status === 'sent') return
 
     item.status = 'approved'
     responseSeconds.set(id, (Date.now() - Date.parse(item.created_at)) / 1000)
@@ -225,6 +237,25 @@ export async function getTickets(): Promise<Ticket[]> {
     deliverReadyReplies()
     processTicketActivity()
     return structuredClone(newestFirst(Array.from(tickets.values())))
+  })
+}
+
+export async function getTicket(id: string): Promise<Ticket> {
+  await pause()
+  return withChatState(() => {
+    deliverReadyReplies()
+    return structuredClone(requireRecord(tickets, id))
+  })
+}
+
+export function getChatCases() {
+  return withChatState(() => {
+    deliverReadyReplies()
+    const shadowCases = [...cases.entries()].filter(([, record]) => record.shadow)
+    return structuredClone({
+      inbox: shadowCases.map(([id]) => requireRecord(inbox, id)),
+      tickets: shadowCases.flatMap(([, { ticketId }]) => ticketId ? [requireRecord(tickets, ticketId)] : []),
+    })
   })
 }
 

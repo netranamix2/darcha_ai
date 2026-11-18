@@ -1,5 +1,5 @@
 import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, createChatSession, getChatMessages, sendChatMessage, subscribeToCaseChanges } from '../api/client'
 import type { ChatMessage } from '../api/types'
 
@@ -76,31 +76,45 @@ function keepUserMessageIds(messages: ChatMessage[], sent: Map<string, ChatMessa
 interface SendAttempt {
   message: ChatMessage
   thinkingSince: number
+  generation: number
 }
 
 export function usePublicChat() {
   const queryClient = useQueryClient()
   const [sessionId, setSessionId] = useState(readSession)
   const currentSession = useRef(sessionId)
+  const generation = useRef(0)
   const inFlight = useRef(false)
   const sent = useRef(new Map<string, ChatMessage>())
   const seenGreen = useRef(new Set<string>())
   const hydratedSession = useRef<string | null>(null)
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
+  const [resetKey, setResetKey] = useState(0)
 
-  function clearSession(id: string) {
+  const clearSession = useCallback((id: string | null) => {
     if (currentSession.current !== id) return
-    discardSession(id)
+    if (id) discardSession(id)
     currentSession.current = null
+    inFlight.current = false
+    sent.current.clear()
+    seenGreen.current.clear()
+    hydratedSession.current = null
+    setResetKey(++generation.current)
     setSessionId(null)
     setStreamingMessageId(null)
-  }
+  }, [])
 
   const sendRequest = useMutation({
-    mutationFn: async ({ message }: SendAttempt) => {
+    mutationFn: async ({ message, generation: requested }: SendAttempt) => {
+      function checkActive() {
+        if (requested !== generation.current) throw new ApiError(410, 'Chat session was reset')
+      }
+
+      checkActive()
       let id = currentSession.current
       if (!id) {
         const session = await createChatSession()
+        checkActive()
         id = session.session_id
         currentSession.current = id
         saveSession(id)
@@ -108,15 +122,17 @@ export function usePublicChat() {
       }
 
       await queryClient.cancelQueries({ queryKey: historyKey(id), exact: true })
+      checkActive()
       try {
         const reply = await sendChatMessage(id, message.text)
         return { id, reply }
       } catch (error) {
-        if (isExpired(error)) clearSession(id)
+        if (requested === generation.current && isExpired(error)) clearSession(id)
         throw error
       }
     },
-    onSuccess: ({ id, reply }, { message }) => {
+    onSuccess: ({ id, reply }, { message, generation: requested }) => {
+      if (requested !== generation.current) return
       sent.current.set(reply.message_id, message)
       if (reply.level === 'green') {
         setStreamingMessageId(reply.message_id)
@@ -133,13 +149,14 @@ export function usePublicChat() {
         },
       ])
     },
-    onSettled: () => {
-      inFlight.current = false
+    onSettled: (_result, _error, { generation: requested }) => {
+      if (requested === generation.current) inFlight.current = false
     },
     // A failed response does not prove that the server missed the POST.
     // TODO(backend): Add idempotency keys for retrying interrupted sends safely.
     retry: false,
   })
+  const resetSend = sendRequest.reset
 
   const history = useQuery({
     queryKey: historyKey(sessionId),
@@ -152,22 +169,24 @@ export function usePublicChat() {
   })
 
   useEffect(() => {
-    if (!sessionId) return
     return subscribeToCaseChanges((kind) => {
-      if (kind === 'report') return
-      void queryClient.invalidateQueries({ queryKey: historyKey(sessionId), exact: true })
+      const active = currentSession.current
+      if (kind === 'reset') {
+        clearSession(active)
+        resetSend()
+        if (active) queryClient.removeQueries({ queryKey: historyKey(active), exact: true })
+      } else if (kind === 'update' && active) {
+        void queryClient.invalidateQueries({ queryKey: historyKey(active), exact: true })
+      }
     })
-  }, [queryClient, sessionId])
+  }, [queryClient, clearSession, resetSend])
 
   useEffect(() => {
     if (sessionId && isExpired(history.error) && currentSession.current === sessionId) {
-      discardSession(sessionId)
-      currentSession.current = null
-      sent.current.clear()
-      setSessionId(null)
-      setStreamingMessageId(null)
+      clearSession(sessionId)
+      resetSend()
     }
-  }, [history.error, sessionId])
+  }, [clearSession, history.error, resetSend, sessionId])
 
   useLayoutEffect(() => {
     if (!sessionId || !history.data) return
@@ -182,7 +201,7 @@ export function usePublicChat() {
 
   const committed = history.data ?? emptyHistory
   const { resolvedMessageIds } = useMemo(() => conversationStatus(committed), [committed])
-  const sendFailed = sendRequest.isError && !isExpired(sendRequest.error)
+  const sendFailed = sendRequest.isError && sendRequest.variables?.generation === generation.current && !isExpired(sendRequest.error)
   const attempt = sendRequest.isPending || sendFailed ? sendRequest.variables : undefined
   const messages = useMemo(() => (
     attempt && !committed.some(({ id }) => id === attempt.message.id) ? [...committed, attempt.message] : committed
@@ -203,12 +222,13 @@ export function usePublicChat() {
     start({
       message: { id: crypto.randomUUID(), role: 'user', text: trimmed, created_at: new Date(now).toISOString() },
       thinkingSince: now,
+      generation: generation.current,
     })
   }
 
   function retry() {
     if (inFlight.current) return
-    if (sendRequest.isError && sendRequest.variables) {
+    if (sendFailed && sendRequest.variables) {
       start({ ...sendRequest.variables, thinkingSince: Date.now() })
     } else if (history.isError) {
       void history.refetch()
@@ -217,6 +237,7 @@ export function usePublicChat() {
 
   return {
     sessionId,
+    resetKey,
     messages,
     isRestoring,
     isSending: sendRequest.isPending,

@@ -55,6 +55,8 @@ function findSpikes(items: InboxItem[], dayCounts: ReadonlyMap<string, number>):
       kind: 'spike',
       text: `Bir kunda ${count} ta murojaat kelib tushdi (+${growth}%).`,
       created_at: last,
+      appeal_count: count,
+      growth_pct: growth,
     }]
   })
 }

@@ -39,7 +39,7 @@ export default function LoginPage() {
         <form className="login-form" onSubmit={submit}>
           <label>
             <span>{t('login.email')}</span>
-            <Input name="email" type="email" autoComplete="username" required />
+            <Input name="email" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} required />
           </label>
           <label>
             <span>{t('login.password')}</span>

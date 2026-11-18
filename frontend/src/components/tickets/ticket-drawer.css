@@ -274,6 +274,21 @@
 .ticket-drawer-final-answer { border-inline-start-color: var(--color-green); }
 .ticket-drawer-error { color: color-mix(in srgb, var(--color-red) 70%, var(--color-text)); font-size: var(--text-ui); font-weight: 550; }
 
+.ticket-drawer-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+}
+
+.ticket-drawer-loading {
+  display: grid;
+  gap: 0.75rem;
+  grid-auto-rows: 5rem;
+}
+
+.ticket-drawer-loading--citations { grid-auto-rows: 2.5rem; }
+
 .ticket-drawer-footer {
   display: grid;
   gap: 0.45rem;

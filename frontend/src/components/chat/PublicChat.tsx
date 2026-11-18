@@ -5,7 +5,7 @@ import type { ChatMessage } from '../../api/types'
 import { usePublicChat } from '../../hooks/usePublicChat'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
-import { Button, GlassPanel } from '../ui'
+import { Button, GlassPanel, Skeleton } from '../ui'
 import { ChatAnswer, ChatSources } from './ChatAnswer'
 import { ChatComposer } from './ChatComposer'
 import { ChatHeader, ChatOrb } from './ChatHeader'
@@ -78,7 +78,7 @@ function isAtLatest(viewport: HTMLDivElement) {
 
 export default function PublicChat() {
   const {
-    sessionId, messages, isRestoring, isSending, thinkingSince, streamingMessageId, resolvedMessageIds, error, send, retry,
+    sessionId, resetKey, messages, isRestoring, isSending, thinkingSince, streamingMessageId, resolvedMessageIds, error, send, retry,
   } = usePublicChat()
   const t = useT(chatMessages)
   const titleId = useId()
@@ -99,6 +99,11 @@ export default function PublicChat() {
     const smooth = loaded.current && !reducedMotion && element.scrollHeight > element.clientHeight
     lastContent.current = [latestId, streamingMessageId]
     loaded.current = true
+    if (!latestId) {
+      followsLatest.current = true
+      scrollDeadline.current = 0
+      setUnread(false)
+    }
 
     if (followsLatest.current) {
       scrollDeadline.current = smooth ? performance.now() + 500 : 0
@@ -106,7 +111,7 @@ export default function PublicChat() {
     } else if (latestId && changed) {
       setUnread(true)
     }
-  }, [isRestoring, isSending, latestId, reducedMotion, streamingMessageId])
+  }, [isRestoring, isSending, latestId, reducedMotion, resetKey, streamingMessageId])
 
   function handleScroll(element: HTMLDivElement) {
     if (isAtLatest(element)) {
@@ -127,7 +132,7 @@ export default function PublicChat() {
     setUnread(false)
   }
 
-  const blocked = isRestoring || isSending || error === 'restore'
+  const blocked = isRestoring || isSending || (error === 'restore' && !messages.length)
 
   return (
     <GlassPanel variant="elevated" className="public-chat" role="region" aria-labelledby={titleId} data-thinking={isSending || undefined}>
@@ -148,7 +153,11 @@ export default function PublicChat() {
           }}
         >
           {isRestoring ? (
-            <div className="chat-restoring" role="status"><ChatOrb />{t('conversation.restoring')}</div>
+            <div className="chat-restoring" role="status">
+              <span className="chat-restoring-status"><ChatOrb />{t('conversation.restoring')}</span>
+              <Skeleton className="chat-restoring-line" />
+              <Skeleton className="chat-restoring-line" />
+            </div>
           ) : messages.length || thinkingSince !== null ? (
             <>
               <ol className="chat-message-list">
@@ -181,7 +190,7 @@ export default function PublicChat() {
             <Button size="sm" variant="secondary" disabled={isSending || isRestoring} onClick={retry}>{t('conversation.retry')}</Button>
           </div>
         )}
-        <ChatComposer disabled={blocked} onSend={send} />
+        <ChatComposer key={resetKey} disabled={blocked} onSend={send} />
       </div>
     </GlassPanel>
   )

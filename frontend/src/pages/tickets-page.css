@@ -91,6 +91,7 @@
   font-size: var(--text-caption);
   font-weight: 580;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .ticket-metric-label svg {
@@ -247,6 +248,7 @@
 .tickets-no-matches,
 .tickets-page-state {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem;
   padding: 0.65rem 0.9rem;
@@ -270,6 +272,8 @@
   border-radius: var(--radius-panel-subtle);
 }
 
+.tickets-staff-loading { height: 1.85rem; max-width: 15rem; }
+
 @media (max-width: 1080px) {
   .tickets-filters {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -282,21 +286,20 @@
 @media (max-width: 800px) {
   .tickets-page { padding-top: 1.25rem; }
   .tickets-stats {
-    grid-template-columns: repeat(5, minmax(8.7rem, 1fr));
-    overflow-x: auto;
-    padding: 0.12rem 0.08rem 0.45rem;
-    margin-bottom: 0.5rem;
-    scroll-snap-type: x proximity;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.25rem), 1fr));
   }
-  .ticket-metric { scroll-snap-align: start; }
 }
 
 @media (max-width: 570px) {
+  .tickets-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .tickets-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .ticket-filter-mine { justify-self: start; }
   .tickets-no-matches { flex-wrap: wrap; }
+  .ticket-metric:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

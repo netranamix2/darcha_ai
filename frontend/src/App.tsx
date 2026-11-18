@@ -2,7 +2,8 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
 import { AuroraBackground } from './components/AuroraBackground'
 import { PublicLayout } from './components/PublicLayout'
-import { useT } from './i18n/useT'
+import { RouteBoundary, RouteLoading } from './components/RouteFeedback'
+import { RouteMetadata } from './components/RouteMetadata'
 import { readStaffRole, staffLanding } from './lib/staff-landing'
 
 const PublicChatPage = lazy(() => import('./pages/PublicChatPage'))
@@ -19,32 +20,33 @@ function PanelStart() {
 }
 
 export default function App() {
-  const t = useT()
-
   return (
     <>
       <AuroraBackground />
-      <Routes>
-        <Route element={<PublicLayout />}>
-          <Route index element={<PublicChatPage />} />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="ui" element={<UiPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-        <Route
-          path="panel"
-          element={
-            <Suspense fallback={<p className="route-loading" role="status">{t('common.loading')}</p>}>
-              <PanelLayout />
-            </Suspense>
-          }
-        >
-          <Route index element={<PanelStart />} />
-          <Route path="inbox" element={<InboxPage />} />
-          <Route path="tickets" element={<TicketsPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-        </Route>
-      </Routes>
+      <RouteMetadata />
+      <RouteBoundary>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route index element={<PublicChatPage />} />
+            <Route path="login" element={<LoginPage />} />
+            <Route path="ui" element={<UiPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+          <Route
+            path="panel"
+            element={
+              <Suspense fallback={<RouteLoading />}>
+                <PanelLayout />
+              </Suspense>
+            }
+          >
+            <Route index element={<PanelStart />} />
+            <Route path="inbox" element={<InboxPage />} />
+            <Route path="tickets" element={<TicketsPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+          </Route>
+        </Routes>
+      </RouteBoundary>
     </>
   )
 }

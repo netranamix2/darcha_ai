@@ -156,7 +156,7 @@ const russian = {
   'conversation.suggestContract': 'Можно ли оплатить контракт частями?',
   'conversation.suggestCertification': 'Когда проходит аттестация педагогов?',
   'conversation.suggestRestoration': 'Как восстановиться на учёбе?',
-  'conversation.placeholder': 'Напишите свой вопрос…',
+  'conversation.placeholder': 'Задайте вопрос…',
   'conversation.send': 'Отправить сообщение',
   'conversation.mic': 'Голосовое сообщение',
   'conversation.soon': 'Скоро',

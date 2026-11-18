@@ -110,6 +110,8 @@
 .analytics-kpi-change[data-tone="attention"] { color: var(--color-amber); }
 .analytics-kpi-change[data-tone="bad"] { color: color-mix(in srgb, var(--color-red) 77%, var(--color-text)); }
 
+.analytics-kpi-comparison-loading { width: 6rem; height: 0.85rem; }
+
 .analytics-kpi-baseline {
   color: var(--color-secondary);
   font-size: 0.68rem;
@@ -203,13 +205,6 @@
   max-width: 14rem;
   aspect-ratio: 1;
   justify-self: center;
-}
-
-.analytics-donut-placeholder {
-  position: absolute;
-  inset: 8%;
-  border: clamp(0.6rem, 1.5vw, 1.15rem) solid var(--color-border);
-  border-radius: 50%;
 }
 
 .analytics-chart-ring {

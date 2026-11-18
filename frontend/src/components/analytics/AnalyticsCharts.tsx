@@ -1,16 +1,17 @@
-import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, ChartNoAxesCombined, ChartPie, MapPin, MessagesSquare } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, ChartNoAxesCombined, ChartPie, CircleAlert, MapPin, MessagesSquare } from 'lucide-react'
 import { useId, useMemo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, Pie, PieChart, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { BarShapeProps, TooltipContentProps } from 'recharts'
 import type { AnalyticsSummary, Channel, Level, Sentiment } from '../../api/types'
-import { analyticsChartMessages, analyticsTopicNames } from '../../i18n/analytics-charts'
-import { chatMessages } from '../../i18n/chat'
+import { analyticsChartMessages } from '../../i18n/analytics-charts'
+import { formatChatDate } from '../../i18n/chat'
 import { localeCodes } from '../../i18n/locales'
 import type { Language } from '../../i18n/locales'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
-import { GlassPanel } from '../ui'
+import { localizeCaseRegion, localizeCaseTopic } from '../../lib/case-labels'
+import { Button, GlassPanel, Skeleton } from '../ui'
 import './analytics-charts.css'
 
 const levels = [
@@ -30,13 +31,6 @@ const channelNames = {
   web: 'charts.web',
   instagram: 'charts.instagram',
 } as const satisfies Record<Channel, keyof typeof analyticsChartMessages['uz-latn']>
-
-const regionKeys = [
-  'conversation.regionAndijan', 'conversation.regionBukhara', 'conversation.regionFergana', 'conversation.regionJizzakh',
-  'conversation.regionKarakalpakstan', 'conversation.regionKashkadarya', 'conversation.regionKhorezm', 'conversation.regionNamangan',
-  'conversation.regionNavoi', 'conversation.regionSamarkand', 'conversation.regionSirdarya', 'conversation.regionSurkhandarya',
-  'conversation.regionTashkent', 'conversation.regionTashkentCity',
-] as const
 
 type Rank = { key: string; label: string; count: number; growth?: number }
 const chartGrid = 'var(--color-border)'
@@ -70,7 +64,7 @@ function ChartTooltip({ active, payload, label, locale, dateLabel }: Pick<Toolti
   locale: string
   dateLabel?: (value: string) => string
 }) {
-  if (!active || !payload.length) return null
+  if (!active || !payload?.length) return null
   const formatter = new Intl.NumberFormat(locale)
   const caption = label !== undefined ? dateLabel?.(String(label)) ?? String(label) : null
 
@@ -140,13 +134,11 @@ function LevelChart({ summary, locale }: { summary: AnalyticsSummary; locale: st
     count: summary.by_level.find((row) => row.level === level)?.count ?? 0,
     fill: color,
   }))
-  const hasData = data.some(({ count }) => count > 0)
-
   return (
     <ChartCard title={title} icon={<ChartPie size={17} />}>
-      <div className="analytics-donut-layout">
-        <div className="analytics-donut-plot">
-          {hasData ? (
+      {data.some(({ count }) => count > 0) ? (
+        <div className="analytics-donut-layout">
+          <div className="analytics-donut-plot">
             <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <PieChart accessibilityLayer aria-label={title}>
                 <Pie className="analytics-chart-ring" data={data} dataKey="count" nameKey="name" startAngle={90} endAngle={-270}
@@ -154,31 +146,37 @@ function LevelChart({ summary, locale }: { summary: AnalyticsSummary; locale: st
                 <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} wrapperStyle={tooltipStyle} isAnimationActive={false} />
               </PieChart>
             </ResponsiveContainer>
-          ) : <div className="analytics-donut-placeholder" aria-hidden="true" />}
-          <div className="analytics-donut-center">
-            <strong>{formatter.format(summary.ai_resolved_pct)}%</strong>
-            <span>{t('charts.shortAi')}</span>
+            <div className="analytics-donut-center">
+              <strong>{formatter.format(summary.ai_resolved_pct)}%</strong>
+              <span>{t('charts.shortAi')}</span>
+            </div>
           </div>
+          <ul className="analytics-chart-levels">
+            {data.map(({ level, name, count, fill }) => (
+              <li key={level}>
+                <span className="analytics-chart-dot" style={{ '--analytics-series-color': fill } as CSSProperties} aria-hidden="true" />
+                <span>{name}</span>
+                <strong>{formatter.format(count)}</strong>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="analytics-chart-levels">
-          {data.map(({ level, name, count, fill }) => (
-            <li key={level}>
-              <span className="analytics-chart-dot" style={{ '--analytics-series-color': fill } as CSSProperties} aria-hidden="true" />
-              <span>{name}</span>
-              <strong>{formatter.format(count)}</strong>
-            </li>
-          ))}
-        </ul>
-      </div>
+      ) : <EmptyChart />}
     </ChartCard>
   )
 }
 
-function SentimentChart({ data, locale }: { data: AnalyticsSummary['sentiment_daily']; locale: string }) {
+function SentimentChart({ data, language, loading, onRetry }: {
+  data: AnalyticsSummary['sentiment_daily']
+  language: Language
+  loading: boolean
+  onRetry?: () => void
+}) {
   const t = useT(analyticsChartMessages)
   const id = useId()
   const title = t('charts.sentiment')
-  const formatDate = useMemo(() => new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone: 'Asia/Tashkent' }), [locale])
+  const locale = localeCodes[language]
+  const formatDate = useMemo(() => new Intl.DateTimeFormat(locale, { month: 'numeric', day: 'numeric', timeZone: 'Asia/Tashkent' }), [locale])
   const numeric = new Intl.NumberFormat(locale, { notation: 'compact' })
   const chronological = useMemo(() => [...data].sort((a, b) => a.date.localeCompare(b.date)).slice(-14), [data])
 
@@ -189,7 +187,16 @@ function SentimentChart({ data, locale }: { data: AnalyticsSummary['sentiment_da
 
   return (
     <ChartCard title={title} detail={t('charts.last14')} icon={<ChartNoAxesCombined size={17} />} className="analytics-sentiment-card">
-      {chronological.some(({ positive, neutral, negative }) => positive + neutral + negative > 0) ? (
+      {onRetry && (
+        <div className="analytics-load-error" role="alert">
+          <CircleAlert size={18} aria-hidden="true" />
+          <p>{t('charts.sentimentError')}</p>
+          <Button variant="secondary" size="sm" onClick={onRetry}>{t('charts.retry')}</Button>
+        </div>
+      )}
+      {loading ? (
+        <div role="status" aria-label={t('common.loading')}><Skeleton className="analytics-loading-chart" /></div>
+      ) : chronological.some(({ positive, neutral, negative }) => positive + neutral + negative > 0) ? (
         <>
           <div className="analytics-sentiment-plot">
             <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
@@ -206,7 +213,7 @@ function SentimentChart({ data, locale }: { data: AnalyticsSummary['sentiment_da
                 <XAxis dataKey="date" tickFormatter={tickDate} minTickGap={26} tick={axisTick} tickMargin={10} tickLine={false} axisLine={false} />
                 <YAxis tick={axisTick} tickMargin={4} tickLine={false} axisLine={false} width={31} tickCount={4} allowDecimals={false}
                   tickFormatter={(value: number) => numeric.format(value)} />
-                <Tooltip content={(props) => <ChartTooltip {...props} dateLabel={tickDate} locale={locale} />}
+                <Tooltip content={(props) => <ChartTooltip {...props} dateLabel={(value) => formatChatDate(new Date(value), language) ?? value} locale={locale} />}
                   cursor={{ stroke: 'var(--color-secondary)', strokeDasharray: '3 4', opacity: 0.7 }} wrapperStyle={tooltipStyle} isAnimationActive={false} />
                 {sentimentSeries.map(({ key, label, color }) => (
                   <Area key={key} className="analytics-chart-area" type="monotone" dataKey={key} name={t(label)} stackId="sentiment"
@@ -224,7 +231,7 @@ function SentimentChart({ data, locale }: { data: AnalyticsSummary['sentiment_da
             ))}
           </ul>
         </>
-      ) : <EmptyChart />}
+      ) : !onRetry && <EmptyChart />}
     </ChartCard>
   )
 }
@@ -291,20 +298,12 @@ function RankedBars({ rows, title, icon, locale, unspecified, region = false }: 
   )
 }
 
-function localizedTopic(name: string, language: Language) {
-  if (language === 'uz-latn') return name
-  return analyticsTopicNames[name]?.[language === 'uz-cyrl' ? 0 : 1] ?? name
-}
-
-function localizedRegion(name: string, language: Language) {
-  const translationKey = regionKeys.find((key) => chatMessages['uz-latn'][key] === name)
-  return translationKey ? chatMessages[language][translationKey] : name
-}
-
-export function AnalyticsCharts({ summary, previous, sentiment }: {
+export function AnalyticsCharts({ summary, previous, sentiment, sentimentLoading, onSentimentRetry }: {
   summary: AnalyticsSummary
   previous?: AnalyticsSummary
-  sentiment: AnalyticsSummary['sentiment_daily']
+  sentiment?: AnalyticsSummary['sentiment_daily']
+  sentimentLoading: boolean
+  onSentimentRetry?: () => void
 }) {
   const t = useT(analyticsChartMessages)
   const { language } = useLanguage()
@@ -313,10 +312,10 @@ export function AnalyticsCharts({ summary, previous, sentiment }: {
   const topics = [...summary.top_topics].sort((a, b) => b.count - a.count).slice(0, 5).map((row) => {
     const before = previousTopics.get(row.topic)
     const growth = row.growth_pct ?? (before ? ((row.count - before) / before) * 100 : undefined)
-    return { key: row.topic, label: localizedTopic(row.topic, language), count: row.count, growth }
+    return { key: row.topic, label: localizeCaseTopic(row.topic, language), count: row.count, growth }
   })
   const regions = summary.by_region.flatMap(({ region, count }) => region?.trim()
-    ? [{ key: region, label: localizedRegion(region, language), count }]
+    ? [{ key: region, label: localizeCaseRegion(region, language), count }]
     : []).sort((a, b) => b.count - a.count)
   const unspecified = summary.by_region.filter(({ region }) => !region?.trim()).reduce((total, { count }) => total + count, 0)
 
@@ -324,7 +323,7 @@ export function AnalyticsCharts({ summary, previous, sentiment }: {
     <div className="analytics-charts-grid">
       <ChannelChart byChannel={summary.by_channel} locale={locale} />
       <LevelChart summary={summary} locale={locale} />
-      <SentimentChart data={sentiment} locale={locale} />
+      <SentimentChart data={sentiment ?? []} language={language} loading={sentimentLoading} onRetry={onSentimentRetry} />
       <RankedBars rows={topics} title={t('charts.topics')} icon={<MessagesSquare size={17} />} locale={locale} />
       <RankedBars rows={regions} title={t('charts.regions')} icon={<MapPin size={17} />} locale={locale} unspecified={unspecified} region />
     </div>

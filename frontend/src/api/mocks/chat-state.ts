@@ -19,6 +19,7 @@ export interface ChatCase {
   messageId: string
   ticketId: string | null
   followUp: FollowUp | null
+  shadow?: boolean
 }
 
 interface StoredCase extends ChatCase {
@@ -107,6 +108,7 @@ function isMessage(value: unknown): value is ChatMessage {
 
 function isCase(value: unknown): value is ChatCase {
   if (!isRecord(value) || typeof value.sessionId !== 'string' || typeof value.messageId !== 'string' ||
+    (value.shadow !== undefined && typeof value.shadow !== 'boolean') ||
     (value.ticketId !== null && typeof value.ticketId !== 'string')) return false
   const { followUp } = value
   return followUp === null || (isRecord(followUp) && typeof followUp.availableAt === 'number' &&

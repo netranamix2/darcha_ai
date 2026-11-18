@@ -6,7 +6,7 @@ import { analyticsChartMessages } from '../../i18n/analytics-charts'
 import { localeCodes } from '../../i18n/locales'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
-import { GlassPanel, ViewportCounter } from '../ui'
+import { GlassPanel, Skeleton, ViewportCounter } from '../ui'
 import './analytics-charts.css'
 
 const metrics = [
@@ -84,7 +84,11 @@ function MetricChange({ metric, value, previous, locale }: {
   )
 }
 
-export function AnalyticsKpis({ summary, previous }: { summary: AnalyticsSummary; previous?: AnalyticsSummary }) {
+export function AnalyticsKpis({ summary, previous, comparisonLoading }: {
+  summary: AnalyticsSummary
+  previous?: AnalyticsSummary
+  comparisonLoading: boolean
+}) {
   const t = useT(analyticsChartMessages)
   const { language } = useLanguage()
   const locale = localeCodes[language]
@@ -111,7 +115,11 @@ export function AnalyticsKpis({ summary, previous }: { summary: AnalyticsSummary
             </span>
             <Sparkline values={metricTrend(key, summary, previous)} />
           </dd>
-          <dd className="analytics-kpi-foot"><MetricChange metric={key} value={summary[key]} previous={previous?.[key]} locale={locale} /></dd>
+          <dd className="analytics-kpi-foot">
+            {comparisonLoading ? (
+              <div role="status" aria-label={t('common.loading')}><Skeleton className="analytics-kpi-comparison-loading" /></div>
+            ) : <MetricChange metric={key} value={summary[key]} previous={previous?.[key]} locale={locale} />}
+          </dd>
         </GlassPanel>
       ))}
     </dl>

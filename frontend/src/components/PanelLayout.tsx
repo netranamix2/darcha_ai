@@ -15,6 +15,7 @@ import { getTicketStatus } from '../lib/ticket-time'
 import { AnimatedOutlet } from './AnimatedOutlet'
 import { Brand } from './Brand'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { PanelApiFooter } from './PanelApiFooter'
 import { PanelSearch } from './PanelSearch'
 import { SkipLink } from './SkipLink'
 import { Avatar, Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger, GlassPanel, IconButton, Toast, ToastProvider, ToastViewport } from './ui'
@@ -148,6 +149,7 @@ export default function PanelLayout() {
         <main id="main-content" className="panel-main" tabIndex={-1}>
           <AnimatedOutlet context={notify} />
         </main>
+        {import.meta.env.DEV && <PanelApiFooter />}
       </div>
     </div>
   )

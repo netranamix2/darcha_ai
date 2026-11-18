@@ -1,6 +1,7 @@
 .public-chat {
   --chat-pad: clamp(0.875rem, 2vw, 1.55rem);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
   height: var(--public-chat-height, 40rem);
@@ -52,6 +53,7 @@
 }
 
 .chat-region {
+  min-width: 0;
   max-width: 48%;
   gap: 0.4rem;
 }
@@ -221,14 +223,30 @@
 }
 
 .chat-restoring {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.65rem;
   min-height: 100%;
   padding: 1.1rem var(--chat-pad);
   color: var(--color-secondary);
   font-size: var(--text-ui);
+}
+
+.chat-restoring-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.35rem;
+}
+
+.chat-restoring-line {
+  width: min(100%, 15rem);
+  height: 0.85rem;
+}
+
+.chat-restoring-line:last-child {
+  width: min(76%, 11.5rem);
 }
 
 .chat-message-list {
@@ -802,7 +820,12 @@
 @media (max-width: 500px) {
   .public-chat { height: min(39rem, max(32rem, calc(100svh - 5.1rem))); }
   .chat-header { gap: 0.55rem; min-height: 4.45rem; }
-  .chat-region { padding-inline: 0.52rem; }
+  .chat-region { padding: 0.45rem 0.52rem; }
+  .chat-region .chat-region-selected {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: start;
+  }
   .chat-prompt { justify-content: flex-start; gap: 0.85rem; padding-block: 1.05rem; }
   .chat-orb--large { width: 3.35rem; height: 3.35rem; }
   .chat-prompts { gap: 0.45rem; }

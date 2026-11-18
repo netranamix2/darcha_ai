@@ -245,15 +245,20 @@ export function FaqReportSection() {
       </header>
 
       {rebuild.isPending && <ReportProgress />}
-      {rebuild.isError && <p className="faq-report-feedback faq-report-error" role="alert">{t('faq.rebuildError')}</p>}
+      {rebuild.isError && (
+        <div className="faq-report-feedback faq-report-error" role="alert">
+          <p>{t('faq.rebuildError')}</p>
+          <Button variant="secondary" size="sm" onClick={() => rebuild.mutate()}>{t('faq.retry')}</Button>
+        </div>
+      )}
 
-      {reportQuery.isLoading && (
+      {reportQuery.isPending && (
         <div className="faq-report-grid faq-report-loading" role="status">
           <span className="sr-only">{t('faq.loading')}</span>
           <Skeleton /><Skeleton />
         </div>
       )}
-      {!report && !reportQuery.isLoading && !rebuild.isPending && (
+      {reportQuery.isError && !rebuild.isPending && (!missing || !report) && (
         <GlassPanel blur={false} className="faq-report-feedback" role={missing ? 'status' : 'alert'}>
           <span>{t(missing ? 'faq.noReport' : 'faq.loadError')}</span>
           {!missing && <Button variant="secondary" size="sm" onClick={() => void reportQuery.refetch()}>{t('faq.retry')}</Button>}

@@ -104,6 +104,8 @@ export interface AnalyticsAlert {
   kind: 'spike' | 'fraud'
   text: string
   created_at: string
+  appeal_count?: number
+  growth_pct?: number
   // TODO(backend): include the linked Inbox item on individual alerts.
   inbox_id?: string | null
 }

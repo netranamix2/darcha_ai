@@ -11,7 +11,7 @@ import { useT } from '../../i18n/useT'
 import { formatDayDuration, formatTicketDate, getDeadlineDays, getTicketStatus } from '../../lib/ticket-time'
 import {
   Button, Dropdown, DropdownContent, DropdownRadioGroup, DropdownRadioItem,
-  DropdownTrigger, IconButton, Input, Textarea,
+  DropdownTrigger, IconButton, Input, Skeleton, Textarea,
 } from '../ui'
 
 type PickerOption<Value> = { value: Value; label: string }
@@ -228,6 +228,7 @@ export function TicketCitationPicker({ disabled, onPick, onReturnToEditor }: {
     queryFn: getKnowledgeBase,
     enabled: open,
     staleTime: 60_000,
+    retry: false,
   })
   const needle = citationSearch(query.trim())
   const results = (source.data ?? []).filter(({ ref, title }) => citationSearch(`${title} ${ref}`).includes(needle))
@@ -269,7 +270,11 @@ export function TicketCitationPicker({ disabled, onPick, onReturnToEditor }: {
             placeholder={t('drawer.searchSources')}
             aria-label={t('drawer.searchSources')}
           />
-          {source.isPending && <p className="ticket-drawer-muted" role="status">{t('common.loading')}</p>}
+          {source.isPending && (
+            <div className="ticket-drawer-loading ticket-drawer-loading--citations" role="status" aria-label={t('common.loading')}>
+              <Skeleton /><Skeleton /><Skeleton />
+            </div>
+          )}
           {source.isError && (
             <div className="ticket-drawer-citation-error">
               <p className="ticket-drawer-error" role="alert">{t('drawer.sourceError')}</p>

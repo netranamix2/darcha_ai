@@ -124,26 +124,28 @@ function TicketOriginal({ ticket }: { ticket: Ticket }) {
 function SimilarTickets({ ticket, disabled, onReuse }: {
   ticket: Ticket
   disabled: boolean
-  onReuse: (answer: string) => void
+  onReuse?: (answer: string) => void
 }) {
   const t = useT(ticketDrawerMessages)
+
+  if (!ticket.similar_cases.length) return null
 
   return (
     <section className="ticket-drawer-section">
       <h3><Files size={16} aria-hidden="true" /> {t('drawer.similar')}</h3>
-      {ticket.similar_cases.length ? (
-        <ul className="ticket-drawer-similar-list">
-          {ticket.similar_cases.slice(0, 3).map((item) => (
-            <li key={item.number}>
-              <div><strong>{formatNumber(item.number)}</strong><p>{item.summary}</p></div>
+      <ul className="ticket-drawer-similar-list">
+        {ticket.similar_cases.slice(0, 3).map((item) => (
+          <li key={item.number}>
+            <div><strong>{formatNumber(item.number)}</strong><p>{item.summary}</p></div>
+            {onReuse && (
               <Button variant="secondary" size="sm" disabled={disabled || !item.answer}
                 onClick={() => item.answer && onReuse(item.answer)}>
                 {t('drawer.reuse')}
               </Button>
-            </li>
-          ))}
-        </ul>
-      ) : <p className="ticket-drawer-muted">{t('drawer.noSimilar')}</p>}
+            )}
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }
@@ -153,6 +155,7 @@ interface TicketDrawerProps {
   staff: StaffMember[]
   now: number
   detailLoading: boolean
+  readOnly: boolean
   detailError?: () => void
   staffUnavailable: boolean
   staffError?: () => void
@@ -161,7 +164,7 @@ interface TicketDrawerProps {
   onSent: (channel: Channel) => void
 }
 
-export function TicketDrawer({ ticket, staff, now, detailLoading, detailError, staffUnavailable, staffError, onClose, onUpdated, onSent }: TicketDrawerProps) {
+export function TicketDrawer({ ticket, staff, now, detailLoading, readOnly, detailError, staffUnavailable, staffError, onClose, onUpdated, onSent }: TicketDrawerProps) {
   const t = useT(ticketDrawerMessages)
   const { language } = useLanguage()
   const [open, setOpen] = useState(true)
@@ -197,10 +200,14 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, detailError, s
   const assignee = assignees.find(({ value }) => value === (ticket.assignee_id ?? ''))
 
   useEffect(() => {
-    if (detailLoading || viewedTicketId.current === ticket.id || ticket.events?.some((event) => event.type === 'viewed')) return
+    if (readOnly || detailLoading || viewedTicketId.current === ticket.id || ticket.events?.some((event) => event.type === 'viewed')) return
     viewedTicketId.current = ticket.id
     markViewed(ticket.id)
-  }, [detailLoading, markViewed, ticket.events, ticket.id])
+  }, [detailLoading, markViewed, readOnly, ticket.events, ticket.id])
+
+  function save(patch: TicketPatch) {
+    if (!readOnly) update.mutate(patch)
+  }
 
   function insert(text: string, focus = true) {
     if (!text.trim()) return
@@ -252,16 +259,16 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, detailError, s
             </div>
             <div className="ticket-drawer-fields">
               <TicketFieldPicker<Ticket['status']> label={t('drawer.status')} value={status} selectedLabel={t(`drawer.state.${status}`)}
-                options={statusItems} disabled={busy} tone={status} onChange={(next) => update.mutate({ status: next })} />
+                options={statusItems} disabled={busy} readOnly={readOnly} tone={status} onChange={(next) => save({ status: next })} />
               <TicketFieldPicker label={t('drawer.priority')} value={ticket.priority} selectedLabel={t(`drawer.priority.${ticket.priority}`)}
-                options={priorityItems} disabled={busy} tone={ticket.priority} onChange={(priority) => update.mutate({ priority })} />
+                options={priorityItems} disabled={busy} readOnly={readOnly} tone={ticket.priority} onChange={(priority) => save({ priority })} />
               <TicketFieldPicker label={t('drawer.assignee')} value={ticket.assignee_id ?? ''} selectedLabel={assignee?.label ?? t('drawer.unassigned')}
-                options={assignees} disabled={busy || staffUnavailable} onChange={(value) => update.mutate({ assignee_id: value || null })} />
+                options={assignees} disabled={busy || staffUnavailable} readOnly={readOnly} onChange={(value) => save({ assignee_id: value || null })} />
             </div>
             {update.isError && (
               <div className="ticket-drawer-state" role="alert">
                 <p className="ticket-drawer-error">{t('drawer.saveError')}</p>
-                <Button variant="secondary" size="sm" disabled={busy} onClick={() => update.variables && update.mutate(update.variables)}>{t('drawer.retry')}</Button>
+                <Button variant="secondary" size="sm" disabled={busy} onClick={() => update.variables && save(update.variables)}>{t('drawer.retry')}</Button>
               </div>
             )}
             {staffError && (
@@ -287,16 +294,16 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, detailError, s
                 {status === 'overdue' && (
                   <p className="ticket-drawer-overdue"><CircleAlert size={17} aria-hidden="true" /> {t('drawer.overdueBanner')}</p>
                 )}
-                <TicketDeadline ticket={displayTicket} now={now} disabled={busy} onUpdated={onUpdated} />
+                <TicketDeadline ticket={displayTicket} now={now} disabled={busy} readOnly={readOnly} onUpdated={onUpdated} />
                 <TicketTimeline ticket={ticket} staff={staff} />
                 <TicketOriginal ticket={ticket} />
-                <SimilarTickets ticket={ticket} disabled={busy || Boolean(sent)} onReuse={insert} />
-                <section className="ticket-drawer-section ticket-drawer-answer">
+                <SimilarTickets ticket={ticket} disabled={busy || Boolean(sent)} onReuse={readOnly ? undefined : insert} />
+                {(!readOnly || sent) && <section className="ticket-drawer-section ticket-drawer-answer">
                   <h3><Send size={16} aria-hidden="true" /> {sent ? t('drawer.answer') : <label htmlFor={answerId}>{t('drawer.answer')}</label>}</h3>
                   {sent ? <p className="ticket-drawer-original ticket-drawer-final-answer">{sent}</p> : (
                     <form id={formId} onSubmit={(event) => {
                       event.preventDefault()
-                      if (answer.trim() && !busy && !sent) send.mutate(answer.trim())
+                      if (!readOnly && answer.trim() && !busy && !sent) send.mutate(answer.trim())
                     }}>
                       <div className="ticket-drawer-editor-tools">
                         <Button variant="secondary" size="sm" disabled={busy || !ticket.draft_answer}
@@ -322,11 +329,11 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, detailError, s
                       </div>
                     </form>
                   )}
-                </section>
+                </section>}
               </>
             )}
           </div>
-          <footer className="ticket-drawer-footer">
+          {(!readOnly || sent) && <footer className="ticket-drawer-footer">
             {sent ? (
               <p className="ticket-drawer-sent" data-recent={Boolean(justSent) || undefined} role={justSent ? 'status' : undefined}>
                 <span aria-hidden="true" className="ticket-drawer-drawn-check" />
@@ -341,7 +348,7 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, detailError, s
                 </Button>
               </>
             )}
-          </footer>
+          </footer>}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

@@ -1,17 +1,18 @@
 import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import { staffMessages } from '../i18n/staff'
 import { useT } from '../i18n/useT'
-import { panelSections } from '../lib/panel-sections'
+import type { PanelSection } from '../lib/panel-sections'
 import { Input } from './ui'
 
-export function PanelSearch() {
+export function PanelSearch({ sections }: { sections: readonly PanelSection[] }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
-  const t = useT()
+  const t = useT(staffMessages)
   const navigate = useNavigate()
   const searchTerm = query.trim().toLocaleLowerCase()
-  const sections = panelSections.filter(({ label }) => t(label).toLocaleLowerCase().includes(searchTerm))
+  const matches = sections.filter(({ label }) => t(label).toLocaleLowerCase().includes(searchTerm))
 
   function closeResults() {
     setQuery('')
@@ -30,9 +31,9 @@ export function PanelSearch() {
       }}
       onSubmit={(event) => {
         event.preventDefault()
-        const match = sections[0]
+        const match = matches[0]
         if (!searchTerm || !match) return
-        void navigate(`/panel/${match.id}`)
+        void navigate(match.to)
         closeResults()
       }}
     >
@@ -51,11 +52,11 @@ export function PanelSearch() {
       />
       {open && searchTerm && (
         <div className="panel-search-results">
-          {sections.length ? (
+          {matches.length ? (
             <ul>
-              {sections.map(({ id, label, icon: SectionIcon }) => (
+              {matches.map(({ id, to, label, icon: SectionIcon }) => (
                 <li key={id}>
-                  <Link to={`/panel/${id}`} onClick={closeResults}>
+                  <Link to={to} onClick={closeResults}>
                     <SectionIcon size={16} aria-hidden="true" />
                     {t(label)}
                   </Link>

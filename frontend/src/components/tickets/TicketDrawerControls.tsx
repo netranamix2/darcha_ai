@@ -17,7 +17,7 @@ import {
 type PickerOption<Value> = { value: Value; label: string }
 
 export function TicketFieldPicker<Value extends string>({
-  label, value, selectedLabel, options, onChange, disabled, tone,
+  label, value, selectedLabel, options, onChange, disabled, readOnly, tone,
 }: {
   label: string
   value: Value
@@ -25,12 +25,13 @@ export function TicketFieldPicker<Value extends string>({
   options: PickerOption<Value>[]
   onChange: (value: Value) => void
   disabled: boolean
+  readOnly?: boolean
   tone?: string
 }) {
   return (
     <div className="ticket-drawer-field">
       <span className="ticket-drawer-field-label">{label}</span>
-      <Dropdown modal={false}>
+      {readOnly ? <span className="ticket-drawer-field-current">{selectedLabel}</span> : <Dropdown modal={false}>
         <DropdownTrigger asChild>
           <Button
             variant="secondary"
@@ -56,7 +57,7 @@ export function TicketFieldPicker<Value extends string>({
             ))}
           </DropdownRadioGroup>
         </DropdownContent>
-      </Dropdown>
+      </Dropdown>}
     </div>
   )
 }
@@ -171,10 +172,11 @@ function DeadlineExtension({ ticket, disabled, onUpdated }: {
   )
 }
 
-export function TicketDeadline({ ticket, now, disabled, onUpdated }: {
+export function TicketDeadline({ ticket, now, disabled, readOnly, onUpdated }: {
   ticket: Ticket
   now: number
   disabled: boolean
+  readOnly: boolean
   onUpdated: () => void
 }) {
   const t = useT(ticketDrawerMessages)
@@ -198,7 +200,7 @@ export function TicketDeadline({ ticket, now, disabled, onUpdated }: {
             {status !== 'answered' && Number.isFinite(days) && <span>{remaining}</span>}
           </div>
         </div>
-        {status !== 'answered' && <DeadlineExtension ticket={ticket} disabled={disabled} onUpdated={onUpdated} />}
+        {!readOnly && status !== 'answered' && <DeadlineExtension ticket={ticket} disabled={disabled} onUpdated={onUpdated} />}
       </div>
       <a href={appealLaw} className="ticket-drawer-legal" target="_blank" rel="noopener noreferrer">
         <FileText size={15} aria-hidden="true" />

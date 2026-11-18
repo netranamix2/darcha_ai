@@ -1,0 +1,13 @@
+@media (max-width: 800px) {
+  .panel-nav {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .panel-shell[data-staff-role="manager"] .panel-nav-text {
+    display: none;
+  }
+}

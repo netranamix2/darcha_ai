@@ -121,6 +121,10 @@
   min-width: 0;
 }
 
+.analytics-operations > :only-child {
+  grid-column: 1 / -1;
+}
+
 .analytics-savings,
 .analytics-alerts {
   min-width: 0;

@@ -1,7 +1,7 @@
 import type { Language } from './locales'
 
 const latin = {
-  'tickets.subtitle': 'AI javob bera olmagan murojaatlar — mutaxassislar uchun',
+  'tickets.subtitle': 'Shaxsiy murojaatlar. Javob odatda 15 kun ichida fuqaro murojaat qilgan kanal orqali yuboriladi.',
   'tickets.new': 'Yangi',
   'tickets.inProgress': 'Jarayonda',
   'tickets.dueSoon': 'Muddati yaqin',
@@ -53,7 +53,7 @@ const latin = {
 export const ticketPageMessages = {
   'uz-latn': latin,
   'uz-cyrl': {
-    'tickets.subtitle': 'AI жавоб бера олмаган мурожаатлар — мутахассислар учун',
+    'tickets.subtitle': 'Шахсий мурожаатлар. Жавоб одатда 15 кун ичида фуқаро мурожаат қилган канал орқали юборилади.',
     'tickets.new': 'Янги',
     'tickets.inProgress': 'Жараёнда',
     'tickets.dueSoon': 'Муддати яқин',
@@ -102,7 +102,7 @@ export const ticketPageMessages = {
     'tickets.toastViewport': 'Билдиришномалар ({hotkey})',
   },
   ru: {
-    'tickets.subtitle': 'Обращения, которые ИИ передал специалистам',
+    'tickets.subtitle': 'Индивидуальные обращения. Обычно ответ нужно дать в течение 15 дней. Он поступит гражданину в тот же канал.',
     'tickets.new': 'Новые',
     'tickets.inProgress': 'В работе',
     'tickets.dueSoon': 'Срок близко',

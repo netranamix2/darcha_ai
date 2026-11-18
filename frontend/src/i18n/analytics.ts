@@ -1,7 +1,7 @@
 import type { Language } from './locales'
 
 const latin = {
-  'analytics.subtitle': 'Murojaatlar boʻyicha haftalik manzara',
+  'analytics.subtitle': 'Murojaatlar hajmi, AI hal qilgan ulush, hududlar va mavzular.',
   'analytics.period': 'Hisobot davri',
   'analytics.periodDays': '{days} kun',
   'analytics.updated': 'Yangilandi',
@@ -29,7 +29,7 @@ const latin = {
 export const analyticsMessages = {
   'uz-latn': latin,
   'uz-cyrl': {
-    'analytics.subtitle': 'Мурожаатлар бўйича ҳафталик манзара',
+    'analytics.subtitle': 'Мурожаатлар ҳажми, AI ҳал қилган улуш, ҳудудлар ва мавзулар.',
     'analytics.period': 'Ҳисобот даври',
     'analytics.periodDays': '{days} кун',
     'analytics.updated': 'Янгиланди',
@@ -54,7 +54,7 @@ export const analyticsMessages = {
     'analytics.demoResetError': 'Демо маълумотларини тиклаб бўлмади.',
   },
   ru: {
-    'analytics.subtitle': 'Недельная картина обращений',
+    'analytics.subtitle': 'Объём обращений, доля ответов ИИ, регионы и темы.',
     'analytics.period': 'Период отчёта',
     'analytics.periodDays': '{days} дн.',
     'analytics.updated': 'Обновлено',

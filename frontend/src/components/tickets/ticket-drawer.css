@@ -59,6 +59,13 @@
 .ticket-drawer-topic { margin-top: 0.28rem; color: var(--color-secondary); font-size: var(--text-ui); overflow-wrap: anywhere; }
 .ticket-drawer-close { align-self: start; }
 
+.ticket-drawer-field-current {
+  min-width: 0;
+  color: var(--color-text);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
 .ticket-drawer-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 0.94fr) minmax(0, 1.18fr);

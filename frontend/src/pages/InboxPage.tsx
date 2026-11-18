@@ -4,13 +4,15 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useOutletContext, useSearchParams } from 'react-router'
 import { approveResponse, convertInboxToTicket } from '../api/client'
 import type { Channel, InboxItem, Ticket } from '../api/types'
-import type { PanelNotify } from '../components/PanelLayout'
+import type { PanelContext } from '../components/PanelLayout'
 import { Button, GlassPanel, IconButton, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui'
 import { inboxKey, ticketsKey, useInboxRecords } from '../hooks/usePanelCases'
 import { inboxMessages } from '../i18n/inbox'
+import { staffMessages } from '../i18n/staff'
 import { useLanguage } from '../i18n/useLanguage'
 import { useT } from '../i18n/useT'
 import { localizeCaseTopic } from '../lib/case-labels'
+import { canEditCases } from '../lib/panel-sections'
 import { formatTicketDate } from '../lib/ticket-time'
 import './inbox-page.css'
 
@@ -28,11 +30,12 @@ function needsReview(appeal: InboxItem) {
   return appeal.level === 'yellow' && appeal.status === 'draft' && !appeal.ticket_id && !appeal.ticket_number
 }
 
-function AppealedRow({ appeal, selected, pendingAction, disabled, onConvert, onApprove }: {
+function AppealedRow({ appeal, selected, pendingAction, disabled, readOnly, onConvert, onApprove }: {
   appeal: InboxItem
   selected: boolean
   pendingAction?: 'convert' | 'approve'
   disabled: boolean
+  readOnly: boolean
   onConvert: () => void
   onApprove: () => void
 }) {
@@ -74,7 +77,7 @@ function AppealedRow({ appeal, selected, pendingAction, disabled, onConvert, onA
           <Button asChild variant="secondary" size="sm">
             <Link to={target}>{t('inbox.open')}</Link>
           </Button>
-        ) : (
+        ) : !readOnly && (
           <>
             {draft && (
               <Button size="sm" onClick={onApprove} loading={pendingAction === 'approve'} disabled={disabled}>
@@ -99,7 +102,9 @@ export default function InboxPage() {
   const selected = params.get('item')
   const activeTab = selected ? 'all' : tab
   const t = useT(inboxMessages)
-  const notify = useOutletContext<PanelNotify>()
+  const { notify, role } = useOutletContext<PanelContext>()
+  const readOnly = !canEditCases(role, 'inbox')
+  const tStaff = useT(staffMessages)
   const queryClient = useQueryClient()
   const query = useInboxRecords()
   const appeals = query.data ?? empty
@@ -167,7 +172,7 @@ export default function InboxPage() {
     <section className="inbox-page" aria-labelledby="inbox-title">
       <header className="inbox-heading">
         <h1 id="inbox-title" ref={heading} tabIndex={-1}>{t('panel.inbox')}</h1>
-        <p>{t('inbox.subtitle')}</p>
+        <p>{t('inbox.subtitle')}{readOnly && ' ' + tStaff('staff.readOnlyNote')}</p>
       </header>
       <Tabs value={activeTab} onValueChange={(value) => changeView(value === 'queue' || value === 'tickets' ? value : 'all', 0)}>
         <TabsList aria-label={t('panel.inbox')}>
@@ -199,8 +204,9 @@ export default function InboxPage() {
                         ? 'approve'
                         : conversion.isPending && conversion.variables === appeal.id ? 'convert' : undefined}
                       disabled={busy}
-                      onApprove={() => approval.mutate(appeal.id)}
-                      onConvert={() => conversion.mutate(appeal.id)}
+                      readOnly={readOnly}
+                      onApprove={() => { if (!readOnly) approval.mutate(appeal.id) }}
+                      onConvert={() => { if (!readOnly) conversion.mutate(appeal.id) }}
                     />
                   ))}
                 </div>

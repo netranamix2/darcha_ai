@@ -48,15 +48,16 @@ function TicketCardBody({ ticket, member, now }: { ticket: Ticket; member?: Staf
   )
 }
 
-function BoardCard({ ticket, member, now, status, onOpen }: {
+function BoardCard({ ticket, member, now, status, readOnly, onOpen }: {
   ticket: Ticket
   member?: StaffMember
   now: number
   status: Status
   onOpen: TicketViewProps['onOpen']
+  readOnly: boolean
 }) {
   const t = useTicketViewT()
-  const movable = isMovableStatus(status)
+  const movable = !readOnly && isMovableStatus(status)
   const { setNodeRef, setActivatorNodeRef, attributes, listeners, isDragging } = useDraggable({
     id: ticket.id,
     disabled: !movable,
@@ -92,16 +93,17 @@ function BoardCard({ ticket, member, now, status, onOpen }: {
   )
 }
 
-function BoardLane({ status, tickets, members, now, onOpen }: {
+function BoardLane({ status, tickets, members, now, readOnly, onOpen }: {
   status: Status
   tickets: Ticket[]
   members: ReadonlyMap<string, StaffMember>
   now: number
+  readOnly: boolean
   onOpen: TicketViewProps['onOpen']
 }) {
   const id = useId()
   const t = useTicketViewT()
-  const { setNodeRef, isOver } = useDroppable({ id: status, disabled: !isMovableStatus(status) })
+  const { setNodeRef, isOver } = useDroppable({ id: status, disabled: readOnly || !isMovableStatus(status) })
 
   return (
     <section className="ticket-board-lane" data-status={status} data-over={isOver || undefined} ref={setNodeRef} aria-labelledby={id}>
@@ -118,6 +120,7 @@ function BoardLane({ status, tickets, members, now, onOpen }: {
               ticket={ticket}
               member={ticket.assignee_id ? members.get(ticket.assignee_id) : undefined}
               status={status}
+              readOnly={readOnly}
               now={now}
               onOpen={onOpen}
             />
@@ -149,7 +152,7 @@ const keyboardColumnCoordinates: KeyboardCoordinateGetter = (event, { currentCoo
 }
 
 export function TicketKanban({ tickets, staff, now, onOpen, onMove }: TicketViewProps & {
-  onMove: (id: string, status: MovableStatus) => void
+  onMove?: (id: string, status: MovableStatus) => void
 }) {
   const t = useTicketViewT()
   const reducedMotion = useReducedMotion()
@@ -172,7 +175,7 @@ export function TicketKanban({ tickets, staff, now, onOpen, onMove }: TicketView
     setActiveId(null)
     const ticket = byId.get(String(active.id))
     if (!ticket || !isMovableStatus(over?.id) || getTicketStatus(ticket, now) === over.id) return
-    onMove(ticket.id, over.id)
+    onMove?.(ticket.id, over.id)
   }
 
   function announceDrag(key: 'ticketView.dragStart' | 'ticketView.dragOver' | 'ticketView.dragEnd' | 'ticketView.dragCancel', id: string | number, lane?: string | number) {
@@ -202,7 +205,7 @@ export function TicketKanban({ tickets, staff, now, onOpen, onMove }: TicketView
     >
       <div className="ticket-board-scroller" role="region" aria-label={t('ticketView.board')} tabIndex={0}>
         <div className="ticket-board">
-          {laneOrder.map((status) => <BoardLane key={status} status={status} tickets={lanes[status]} members={members} now={now} onOpen={onOpen} />)}
+          {laneOrder.map((status) => <BoardLane key={status} status={status} tickets={lanes[status]} members={members} now={now} readOnly={!onMove} onOpen={onOpen} />)}
         </div>
       </div>
       {createPortal(

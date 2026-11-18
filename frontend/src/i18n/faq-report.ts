@@ -2,6 +2,7 @@ import type { Language } from './locales'
 
 const latin = {
   'faq.title': 'Haftalik FAQ hisoboti',
+  'faq.subtitle': 'Haftada eng koʻp soʻralgan savollar va hujjatlarda javobi yoʻq mavzular.',
   'faq.week': '{year}-yil {week}-hafta',
   'faq.generated': 'Hisoblangan vaqt',
   'faq.rebuild': 'Hisobotni qayta hisoblash',
@@ -32,6 +33,7 @@ export const faqReportMessages = {
   'uz-latn': latin,
   'uz-cyrl': {
     'faq.title': 'Ҳафталик FAQ ҳисоботи',
+    'faq.subtitle': 'Ҳафтада энг кўп сўралган саволлар ва ҳужжатларда жавоби йўқ мавзулар.',
     'faq.week': '{year}-йил {week}-ҳафта',
     'faq.generated': 'Ҳисобланган вақт',
     'faq.rebuild': 'Ҳисоботни қайта ҳисоблаш',
@@ -59,6 +61,7 @@ export const faqReportMessages = {
   },
   ru: {
     'faq.title': 'Еженедельный отчёт по частым вопросам',
+    'faq.subtitle': 'Частые вопросы недели и темы, на которые в документах пока нет ответа.',
     'faq.week': '{week}-я неделя {year} года',
     'faq.generated': 'Сформирован',
     'faq.rebuild': 'Пересчитать отчёт',

@@ -74,52 +74,50 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
       <div className="analytics-operations-heading">
         <h2 id={headingId}>{t('analytics.alerts')}</h2>
       </div>
-      {recent.length ? (
-        <ul className="analytics-alert-list glass-stagger" aria-live="polite" aria-relevant="additions">
-          {recent.map((alert) => {
-            const fraud = alert.kind === 'fraud'
-            const AlertIcon = fraud ? ShieldAlert : TrendingUp
-            const canOpen = fraud && alert.inbox_id
-            const text = !fraud && alert.appeal_count != null && alert.growth_pct != null
-              ? t('analytics.spikeDetail').replace('{count}', number.format(alert.appeal_count)).replace('{growth}', growth.format(alert.growth_pct / 100))
-              : alert.text
-            const body = (
-              <>
-                <span className="analytics-alert-mark"><AlertIcon aria-hidden="true" size={17} /></span>
-                <span className="analytics-alert-body">
-                  <span className="analytics-alert-meta">
-                    <strong>{t(fraud ? 'analytics.fraud' : 'analytics.spike')}</strong>
-                    <time dateTime={alert.created_at}>{analyticsTimestamp(alert.created_at, language)}</time>
-                  </span>
-                  <span className="analytics-alert-text">{text}</span>
+      <ul className="analytics-alert-list glass-stagger" aria-live="polite" aria-relevant="additions">
+        {recent.map((alert) => {
+          const fraud = alert.kind === 'fraud'
+          const AlertIcon = fraud ? ShieldAlert : TrendingUp
+          const canOpen = fraud && alert.inbox_id
+          const text = !fraud && alert.appeal_count != null && alert.growth_pct != null
+            ? t('analytics.spikeDetail').replace('{count}', number.format(alert.appeal_count)).replace('{growth}', growth.format(alert.growth_pct / 100))
+            : alert.text
+          const body = (
+            <>
+              <span className="analytics-alert-mark"><AlertIcon aria-hidden="true" size={17} /></span>
+              <span className="analytics-alert-body">
+                <span className="analytics-alert-meta">
+                  <strong>{t(fraud ? 'analytics.fraud' : 'analytics.spike')}</strong>
+                  <time dateTime={alert.created_at}>{analyticsTimestamp(alert.created_at, language)}</time>
                 </span>
-              </>
-            )
-            return (
-              <li key={alert.id} data-kind={alert.kind} className="analytics-alert-entry">
-                {canOpen ? (
-                  <Link className="analytics-alert-row" to={`/panel/inbox?${new URLSearchParams({ item: canOpen })}`}>
-                    {body}
-                    <span className="sr-only">{t('analytics.alertOpen')}</span>
-                  </Link>
-                ) : <div className="analytics-alert-row">{body}</div>}
-              </li>
-            )
-          })}
-        </ul>
-      ) : <p className="analytics-alert-empty">{t('analytics.noAlerts')}</p>}
+                <span className="analytics-alert-text">{text}</span>
+              </span>
+            </>
+          )
+          return (
+            <li key={alert.id} data-kind={alert.kind} className="analytics-alert-entry">
+              {canOpen ? (
+                <Link className="analytics-alert-row" to={`/panel/inbox?${new URLSearchParams({ item: canOpen })}`}>
+                  {body}
+                  <span className="sr-only">{t('analytics.alertOpen')}</span>
+                </Link>
+              ) : <div className="analytics-alert-row">{body}</div>}
+            </li>
+          )
+        })}
+      </ul>
     </GlassPanel>
   )
 }
 
 export function AnalyticsOperations({ summary, days }: { summary?: AnalyticsSummary; days: number }) {
   const [minutes, setMinutes] = useState(15)
-  if (!summary) return null
+  if (!summary || (!summary.total && !summary.alerts.length)) return null
 
   return (
     <div className="analytics-operations">
-      <TimeSavings summary={summary} days={days} minutes={minutes} onMinutesChange={setMinutes} />
-      <AlertFeed alerts={summary.alerts} />
+      {summary.total > 0 && <TimeSavings summary={summary} days={days} minutes={minutes} onMinutesChange={setMinutes} />}
+      {summary.alerts.length > 0 && <AlertFeed alerts={summary.alerts} />}
     </div>
   )
 }

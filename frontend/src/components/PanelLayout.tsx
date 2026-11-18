@@ -1,16 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
-import { Bell, Home, PanelLeftClose, PanelLeftOpen, RotateCcw } from 'lucide-react'
+import { Home, LogIn, PanelLeftClose, PanelLeftOpen, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, NavLink } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { canResetDemoData, resetDemoData } from '../api/client'
+import type { StaffRole } from '../api/types'
 import { analyticsKey } from '../hooks/useAnalytics'
 import { usePanelCaseSubscription, useTicketRecords } from '../hooks/usePanelCases'
 import { useTicketClock } from '../hooks/useTicketClock'
 import { analyticsMessages } from '../i18n/analytics'
+import { staffMessages } from '../i18n/staff'
 import { ticketPageMessages } from '../i18n/ticket-page'
 import { useT } from '../i18n/useT'
-import { panelSections } from '../lib/panel-sections'
+import { faqReportId, staffSections } from '../lib/panel-sections'
+import { readStaffRole } from '../lib/staff-landing'
 import { getTicketStatus } from '../lib/ticket-time'
 import { AnimatedOutlet } from './AnimatedOutlet'
 import { Brand } from './Brand'
@@ -19,9 +22,11 @@ import { PanelApiFooter } from './PanelApiFooter'
 import { PanelSearch } from './PanelSearch'
 import { SkipLink } from './SkipLink'
 import { Avatar, Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger, GlassPanel, IconButton, Toast, ToastProvider, ToastViewport } from './ui'
+import './staff-panel.css'
 
 type Notice = { title: string; description?: string; variant?: 'default' | 'success' | 'warning' | 'error' }
-export type PanelNotify = (notice: Notice) => void
+type PanelNotify = (notice: Notice) => void
+export type PanelContext = { notify: PanelNotify; role: StaffRole | null }
 
 export default function PanelLayout() {
   const [collapsed, setCollapsed] = useState(false)
@@ -30,8 +35,17 @@ export default function PanelLayout() {
   const reducedMotion = useReducedMotion()
   const t = useT(ticketPageMessages)
   const tDemo = useT(analyticsMessages)
+  const tStaff = useT(staffMessages)
+  const [role] = useState(readStaffRole)
+  const sections = staffSections(role)
+  const { pathname, hash } = useLocation()
+  const currentSection = pathname.replace(/\/$/u, '').toLowerCase()
+  const currentPath = role === 'manager' && currentSection === '/panel/analytics' && hash === '#' + faqReportId
+    ? currentSection + hash : currentSection
+  const roleLabel = role ? tStaff(`staff.role.${role}`) : ''
+  const hasTickets = sections.some(({ id }) => id === 'tickets')
   const queryClient = useQueryClient()
-  const { data: tickets } = useTicketRecords(true)
+  const { data: tickets } = useTicketRecords(hasTickets)
   const now = useTicketClock()
   usePanelCaseSubscription()
   const CollapseIcon = collapsed ? PanelLeftOpen : PanelLeftClose
@@ -61,7 +75,7 @@ export default function PanelLayout() {
   }, [newNoticeTitle, notify, tickets])
 
   const shell = (
-    <div className="panel-shell" data-collapsed={collapsed}>
+    <div className="panel-shell" data-collapsed={collapsed} data-staff-role={role || undefined}>
       <SkipLink />
       <aside className="panel-sidebar">
         <GlassPanel className="panel-sidebar-surface">
@@ -80,25 +94,25 @@ export default function PanelLayout() {
           </div>
           <LayoutGroup>
             <nav id="panel-navigation" className="panel-nav" aria-label={t('panel.nav')}>
-              {panelSections.map(({ id, label, icon: SectionIcon }) => (
-                <NavLink key={id} to={`/panel/${id}`} aria-label={t(label)} title={collapsed ? t(label) : undefined}>
-                  {({ isActive }) => (
-                    <>
-                      {isActive && (
-                        <motion.span
-                          aria-hidden="true"
-                          className="panel-nav-indicator"
-                          layoutId={reducedMotion ? undefined : 'panel-nav-indicator'}
-                          transition={{ duration: 0.2, ease: 'easeOut' }}
-                        />
-                      )}
-                      <SectionIcon size={19} aria-hidden="true" />
-                      <span className="panel-nav-text">{t(label)}</span>
-                      {id === 'tickets' && newCount > 0 && <span className="panel-nav-count" aria-hidden="true">{newCount}</span>}
-                    </>
-                  )}
-                </NavLink>
-              ))}
+              {sections.map(({ id, to, label, icon: SectionIcon }) => {
+                const isActive = currentPath === to
+                const name = tStaff(label)
+                return (
+                  <Link key={id} to={to} aria-current={isActive ? 'page' : undefined} aria-label={name} title={collapsed ? name : undefined}>
+                    {isActive && (
+                      <motion.span
+                        aria-hidden="true"
+                        className="panel-nav-indicator"
+                        layoutId={reducedMotion ? undefined : 'panel-nav-indicator'}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                      />
+                    )}
+                    <SectionIcon size={19} aria-hidden="true" />
+                    <span className="panel-nav-text">{name}</span>
+                    {id === 'tickets' && newCount > 0 && <span className="panel-nav-count" aria-hidden="true">{newCount}</span>}
+                  </Link>
+                )
+              })}
             </nav>
           </LayoutGroup>
         </GlassPanel>
@@ -106,28 +120,22 @@ export default function PanelLayout() {
       <div className="panel-workspace">
         <header className="panel-header">
           <GlassPanel className="panel-topbar">
-            <PanelSearch />
+            <PanelSearch sections={sections} />
             <div className="panel-actions">
               <LanguageSwitcher compact />
               <Dropdown>
                 <DropdownTrigger asChild>
-                  <IconButton aria-label={t('panel.notifications')} title={t('panel.notifications')}>
-                    <Bell size={19} aria-hidden="true" />
-                  </IconButton>
-                </DropdownTrigger>
-                <DropdownContent align="end" aria-label={t('panel.notifications')}>
-                  <DropdownLabel className="panel-menu-label">{t('panel.notifications')}</DropdownLabel>
-                  <p className="notifications-empty">{t('panel.notificationsEmpty')}</p>
-                </DropdownContent>
-              </Dropdown>
-              <Dropdown>
-                <DropdownTrigger asChild>
                   <button className="panel-profile-button" type="button" aria-label={t('panel.profile')}>
-                    <Avatar initials="D" size="sm" />
+                    <Avatar initials={(roleLabel || t('brand.name')).slice(0, 1)} size="sm" />
                   </button>
                 </DropdownTrigger>
                 <DropdownContent align="end" aria-label={t('panel.profile')}>
-                  <DropdownLabel className="panel-menu-label">{t('panel.profile')}</DropdownLabel>
+                  <DropdownLabel className="panel-menu-label">{roleLabel || t('panel.profile')}</DropdownLabel>
+                  <DropdownItem asChild>
+                    <Link to="/login">
+                      <LogIn size={16} aria-hidden="true" /> {tStaff('staff.switchAccount')}
+                    </Link>
+                  </DropdownItem>
                   <DropdownItem asChild>
                     <Link to="/">
                       <Home size={16} aria-hidden="true" /> {t('common.home')}
@@ -147,7 +155,7 @@ export default function PanelLayout() {
           </GlassPanel>
         </header>
         <main id="main-content" className="panel-main" tabIndex={-1}>
-          <AnimatedOutlet context={notify} />
+          <AnimatedOutlet context={{ notify, role } satisfies PanelContext} />
         </main>
         {import.meta.env.DEV && <PanelApiFooter />}
       </div>

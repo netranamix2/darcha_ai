@@ -4,11 +4,13 @@ import {
   Clock3, Copy, FileText, Inbox, Layers3, PenLine, Printer, RefreshCw, Send,
   TriangleAlert,
 } from 'lucide-react'
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useRef, useId, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { ApiError, getFaqReport, runFaqReport, subscribeToCaseChanges } from '../../api/client'
 import type { FaqReport } from '../../api/types'
+import { useLocation } from 'react-router'
 import { faqReportMessages } from '../../i18n/faq-report'
+import { faqReportId } from '../../lib/panel-sections'
 import { localeCodes } from '../../i18n/locales'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
@@ -190,6 +192,8 @@ export function FaqReportSection() {
   const t = useT(faqReportMessages)
   const client = useQueryClient()
   const titleId = useId()
+  const section = useRef<HTMLElement>(null)
+  const { hash, key: locationKey } = useLocation()
   const reportQuery = useQuery({ queryKey: reportKey, queryFn: () => getFaqReport('week'), staleTime: 60_000, retry: false })
   const rebuild = useMutation({
     mutationFn: async () => {
@@ -206,6 +210,29 @@ export function FaqReportSection() {
     if (kind === 'report' || kind === 'reset') void client.invalidateQueries({ queryKey: reportKey })
   }), [client])
 
+  useEffect(() => {
+    const reportSection = section.current
+    if (hash !== '#' + faqReportId || !reportSection) return
+
+    const scrollToReport = () => reportSection.scrollIntoView({ block: 'start' })
+    scrollToReport()
+    reportSection.focus({ preventScroll: true })
+
+    // The charts and the report load separately and change the anchor's position.
+    const observer = new ResizeObserver(scrollToReport)
+    if (reportSection.previousElementSibling) observer.observe(reportSection.previousElementSibling)
+    observer.observe(reportSection)
+    const events = new AbortController()
+    function stopTracking() {
+      observer.disconnect()
+      events.abort()
+    }
+    for (const input of ['pointerdown', 'keydown', 'wheel', 'touchstart']) {
+      window.addEventListener(input, stopTracking, { passive: true, signal: events.signal })
+    }
+    return stopTracking
+  }, [hash, locationKey])
+
   const report = reportQuery.data
   const clusters = report?.clusters.slice().sort((first, second) => second.count - first.count) ?? []
   const week = report ? getIsoWeek(report.from ?? report.generated_at) : null
@@ -217,10 +244,11 @@ export function FaqReportSection() {
   const missing = reportQuery.error instanceof ApiError && reportQuery.error.status === 404
 
   return (
-    <section className="faq-report" aria-labelledby={titleId} data-printable={report ? 'true' : undefined}>
+    <section className="faq-report" id={faqReportId} ref={section} tabIndex={-1} aria-labelledby={titleId} data-printable={report ? 'true' : undefined}>
       <header className="faq-report-header">
         <div>
           <h2 id={titleId}><BookOpen aria-hidden="true" /> {t('faq.title')}</h2>
+          <p className="faq-report-subtitle">{t('faq.subtitle')}</p>
           {(period || generatedLabel) && (
             <div className="faq-report-meta">
               {period && <span><CalendarDays aria-hidden="true" /> {period}</span>}

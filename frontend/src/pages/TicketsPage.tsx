@@ -5,7 +5,7 @@ import { lazy, Suspense, useDeferredValue, useMemo, useState, useSyncExternalSto
 import { useOutletContext, useSearchParams } from 'react-router'
 import { ApiError, getTicket, updateTicket } from '../api/client'
 import type { Channel, StaffMember, Ticket } from '../api/types'
-import type { PanelNotify } from '../components/PanelLayout'
+import type { PanelContext } from '../components/PanelLayout'
 import { TicketDrawer } from '../components/tickets/TicketDrawer'
 import { TicketFilters } from '../components/tickets/TicketFilters'
 import type { TicketFilterValues } from '../components/tickets/TicketFilters'
@@ -14,11 +14,13 @@ import { TicketTable } from '../components/tickets/TicketViews'
 import { Button, GlassPanel, Skeleton } from '../components/ui'
 import { inboxKey, ticketsKey, useStaffRecords, useTicketRecords } from '../hooks/usePanelCases'
 import { useTicketClock } from '../hooks/useTicketClock'
+import { staffMessages } from '../i18n/staff'
 import { ticketPageMessages } from '../i18n/ticket-page'
 import type { Language } from '../i18n/locales'
 import { useLanguage } from '../i18n/useLanguage'
 import { useT } from '../i18n/useT'
 import { localizeCaseRegion, localizeCaseTopic } from '../lib/case-labels'
+import { canEditCases } from '../lib/panel-sections'
 import './tickets-page.css'
 
 const TicketKanban = lazy(async () => ({ default: (await import('../components/tickets/TicketKanban')).TicketKanban }))
@@ -70,7 +72,9 @@ export default function TicketsPage() {
   const [params, setParams] = useSearchParams()
   const isMobile = useSyncExternalStore(subscribeToWidth, isNarrow)
   const reducedMotion = useReducedMotion()
-  const notify = useOutletContext<PanelNotify>()
+  const { notify, role } = useOutletContext<PanelContext>()
+  const readOnly = !canEditCases(role, 'tickets')
+  const tStaff = useT(staffMessages)
   const queryClient = useQueryClient()
   const ticketsQuery = useTicketRecords()
   const staffQuery = useStaffRecords()
@@ -130,7 +134,7 @@ export default function TicketsPage() {
       <header className="tickets-heading">
         <div>
           <h1 id="tickets-title">{t('panel.tickets')}</h1>
-          <p>{t('tickets.subtitle')}</p>
+          <p>{t('tickets.subtitle')}{readOnly && ' ' + tStaff('staff.readOnlyNote')}</p>
         </div>
         {!isMobile && (
           <LayoutGroup id="ticket-view">
@@ -198,7 +202,7 @@ export default function TicketsPage() {
                 staff={staff}
                 now={now}
                 onOpen={selectTicket}
-                onMove={(id, status) => { if (!movement.isPending) movement.mutate({ id, status }) }}
+                onMove={readOnly ? undefined : (id, status) => { if (!movement.isPending) movement.mutate({ id, status }) }}
               />
             </Suspense>
           )}
@@ -210,6 +214,7 @@ export default function TicketsPage() {
           ticket={selected}
           staff={staff}
           now={now}
+          readOnly={readOnly}
           detailLoading={detail.isPending}
           detailError={detail.isError ? () => void detail.refetch() : undefined}
           staffUnavailable={staffQuery.isPending || staffQuery.isError}

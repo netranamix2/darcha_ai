@@ -1,7 +1,7 @@
 import type { Language } from './locales'
 
 const latin = {
-  'inbox.subtitle': 'Kelgan murojaatlarni koʻring va mutaxassisga yuboring.',
+  'inbox.subtitle': 'Barcha kanallardan kelgan xabarlar. Sariq murojaatlarda inson tasdigʻini kutayotgan AI qoralamasi bor.',
   'inbox.all': 'Barcha murojaatlar',
   'inbox.queue': 'Tasdiqlash navbati',
   'inbox.ticketed': 'Tiketga oʻtgan',
@@ -30,7 +30,7 @@ const latin = {
 export const inboxMessages = {
   'uz-latn': latin,
   'uz-cyrl': {
-    'inbox.subtitle': 'Келган мурожаатларни кўринг ва мутахассисга юборинг.',
+    'inbox.subtitle': 'Барча каналлардан келган хабарлар. Сариқ мурожаатларда инсон тасдиғини кутаётган AI қораламаси бор.',
     'inbox.all': 'Барча мурожаатлар',
     'inbox.queue': 'Тасдиқлаш навбати',
     'inbox.ticketed': 'Тикетга ўтган',
@@ -56,7 +56,7 @@ export const inboxMessages = {
     'inbox.visibleRange': '{start}–{end} / {total}',
   },
   ru: {
-    'inbox.subtitle': 'Просматривайте обращения и передавайте их специалистам.',
+    'inbox.subtitle': 'Сообщения из всех каналов. Жёлтым отмечены обращения с черновиком от ИИ, который ожидает проверки оператором.',
     'inbox.all': 'Все обращения',
     'inbox.queue': 'На утверждении',
     'inbox.ticketed': 'Переведены в тикеты',

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
 import { Button, Dropdown, DropdownContent, DropdownLabel, DropdownRadioGroup, DropdownRadioItem, DropdownSeparator, DropdownTrigger } from '../ui'
+import { WindowMark } from '../Brand'
 import { readChatPreference, saveChatPreference } from './storage'
 
 const regions = {
@@ -29,14 +30,6 @@ function isRegion(value: unknown): value is Region {
   return typeof value === 'string' && Object.hasOwn(regions, value)
 }
 
-export function ChatOrb({ large = false }: { large?: boolean }) {
-  return (
-    <span className={large ? 'chat-orb chat-orb--large' : 'chat-orb'} aria-hidden="true">
-      <span className="chat-orb-core" />
-    </span>
-  )
-}
-
 export function ChatHeader({ titleId, sessionId }: { titleId: string; sessionId: string | null }) {
   const t = useT(chatMessages)
   const [region, setRegion] = useState<Region | null>(() => {
@@ -53,7 +46,7 @@ export function ChatHeader({ titleId, sessionId }: { titleId: string; sessionId:
   return (
     <header className="chat-header">
       <div className="chat-identity">
-        <ChatOrb />
+        <WindowMark className="chat-mark" />
         <div>
           <h2 id={titleId}>{t('brand.name')}</h2>
           <p><span aria-hidden="true" />{t('conversation.online')}</p>

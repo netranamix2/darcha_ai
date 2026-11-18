@@ -39,50 +39,16 @@
   width: fit-content;
   border-radius: 0.68rem;
   color: var(--color-text);
-  font: 800 1.32rem / 1 var(--font-heading);
-  letter-spacing: -0.045em;
+  font: 600 1.32rem / 1 var(--font-heading);
+  letter-spacing: -0.02em;
 }
 
 .window-mark {
-  position: relative;
-  display: inline-grid;
-  flex: 0 0 auto;
-  width: 2.35rem;
-  height: 2.35rem;
-  place-items: center;
-  border: 1px solid rgb(145 179 240 / 45%);
-  border-radius: 0.68rem;
-  background: linear-gradient(150deg, rgb(43 81 144 / 61%), rgb(15 30 57 / 86%));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 14%), 0 3px 14px rgb(3 10 25 / 32%);
-}
-
-.window-mark::before,
-.window-mark::after {
-  position: absolute;
-  border-radius: 1px;
-  background: rgb(179 207 249 / 67%);
-  content: "";
-}
-
-.window-mark::before {
-  width: 58%;
-  height: 1px;
-}
-
-.window-mark::after {
-  width: 1px;
-  height: 58%;
-}
-
-.window-mark > span {
-  position: absolute;
-  top: 21%;
-  right: 21%;
-  width: 22%;
-  height: 22%;
-  border-radius: 1px 3px 1px 1px;
-  background: var(--color-focus);
-  box-shadow: 0 0 4px rgb(47 123 255 / 28%);
+  display: block;
+  flex: none;
+  width: var(--window-mark-size, 2rem);
+  height: var(--window-mark-size, 2rem);
+  color: var(--color-text);
 }
 
 .staff-link,
@@ -546,10 +512,7 @@
     gap: 0.25rem;
   }
 
-  .public-header .window-mark {
-    width: 1.9rem;
-    height: 1.9rem;
-  }
+  .public-header .window-mark { --window-mark-size: 1.5rem; }
 
   .public-header .brand {
     gap: 0.4rem;

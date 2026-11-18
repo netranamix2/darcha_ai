@@ -2,7 +2,7 @@ import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
-import { ChatOrb } from './ChatHeader'
+import { WindowMark } from '../Brand'
 
 const steps = [
   { label: 'conversation.analyzing', time: 0 },
@@ -24,7 +24,7 @@ export function ChatThinking({ startedAt }: { startedAt: number }) {
 
   return (
     <div className="chat-thinking">
-      <ChatOrb />
+      <WindowMark className="chat-mark" />
       <ol aria-label={t(steps[activeStep].label)}>
         {steps.map(({ label }, index) => (
           <li key={label} data-step={index < activeStep ? 'complete' : index === activeStep ? 'active' : 'waiting'}>

@@ -5,10 +5,11 @@ import type { ChatMessage } from '../../api/types'
 import { usePublicChat } from '../../hooks/usePublicChat'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
+import { WindowMark } from '../Brand'
 import { Button, GlassPanel, Skeleton } from '../ui'
 import { ChatAnswer, ChatSources } from './ChatAnswer'
 import { ChatComposer } from './ChatComposer'
-import { ChatHeader, ChatOrb } from './ChatHeader'
+import { ChatHeader } from './ChatHeader'
 import { ChatPrompt } from './ChatPrompt'
 import { ChatFraud, ChatPending, ChatTicket } from './ChatStatus'
 import { ChatThinking } from './ChatThinking'
@@ -153,7 +154,7 @@ export default function PublicChat() {
         >
           {isRestoring ? (
             <div className="chat-restoring" role="status">
-              <span className="chat-restoring-status"><ChatOrb />{t('conversation.restoring')}</span>
+              <span className="chat-restoring-status"><WindowMark className="chat-mark" />{t('conversation.restoring')}</span>
               <Skeleton className="chat-restoring-line" />
               <Skeleton className="chat-restoring-line" />
             </div>

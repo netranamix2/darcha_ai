@@ -1,6 +1,7 @@
 import { ApiError } from '../errors'
 import type { ChatMessage, ChatReply, ChatSession, FaqReport, InboxItem, Level, LoginReply, StaffRole, Ticket, TicketPatch } from '../types'
-import { determineReply } from './chat'
+import { determineReply, publicKnowledgeBase } from './chat'
+import type { MockLocale } from './chat'
 import {
   answeredTopics, cases, nonBlank, persistChatState, reports, requireRecord, resetChatState,
   sessions, ticketFallbackDelay, withChatState,
@@ -283,6 +284,11 @@ export async function getStaff() {
 export async function getKnowledgeBase() {
   await pause()
   return getMockKnowledgeBase()
+}
+
+export async function getPublicKnowledgeBase(language: MockLocale) {
+  await pause()
+  return publicKnowledgeBase(language)
 }
 
 export async function markTicketViewed(id: string): Promise<void> {

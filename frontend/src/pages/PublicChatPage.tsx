@@ -1,106 +1,70 @@
-import { useInView } from 'motion/react'
-import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import { useEffect } from 'react'
+import { useLocation } from 'react-router'
 import PublicChat from '../components/chat/PublicChat'
-import { ViewportCounter } from '../components/ui'
-import { localeCodes } from '../i18n/locales'
+import { PublicOverview, PublicFaq, PublicFooter } from '../components/public/PublicDetails'
+import { PublicSection } from '../components/public/PublicSection'
+import { Button, GlassPanel } from '../components/ui'
 import { publicHomeMessages } from '../i18n/public-home'
-import { useLanguage } from '../i18n/useLanguage'
 import { useT } from '../i18n/useT'
 import './public-home.css'
 
-const PublicDetails = lazy(() => import('../components/public/PublicDetails'))
-const introStorageKey = 'darcha.home-intro'
-let introShownInDocument = false
-
 const trustItems = ['public.trustSources', 'public.trustAvailability', 'public.trustLanguages', 'public.trustReview'] as const
+const sectionIds = ['how-it-works', 'channels', 'documents', 'chat']
 
-const steps = ['public.stepQuestion', 'public.stepSearch', 'public.stepAnswer'] as const
-
-function shouldShowIntro() {
-  if (introShownInDocument) return false
+function telegramUrl() {
+  const value: unknown = import.meta.env.VITE_TG_BOT_URL
+  if (typeof value !== 'string' || !value.trim()) return null
   try {
-    return sessionStorage.getItem(introStorageKey) === null
+    const url = new URL(value.trim())
+    return url.protocol === 'https:' && !url.username && !url.password ? url.href : null
   } catch {
-    return true
+    return null
   }
 }
 
-function HeadlineWords({ words, offset = 0 }: { words: string[]; offset?: number }) {
-  return words.map((word, index) => (
-    <Fragment key={index}>
-      {index > 0 && ' '}
-      <span className="public-headline-word" style={{ '--word-index': offset + index } as CSSProperties}>
-        {word}
-      </span>
-    </Fragment>
-  ))
-}
-
-function DeferredDetails() {
-  const slot = useRef<HTMLDivElement>(null)
-  const isNear = useInView(slot, { once: true, margin: '0px 0px 240px 0px' })
-
-  return (
-    <div className="public-details-slot" ref={slot}>
-      {isNear && (
-        <Suspense fallback={null}>
-          <PublicDetails />
-        </Suspense>
-      )}
-    </div>
-  )
-}
+const botUrl = telegramUrl()
 
 export default function PublicChatPage() {
-  const [showIntro] = useState(shouldShowIntro)
   const t = useT(publicHomeMessages)
-  const { language } = useLanguage()
-  const lead = t('public.heroLead')
-  const accent = t('public.heroAccent')
-  const leadWords = lead.match(/\S+(?:\s+—)?/gu) ?? [lead]
-  const accentWords = accent.split(' ')
+  const { hash } = useLocation()
 
   useEffect(() => {
-    if (!showIntro) return
-    introShownInDocument = true
-    try {
-      sessionStorage.setItem(introStorageKey, 'shown')
-    } catch {
-      // The document flag covers in-app navigation when storage is unavailable.
-    }
-  }, [showIntro])
+    const target = hash.slice(1)
+    if (sectionIds.includes(target)) document.getElementById(target)?.scrollIntoView()
+  }, [hash])
 
   return (
-    <div className="public-home" data-intro={showIntro ? '' : undefined}>
-      <div className="public-hero">
-        <section className="public-hero-intro" aria-labelledby="public-hero-heading">
-          <h1 id="public-hero-heading" className="public-headline" aria-label={`${lead} ${accent}`}>
-            <span aria-hidden="true"><HeadlineWords words={leadWords} /></span>
-            <span className="public-headline-accent" aria-hidden="true">
-              <HeadlineWords words={accentWords} offset={leadWords.length} />
-            </span>
+    <div className="public-home">
+      <section className="public-hero" aria-labelledby="public-hero-heading">
+        <div className="public-hero-intro">
+          <h1 id="public-hero-heading" className="public-headline">
+            {t('public.heroLead')}{' '}
+            <span>{t('public.heroAccent')}</span>
           </h1>
           <p className="public-hero-description">{t('public.heroDescription')}</p>
+          <div className="public-hero-actions">
+            <Button asChild size="lg"><a href="#chat">{t('public.ask')}</a></Button>
+            {botUrl && <Button asChild size="lg" variant="secondary"><a href={botUrl}>{t('public.telegram')}</a></Button>}
+          </div>
           <ul className="public-trust">
             {trustItems.map((label) => <li key={label}>{t(label)}</li>)}
           </ul>
-          <ol className="public-steps" aria-label={t('public.how')}>
-            {steps.map((label) => <li key={label}>{t(label)}</li>)}
-          </ol>
-          <div className="public-stat">
-            <p>
-              {t('public.today')}{' '}
-              <ViewportCounter value={1284} locale={localeCodes[language]} className="public-stat-value" />
-            </p>
-            <small>{t('public.todayDemo')}</small>
-          </div>
-        </section>
-        <div className="public-chat-slot">
-          <PublicChat />
         </div>
-      </div>
-      <DeferredDetails />
+        <GlassPanel className="public-answer-example" variant="subtle" blur={false}>
+          <figure>
+            <figcaption>{t('public.sampleLabel')}</figcaption>
+            <p className="public-example-question">{t('public.sampleQuestion')}</p>
+            <p className="public-example-answer">{t('public.sampleAnswer')} <sup>[1]</sup></p>
+            <p className="public-example-source">{t('public.sampleSource')}</p>
+          </figure>
+        </GlassPanel>
+      </section>
+      <PublicOverview />
+      <PublicSection id="chat" title={t('public.chatTitle')} className="landing-chat">
+        <PublicChat />
+      </PublicSection>
+      <PublicFaq />
+      <PublicFooter botUrl={botUrl} />
     </div>
   )
 }

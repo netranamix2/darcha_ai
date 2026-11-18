@@ -8,6 +8,13 @@ export interface Citation {
   url: string
 }
 
+export interface KnowledgeDocument {
+  title: string
+  number: string
+  date: string
+  url: string
+}
+
 export type Level = 'green' | 'yellow' | 'red'
 
 export interface ChatReply {

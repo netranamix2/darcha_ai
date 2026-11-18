@@ -49,7 +49,7 @@ import {
   TooltipProvider,
   ViewportCounter,
 } from '../components/ui';
-import { localeCodes } from '../i18n/locales';
+import { languages, localeCodes } from '../i18n/locales';
 import { useLanguage } from '../i18n/useLanguage';
 import { showcaseMessages } from '../i18n/showcase';
 import { useT } from '../i18n/useT';
@@ -156,7 +156,7 @@ function MotionSamples() {
         </div>
         <GlassPanel variant="subtle" blur={false} className="ui-motion-counter glass-lift">
           <span>{t('ui.counter')}</span>
-          <ViewportCounter value={1284} locale={localeCodes[language]} key={sequence} />
+          <ViewportCounter value={languages.length} locale={localeCodes[language]} key={sequence} />
         </GlassPanel>
       </div>
       <Button size="sm" variant="ghost" className="ui-motion-replay" onClick={() => setSequence((value) => value + 1)}>

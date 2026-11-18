@@ -4,10 +4,11 @@ import {
   record, rows, session, staffList, ticket, ticketPatch,
 } from './backend-response'
 import { ApiError } from './errors'
+import type { Language } from '../i18n/locales'
 import { caseStorageKey, subscribeToMockCaseChanges } from './mocks/case-events'
 import type {
   AnalyticsAlert, AnalyticsSummary, CaseChangeKind, ChatMessage, ChatReply, ChatSession, Citation,
-  FaqReport, InboxItem, Level, LoginReply, StaffMember, Ticket, TicketDepartment, TicketPatch,
+  FaqReport, InboxItem, KnowledgeDocument, Level, LoginReply, StaffMember, Ticket, TicketDepartment, TicketPatch,
 } from './types'
 
 export { ApiError } from './errors'
@@ -318,6 +319,11 @@ export async function getKnowledgeBase(): Promise<Citation[]> {
   const path = '/api/documents'
   return request(path, async () => documents(await read(path, { staff: true })),
     async () => (await loadMocks()).getKnowledgeBase(), mockStaffSession)
+}
+
+// TODO(backend): Expose an anonymous catalog of active regulations. The existing documents endpoint requires staff access.
+export async function getPublicKnowledgeBase(language: Language): Promise<KnowledgeDocument[]> {
+  return (await loadMocks()).getPublicKnowledgeBase(language)
 }
 
 export async function markTicketViewed(id: string): Promise<void> {

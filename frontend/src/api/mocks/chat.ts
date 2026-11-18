@@ -1,4 +1,4 @@
-import type { Citation, Level } from '../types'
+import type { Citation, KnowledgeDocument, Level } from '../types'
 
 export type MockLocale = 'uz-latn' | 'uz-cyrl' | 'ru'
 
@@ -8,6 +8,8 @@ interface TopicReference {
   title: LocalizedText
   ref: LocalizedText
   documentId: number
+  number: string
+  date: string
 }
 
 interface MockTopic {
@@ -38,6 +40,8 @@ export const topics = {
         ru: 'Постановление № 578, приложение 3, пункты 14–15',
       },
       documentId: 7726569,
+      number: '578',
+      date: '2025-09-13',
     },
     overview: {
       'uz-latn': 'Davlat oliygohlari oʻrtasida oʻqishni koʻchirish arizasi vazirlikning rasmiy sayti yoki Yagona interaktiv davlat xizmatlari portali orqali roʻyxatdan oʻtkaziladi. Nizomda arizaga qoʻshiladigan hujjatlar, jumladan akademik maʼlumotnoma yoki transkript nusxasi koʻrsatilgan.',
@@ -58,6 +62,8 @@ export const topics = {
         ru: 'Постановление № 578, приложение 3, глава 5',
       },
       documentId: 7726569,
+      number: '578',
+      date: '2025-09-13',
     },
     overview: {
       'uz-latn': 'Oʻqishni qayta tiklash uchun arizaga akademik maʼlumotnoma, reyting daftarchasi yoki transkript nusxasi ilova qilinadi. Ariza qabul qilish muddatlari Nizomning 42-bandida keltirilgan.',
@@ -82,6 +88,8 @@ export const topics = {
         ru: 'Положение № 2431, пункт 22',
       },
       documentId: 2137212,
+      number: '2431',
+      date: '2013-02-26',
     },
     overview: {
       'uz-latn': 'Oliy taʼlim uchun kontrakt toʻlovining ulushlari va muddatlari 2431-son Nizomning 22-bandida koʻrsatilgan. Toʻlov jadvalingizni oliygoh bilan tuzgan shartnomangizdan ham tekshiring.',
@@ -106,6 +114,8 @@ export const topics = {
         ru: 'Постановление № 572, приложение 1',
       },
       documentId: 5641270,
+      number: '572',
+      date: '2021-09-17',
     },
     overview: {
       'uz-latn': 'Pedagoglar attestatsiyasi boʻyicha ariza va baholash tartibi 572-son qarorning 1-ilovasida bayon qilingan. Oʻz holatingiz boʻyicha attestatsiya turini aniqlashtiring.',
@@ -130,6 +140,8 @@ export const topics = {
         ru: 'Постановление № 666, приложение 2, глава 3',
       },
       documentId: 3866498,
+      number: '666',
+      date: '2018-08-15',
     },
     overview: {
       'uz-latn': 'Davlat maktablari oʻquvchilari formasi boʻyicha talablar 666-son qarorga ilova qilingan Nizomda keltirilgan. Muayyan maktabdagi kiyinish tartibini maʼmuriyatdan aniqlashtiring.',
@@ -152,6 +164,18 @@ const appealSource: TopicReference = {
     ru: 'Закон № ЗРУ-445, статья 28',
   },
   documentId: 3336169,
+  number: 'OʻRQ-445',
+  date: '2017-09-11',
+}
+
+export function publicKnowledgeBase(language: MockLocale): KnowledgeDocument[] {
+  const sources = new Map<number, TopicReference>()
+  for (const { source } of Object.values(topics)) sources.set(source.documentId, source)
+  sources.set(appealSource.documentId, appealSource)
+  return Array.from(sources.values(), (source) => {
+    const { title, url } = cite(source, language)
+    return { title, url, number: source.number, date: source.date }
+  })
 }
 
 const replyText = {

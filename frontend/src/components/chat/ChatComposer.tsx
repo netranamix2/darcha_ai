@@ -1,8 +1,8 @@
-import { ArrowUp, MicOff } from 'lucide-react'
+import { ArrowUp } from 'lucide-react'
 import { useState } from 'react'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
-import { IconButton, Textarea, Tooltip, TooltipProvider } from '../ui'
+import { IconButton, Textarea } from '../ui'
 
 const messageLimit = 1000
 
@@ -36,15 +36,6 @@ export function ChatComposer({ disabled, onSend }: { disabled: boolean; onSend: 
             }}
           />
         </div>
-        <TooltipProvider>
-          <Tooltip content={t('conversation.soon')} side="top">
-            <span className="chat-mic-trigger" tabIndex={0}>
-              <IconButton disabled type="button" aria-label={t('conversation.mic')} className="chat-mic">
-                <MicOff aria-hidden="true" size={17} />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </TooltipProvider>
         <IconButton type="submit" variant="primary" aria-label={t('conversation.send')} disabled={!ready} className="chat-send">
           <ArrowUp aria-hidden="true" size={20} />
         </IconButton>

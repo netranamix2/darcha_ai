@@ -1,0 +1,12 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: backend}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv venv -p 3.12 && uv pip install -r pyproject.toml --extra dev
+      - run: .venv/bin/ruff check app tests ../scripts
+      - run: .venv/bin/pytest -q

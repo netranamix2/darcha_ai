@@ -1,0 +1,44 @@
+[project]
+name = "darcha-backend"
+version = "0.1.0"
+description = "Darcha backend: one AI core for citizen inquiries to the Ministry of Education (Telegram, web chat, Instagram)"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    "python-dotenv>=1.0",
+    "pydantic>=2.7",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncpg>=0.29",
+    "pgvector>=0.3",
+    "anthropic>=2.9",
+    "aiogram>=3.13",
+    "httpx>=0.27",
+    "pyjwt>=2.8",
+    "pyyaml>=6.0",
+    "beautifulsoup4>=4.12",
+    "pypdf>=4.0",
+    "numpy>=1.26",
+    "scikit-learn>=1.5",          # HDBSCAN for the FAQ report
+    "sentence-transformers>=3.0", # bge-m3 embeddings + bge-reranker
+]
+
+[project.optional-dependencies]
+voice = ["transformers>=4.46", "torch>=2.7"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.6"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 130
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]

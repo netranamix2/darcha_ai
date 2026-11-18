@@ -1,0 +1,68 @@
+# Production stack for a single VM: Postgres+pgvector, API (CPU) and Caddy (static frontend + reverse proxy, auto HTTPS).
+#
+#   cp .env.example .env && chmod 600 .env     # fill in secrets; set SITE_ADDRESS, CORS_ORIGINS, PUBLIC_BASE_URL
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Only Caddy publishes ports (80/443). The database and the API are reachable only inside the compose network.
+name: darcha
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: edu
+      POSTGRES_PASSWORD: edu
+      POSTGRES_DB: darcha
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edu -d darcha"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://edu:edu@db:5432/darcha
+      DATA_DIR: /data
+      PYTHONPATH: /app
+    # trust X-Forwarded-For from Caddy so the per-IP chat rate limit sees real clients
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    volumes:
+      - ./data:/data
+      - ./scripts:/app/scripts:ro
+      - hfcache:/root/.cache/huggingface
+    depends_on:
+      db: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 5
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: ../deploy/web.Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_DEMO_LOGIN: ${VITE_DEMO_LOGIN:-1}
+        VITE_TG_BOT_URL: ${VITE_TG_BOT_URL:-}
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  hfcache:
+  caddy_data:
+  caddy_config:

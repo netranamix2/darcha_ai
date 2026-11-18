@@ -1,6 +1,6 @@
 # Darcha
 
-**Live demo: coming soon**
+**Live demo: https://81-26-189-83.sslip.io** · staff panel: [/login](https://81-26-189-83.sslip.io/login) (one-click demo roles) · API docs: [/docs](https://81-26-189-83.sslip.io/docs)
 
 > **Qisqacha (oʻzbekcha).** Darcha — Oliy taʼlim, fan va innovatsiyalar vazirligiga fuqarolar murojaatlariga
 > rasmiy meʼyoriy hujjatlar asosida javob beradigan AI platforma. Telegram-bot, sayt chati va Instagram bitta
@@ -124,6 +124,25 @@ npm install && npm run dev -- --port 5180
 - **Evaluation**: `backend/.venv/bin/python scripts/run_eval.py data/eval/questions.jsonl`.
 - **Telegram**: polling works without a public URL. Set `TELEGRAM_GROUP_MODE=mention` to answer only @mentions
   in groups.
+
+## Deploy (single VM)
+
+The live demo runs on one Ubuntu 24.04 VM (4 vCPU, 8 GB RAM, CPU only) with `docker-compose.prod.yml`:
+`db` (PostgreSQL 17 + pgvector, not exposed), `api` (FastAPI, bge-m3 on CPU, model cache in a volume) and `web`
+(Caddy: the built React app with SPA fallback, reverse proxy for `/api/*`, `/health`, `/docs`, `/openapi.json`,
+`/webhooks/*`, automatic HTTPS). Every service has `restart: unless-stopped`.
+
+```bash
+git clone https://github.com/netranamix2/darcha_ai && cd darcha_ai
+cp .env.example .env && chmod 600 .env
+# set: JWT_SECRET, LLM_PROVIDER + key, DEVICE=cpu, USE_RERANKER=0, TELEGRAM_MODE=off|webhook,
+#      SITE_ADDRESS=<host>, CORS_ORIGINS=https://<host>, PUBLIC_BASE_URL=https://<host>, VITE_API_URL=https://<host>
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml run --rm api python scripts/ingest_docs.py /data/documents
+docker compose -f docker-compose.prod.yml run --rm api python scripts/seed_demo_history.py   # optional demo analytics
+```
+
+`<host>` can be `<ip-with-dashes>.sslip.io` when there is no domain; Caddy gets a Let's Encrypt certificate for it.
 
 ## Demo accounts
 

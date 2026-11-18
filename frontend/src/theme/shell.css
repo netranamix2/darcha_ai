@@ -1,125 +1,105 @@
-.public-shell {
-  --page-gutter: clamp(1rem, 4vw, 4.5rem);
-  min-height: 100svh;
-  padding: 1.25rem var(--page-gutter) 2.75rem;
-}
+/* ---------- Public shell ---------- */
+
+.public-shell { min-height: 100svh; }
 
 .public-header {
+  position: sticky;
+  z-index: 40;
+  top: 0;
+  border-width: 0 0 1px;
+}
+
+.public-header__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  min-height: 4.2rem;
-  max-width: 88rem;
+  width: min(100%, var(--panel-width));
+  height: 3.75rem;
   margin-inline: auto;
-  padding: 0 1.15rem 0 1.05rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel-subtle);
-  background: var(--glass-fill-subtle);
-  box-shadow: var(--glass-highlight);
+  padding-inline: 1rem;
 }
 
-.public-actions,
-.panel-actions,
-.staff-link,
-.language-switch {
+.public-header__actions {
   display: flex;
   align-items: center;
-}
-
-.public-actions,
-.panel-actions {
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.5rem;
   width: fit-content;
-  border-radius: 0.68rem;
-  color: var(--color-text);
-  font: 800 1.32rem / 1 var(--font-heading);
-  letter-spacing: -0.045em;
+  border-radius: 8px;
+  color: var(--color-ink);
+  font: 600 1.125rem / 1 var(--font-sans);
+  letter-spacing: -0.02em;
 }
 
-.window-mark {
+.lang-segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--color-line);
+  border-radius: 9px;
+  background: var(--color-subtle);
+}
+
+.lang-segmented__option {
   position: relative;
-  display: inline-grid;
-  flex: 0 0 auto;
-  width: 2.35rem;
-  height: 2.35rem;
+  display: grid;
+  min-width: 2.25rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
   place-items: center;
-  border: 1px solid rgb(145 179 240 / 45%);
-  border-radius: 0.68rem;
-  background: linear-gradient(150deg, rgb(43 81 144 / 61%), rgb(15 30 57 / 86%));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 14%), 0 3px 14px rgb(3 10 25 / 32%);
+  border-radius: 7px;
+  color: var(--color-ink-2);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
-.window-mark::before,
-.window-mark::after {
+.lang-segmented__option:hover,
+.lang-segmented__option[aria-checked="true"] { color: var(--color-ink); }
+.lang-segmented__option:focus-visible { outline-offset: 0; }
+
+.lang-segmented__thumb {
   position: absolute;
-  border-radius: 1px;
-  background: rgb(179 207 249 / 67%);
-  content: "";
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgb(12 10 9 / 8%), 0 0 0 1px rgb(12 10 9 / 4%);
 }
 
-.window-mark::before {
-  width: 58%;
-  height: 1px;
+.lang-segmented__label { position: relative; }
+
+/* Dropdown language switch (staff panel) and panel action rows. */
+.panel-actions,
+.language-switch {
+  display: flex;
+  align-items: center;
 }
 
-.window-mark::after {
-  width: 1px;
-  height: 58%;
-}
+.panel-actions { gap: 0.5rem; }
 
-.window-mark > span {
-  position: absolute;
-  top: 21%;
-  right: 21%;
-  width: 22%;
-  height: 22%;
-  border-radius: 1px 3px 1px 1px;
-  background: var(--color-focus);
-  box-shadow: 0 0 8px rgb(47 123 255 / 78%);
-}
-
-.staff-link,
 .language-switch {
   justify-content: center;
-  gap: 0.48rem;
+  gap: 0.5rem;
   min-height: 2.5rem;
-  padding-inline: 0.76rem;
-  border: 1px solid transparent;
+  padding-inline: 0.75rem;
   border-radius: var(--radius-control);
-  color: var(--color-secondary);
-  font-size: var(--text-ui);
-  font-weight: 600;
+  color: var(--color-ink-2);
+  font-size: 0.875rem;
+  font-weight: 500;
   white-space: nowrap;
-  transition: transform var(--motion-fast) var(--ease-out);
-}
-
-.language-switch {
   cursor: pointer;
 }
 
-.staff-link {
-  border-color: var(--control-border);
-  background: var(--control-fill);
-  color: var(--color-text);
-}
-
-.staff-link:hover,
 .language-switch:hover,
 .language-switch[data-state="open"] {
-  background: var(--control-fill-hover);
-  color: var(--color-text);
-}
-
-.staff-link:active,
-.language-switch:active {
-  transform: scale(0.98);
+  background: var(--color-subtle);
+  color: var(--color-ink);
 }
 
 .public-main,
@@ -202,10 +182,6 @@
 
 .skip-link:focus {
   transform: translateY(1rem);
-}
-
-.staff-link svg {
-  flex: 0 0 auto;
 }
 
 .login-page {
@@ -332,9 +308,8 @@
   height: 1.25rem;
   margin-inline-start: auto;
   padding-inline: 0.22rem;
-  border: 1px solid rgb(102 154 254 / 34%);
   border-radius: 999px;
-  background: var(--color-deep);
+  background: var(--color-accent-tint);
   color: var(--color-focus);
   font-size: 0.65rem;
   font-weight: 750;
@@ -356,7 +331,7 @@
 }
 
 .panel-nav a:hover {
-  background: rgb(255 255 255 / 4%);
+  background: var(--color-subtle);
 }
 
 .panel-nav a[aria-current="page"] svg {
@@ -367,9 +342,8 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  border: 1px solid rgb(102 154 254 / 32%);
   border-radius: inherit;
-  background: rgb(47 123 255 / 15%);
+  background: var(--color-accent-tint);
 }
 
 .panel-shell[data-collapsed="true"] .panel-nav a {
@@ -531,42 +505,10 @@
 }
 
 @media (max-width: 480px) {
-  .public-shell {
-    padding-top: 0.7rem;
-  }
-
-  .public-header {
-    gap: 0.4rem;
-    min-height: 3.65rem;
-    padding-inline: 0.55rem;
-  }
-
-  .public-actions,
-  .panel-actions {
-    gap: 0.25rem;
-  }
-
-  .public-header .window-mark {
-    width: 1.9rem;
-    height: 1.9rem;
-  }
-
-  .public-header .brand {
-    gap: 0.4rem;
-    font-size: 1.12rem;
-  }
-
-  .public-header .language-switch > span,
-  .public-header .language-chevron,
-  .public-header .staff-link svg {
-    display: none;
-  }
-
-  .public-header .staff-link,
-  .public-header .language-switch {
-    padding-inline: 0.55rem;
-    font-size: var(--text-caption);
-  }
+  .panel-actions { gap: 0.25rem; }
+  .public-header__inner { gap: 0.5rem; }
+  .public-header__actions { gap: 0.375rem; }
+  .public-header__staff { padding-inline: 0.625rem; }
 
   .panel-shell .panel-nav a,
   .panel-shell[data-collapsed="true"] .panel-nav a {
@@ -597,14 +539,3 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .staff-link,
-  .language-switch {
-    transition: none;
-  }
-
-  .staff-link:active,
-  .language-switch:active {
-    transform: none;
-  }
-}

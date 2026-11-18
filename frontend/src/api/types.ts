@@ -10,6 +10,16 @@ export interface Citation {
 
 export type Level = 'green' | 'yellow' | 'red'
 
+// TODO(backend): public list of knowledge-base documents (GET /api/documents/public?lang=).
+export interface PublicDocument {
+  id: string
+  title: string
+  number: string
+  adopted_at: string
+  status: 'active' | 'repealed'
+  url: string
+}
+
 export interface ChatReply {
   message_id: string
   answer: string

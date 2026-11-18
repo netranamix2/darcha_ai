@@ -1,58 +1,80 @@
-import { ArrowUp, MicOff } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowUp } from 'lucide-react'
+import { forwardRef, useState } from 'react'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
-import { IconButton, Textarea, Tooltip, TooltipProvider } from '../ui'
+import { Select } from '../ui'
+import { isRegion, regions, useChatRegion } from './region'
 
 const messageLimit = 1000
 
-export function ChatComposer({ disabled, onSend }: { disabled: boolean; onSend: (text: string) => void }) {
+type ComposerProps = {
+  disabled: boolean
+  sessionId: string | null
+  onSend: (text: string) => void
+}
+
+export const ChatComposer = forwardRef<HTMLTextAreaElement, ComposerProps>(function ChatComposer(
+  { disabled, sessionId, onSend }, ref,
+) {
   const [draft, setDraft] = useState('')
+  const [region, setRegion] = useChatRegion(sessionId)
   const t = useT(chatMessages)
   const ready = Boolean(draft.trim()) && !disabled
+  const nearLimit = draft.length > messageLimit * 0.8
+  const regionOptions = [
+    { value: 'none', label: t('conversation.regionUnset') },
+    ...Object.entries(regions).map(([value, label]) => ({ value, label: t(label) })),
+  ]
 
   return (
-    <form className="chat-composer" onSubmit={(event) => {
-      event.preventDefault()
-      if (!ready) return
-      onSend(draft.trim())
-      setDraft('')
-    }}>
-      <div className="chat-compose-row">
-        <div className="chat-textarea-grow" data-mirror={draft}>
-          <Textarea
-            className="chat-textarea"
-            containerClassName="chat-textarea-container"
-            rows={1}
-            value={draft}
-            maxLength={messageLimit}
-            aria-label={t('conversation.placeholder')}
-            placeholder={t('conversation.placeholder')}
-            onChange={(event) => setDraft(event.currentTarget.value.slice(0, messageLimit))}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing || event.keyCode === 229) return
-              event.preventDefault()
-              if (!event.repeat && ready) event.currentTarget.form?.requestSubmit()
-            }}
-          />
-        </div>
-        <TooltipProvider>
-          <Tooltip content={t('conversation.soon')} side="top">
-            <span className="chat-mic-trigger" tabIndex={0}>
-              <IconButton disabled type="button" aria-label={t('conversation.mic')} className="chat-mic">
-                <MicOff aria-hidden="true" size={17} />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </TooltipProvider>
-        <IconButton type="submit" variant="primary" aria-label={t('conversation.send')} disabled={!ready} className="chat-send">
-          <ArrowUp aria-hidden="true" size={20} />
-        </IconButton>
+    <form
+      className="composer frost"
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (!ready) return
+        onSend(draft.trim())
+        setDraft('')
+      }}
+    >
+      <div className="composer__grow" data-mirror={draft + ' '}>
+        <textarea
+          ref={ref}
+          className="composer__input"
+          rows={1}
+          value={draft}
+          maxLength={messageLimit}
+          aria-label={t('conversation.placeholder')}
+          placeholder={t('conversation.placeholder')}
+          onChange={(event) => setDraft(event.currentTarget.value.slice(0, messageLimit))}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing || event.keyCode === 229) return
+            event.preventDefault()
+            if (!event.repeat && ready) event.currentTarget.form?.requestSubmit()
+          }}
+        />
       </div>
-      <div className="chat-compose-meta">
-        <p className="chat-keys"><span>{t('conversation.sendHint')}</span><span>{t('conversation.newlineHint')}</span></p>
-        <output aria-live="off" className="chat-character-count" data-full={draft.length === messageLimit}>{draft.length}/{messageLimit}</output>
+      <div className="composer__bar">
+        <Select
+          appearance="inline"
+          side="top"
+          aria-label={t('conversation.region')}
+          prefix={t('conversation.regionPrefix')}
+          value={region ?? 'none'}
+          onValueChange={(value) => setRegion(isRegion(value) ? value : null)}
+          options={regionOptions}
+          className="composer__region"
+        />
+        <div className="composer__end">
+          {nearLimit ? (
+            <output className="composer__count mono" aria-live="polite">{draft.length}/{messageLimit}</output>
+          ) : (
+            <span className="composer__hint">{t('conversation.sendHint')}</span>
+          )}
+          <button type="submit" className="composer__send" aria-label={t('conversation.send')} disabled={!ready}>
+            <ArrowUp aria-hidden="true" size={18} strokeWidth={2.25} />
+          </button>
+        </div>
       </div>
     </form>
   )
-}
+})

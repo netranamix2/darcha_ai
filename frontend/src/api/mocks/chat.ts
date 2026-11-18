@@ -1,4 +1,4 @@
-import type { Citation, Level } from '../types'
+import type { Citation, Level, PublicDocument } from '../types'
 
 export type MockLocale = 'uz-latn' | 'uz-cyrl' | 'ru'
 
@@ -175,6 +175,11 @@ const replyText = {
     'uz-cyrl': 'Саволингизга аниқ жавоб бериш учун таълим муассасаси номини ва қайси масала бўйича ёрдам кераклигини ёзинг. Мурожаатларни кўриб чиқиш тартиби қуйидаги ҳужжатда келтирилган.',
     ru: 'Чтобы ответить точнее, укажите учебное заведение и опишите, в чём нужна помощь. Порядок рассмотрения обращений приведён в документе ниже.',
   },
+  refusal: {
+    'uz-latn': 'Iltimos, savolingizni taʼlimga oid tarzda yozing — men meʼyoriy hujjatlar asosida yordam beraman.',
+    'uz-cyrl': 'Илтимос, саволингизни таълимга оид тарзда ёзинг — мен меъёрий ҳужжатлар асосида ёрдам бераман.',
+    ru: 'Пожалуйста, сформулируйте вопрос, связанный с образованием, — я помогу на основе нормативных документов.',
+  },
   specialist: {
     'uz-latn': 'Murojaatingizni koʻrib chiqdim. Vaziyatni aniqlashtirish uchun taʼlim muassasasi nomini va hodisa sanasini shu suhbatda yozishingiz mumkin.',
     'uz-cyrl': 'Мурожаатингизни кўриб чиқдим. Вазиятни аниқлаштириш учун таълим муассасаси номини ва ҳодиса санасини шу суҳбатда ёзишингиз мумкин.',
@@ -204,11 +209,47 @@ function isFraud(text: string) {
   return hasMoney && (words.length === 1 || solicitation || (admission && !topics.contract.pattern.test(text)))
 }
 
+// Obscene words and direct insults in Uzbek (Latin and Cyrillic), Russian and English.
+// Roots are anchored to a word start so ordinary words ("учебник", "небо") never match.
+const profanity = new RegExp([
+  '(?<!\\p{L})(?:на|по|за|от|ни)?ху[йяеёию]',
+  'пизд',
+  '(?<!\\p{L})(?:за|у|вы|от|по|на|до|раз|съ|при|долбо)?[её]б(?:а|у|л|н|и|ё|о|ы)',
+  '(?<!\\p{L})бля',
+  '(?<!\\p{L})су(?:ка|ки|ку|кой|чк|чар)',
+  '(?<!\\p{L})муд(?:ак|ил|о[зх])',
+  'пид[оа]р',
+  'г[ао]ндон',
+  'залуп',
+  'шлюх',
+  'ублюд',
+  '(?<!\\p{L})(?:дебил|идиот|чмо|урод|даун|тварь|мраз)',
+  '(?<!\\p{L})(?:fuck|shit|bitch|asshole|cunt|bastard|dickhead|motherf|wtf(?!\\p{L}))',
+  "(?<!\\p{L})(?:sik(?:a|i|ay|ib|tir|dim)|jalab|qanjiq|ahmoq|dalbayob|itvachcha|onangni)",
+  '(?<!\\p{L})(?:сик(?:а|и|ай|иб|тир|дим)|жалаб|қанжиқ|канжик|аҳмоқ|ахмоқ|ахмок|далбаёб|онангни)',
+].join('|'), 'iu')
+
+// Signals that a message is about education at all. Anything else gets a polite refusal.
+const educationTopic = new RegExp('(?<!\\p{L})(?:' + [
+  "ta'lim|talim|maktab|o'qi|oqi|o'quv|talaba|student|universitet|institut|otm|oliy|kollej|litsey|texnikum|bog'cha|bogcha|dars|imtihon|test|dtm|diplom|attestat|kontrakt|stipend|grant|o'qituvchi|ustoz|pedagog|direktor|rektor|dekan|fakultet|kafedra|akadem|transkript|qabul|sertifikat|olimpiada|sinf|ota-ona|ilm|fan|magistr|bakalavr|reyting|semestr|kurs|darslik|forma|shikoyat|murojaat|ariza|vazirlik",
+  'таълим|мактаб|ўқи|ўқув|талаба|университет|институт|отм|олий|коллеж|лицей|техникум|боғча|дарс|имтиҳон|тест|диплом|аттестат|контракт|стипенд|грант|ўқитувчи|устоз|педагог|директор|ректор|декан|факультет|кафедра|академ|транскрипт|қабул|сертификат|олимпиада|синф|ота-она|илм|фан|магистр|бакалавр|семестр|курс|дарслик|форма|шикоят|мурожаат|ариза|вазирлик',
+  'образован|школ|учеб|учит|учён|учен|студент|вуз|универ|институт|колледж|лице|техникум|садик|детск|урок|экзамен|тест|диплом|аттестат|контракт|стипенд|грант|педагог|директор|ректор|декан|факультет|кафедр|академ|транскрипт|поступ|зачисл|сертификат|олимпиад|класс|ученик|родител|наук|магистр|бакалавр|семестр|курс|перевод|перевест|восстанов|отчисл|сесси|зач[её]т|оценк|форм|жалоб|обращени|заявлени|министерств',
+  'school|universit|college|student|teacher|exam|educat|diploma|tuition|admission|scholarship|course|lesson|grade',
+].join('|') + ')', 'iu')
+
 export function determineReply(text: string, forceEscalation = false) {
   const locale = detectLocale(text)
   const normalized = text.toLowerCase().replace(/[ʻʼ‘’`´]/g, "'")
+  const isProfane = profanity.test(normalized)
   const topic = Object.values(topics).find(({ pattern }) => pattern.test(normalized))
   const fraud = isFraud(normalized)
+  // A non-answer never carries a citation and never opens a ticket.
+  if (!forceEscalation && (isProfane || (!topic && !fraud && !educationTopic.test(normalized)))) {
+    return {
+      locale, topic: 'Mavzudan tashqari', level: 'green' as Level, answer: replyText.refusal[locale],
+      citations: [] as Citation[], fraud: false, followUp: replyText.refusal[locale],
+    }
+  }
   const escalated = forceEscalation || fraud || /shikoyat|şikoyat|шикоят|жалоб|rad etildi|рад этилди|отказал|muddati o'tdi|муддати ўтди|просроч/i.test(normalized)
   const level: Level = escalated ? 'red' : topic?.level ?? 'yellow'
   const source = escalated ? appealSource : topic?.source ?? appealSource
@@ -220,4 +261,50 @@ export function determineReply(text: string, forceEscalation = false) {
   const label = fraud ? 'Qabuldagi firibgarlik' : topic?.label ?? 'Boshqa murojaatlar'
   const followUp = escalated ? replyText.specialist[locale] : topic?.overview[locale] ?? replyText.clarify[locale]
   return { locale, topic: label, level, answer, citations: [cite(source, locale)], fraud, followUp }
+}
+
+interface DocumentMeta {
+  source: TopicReference
+  number: LocalizedText
+  // Demo values for the mock list — confirm against lex.uz before going live.
+  adoptedAt: string
+}
+
+const documentMeta: DocumentMeta[] = [
+  {
+    source: topics.transfer.source,
+    number: { 'uz-latn': 'VMQ-578', 'uz-cyrl': 'ВМҚ-578', ru: 'ПКМ-578' },
+    adoptedAt: '2023-10-27',
+  },
+  {
+    source: topics.contract.source,
+    number: { 'uz-latn': '2431-son', 'uz-cyrl': '2431-сон', ru: '№ 2431' },
+    adoptedAt: '2013-02-26',
+  },
+  {
+    source: topics.certification.source,
+    number: { 'uz-latn': 'VMQ-572', 'uz-cyrl': 'ВМҚ-572', ru: 'ПКМ-572' },
+    adoptedAt: '2022-10-12',
+  },
+  {
+    source: topics.uniform.source,
+    number: { 'uz-latn': 'VMQ-666', 'uz-cyrl': 'ВМҚ-666', ru: 'ПКМ-666' },
+    adoptedAt: '2018-08-20',
+  },
+  {
+    source: appealSource,
+    number: { 'uz-latn': 'OʻRQ-445', 'uz-cyrl': 'ЎРҚ-445', ru: 'ЗРУ-445' },
+    adoptedAt: '2017-09-11',
+  },
+]
+
+export function publicDocuments(locale: MockLocale): PublicDocument[] {
+  return documentMeta.map(({ source, number, adoptedAt }) => ({
+    id: String(source.documentId),
+    title: source.title[locale],
+    number: number[locale],
+    adopted_at: adoptedAt,
+    status: 'active',
+    url: cite(source, locale).url,
+  }))
 }

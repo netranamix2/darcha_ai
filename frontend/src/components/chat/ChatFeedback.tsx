@@ -1,8 +1,8 @@
-import { ThumbsDown, ThumbsUp } from 'lucide-react'
-import { useState } from 'react'
+import { Check, Copy, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
-import { Button, IconButton, Input } from '../ui'
+import { Button, IconButton, Input, Tooltip } from '../ui'
 import { readChatPreference, saveChatPreference } from './storage'
 
 type Reaction = 'up' | 'down'
@@ -16,13 +16,20 @@ function savedFeedback(key: string): Feedback {
   return { reaction, detail }
 }
 
-export function ChatFeedback({ messageId }: { messageId: string }) {
+export function ChatFeedback({ messageId, text }: { messageId: string; text: string }) {
   const t = useT(chatMessages)
   const key = 'darcha.chat.feedback.' + messageId
   const [feedback, setFeedback] = useState(() => savedFeedback(key))
   const [detail, setDetail] = useState(feedback.detail)
   const [showDetail, setShowDetail] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!copied) return
+    const timer = window.setTimeout(() => setCopied(false), 1600)
+    return () => window.clearTimeout(timer)
+  }, [copied])
 
   function record(next: Feedback) {
     setFeedback(next)
@@ -36,28 +43,37 @@ export function ChatFeedback({ messageId }: { messageId: string }) {
     record({ reaction: next, detail: feedback.detail })
   }
 
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+    } catch {
+      // Clipboard access can be blocked; the text stays selectable.
+    }
+  }
+
   return (
-    <div className="chat-feedback">
-      <div className="chat-feedback-summary">
-        <p>{t('conversation.aiReply')}</p>
-        <div className="chat-feedback-controls">
-          <IconButton
-            size="sm"
-            aria-pressed={feedback.reaction === 'up'}
-            aria-label={t('conversation.helpful')}
-            onClick={() => react('up')}
-          ><ThumbsUp size={14} aria-hidden="true" /></IconButton>
-          <IconButton
-            size="sm"
-            aria-pressed={feedback.reaction === 'down'}
-            aria-expanded={showDetail}
-            aria-label={t('conversation.unhelpful')}
-            onClick={() => react('down')}
-          ><ThumbsDown size={14} aria-hidden="true" /></IconButton>
-        </div>
+    <div className="feedback">
+      <div className="feedback__actions">
+        <Tooltip content={t('conversation.helpful')}>
+          <IconButton size="sm" aria-pressed={feedback.reaction === 'up'} aria-label={t('conversation.helpful')} onClick={() => react('up')}>
+            <ThumbsUp aria-hidden="true" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip content={t('conversation.unhelpful')}>
+          <IconButton size="sm" aria-pressed={feedback.reaction === 'down'} aria-expanded={showDetail}
+            aria-label={t('conversation.unhelpful')} onClick={() => react('down')}>
+            <ThumbsDown aria-hidden="true" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip content={t(copied ? 'conversation.copied' : 'conversation.copy')}>
+          <IconButton size="sm" aria-label={t(copied ? 'conversation.copied' : 'conversation.copy')} onClick={() => void copy()}>
+            {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+          </IconButton>
+        </Tooltip>
       </div>
       {showDetail && (
-        <form className="chat-feedback-form" onSubmit={(event) => {
+        <form className="feedback__form" onSubmit={(event) => {
           event.preventDefault()
           if (!detail.trim()) return
           record({ reaction: 'down', detail: detail.trim() })
@@ -74,7 +90,7 @@ export function ChatFeedback({ messageId }: { messageId: string }) {
           <Button size="sm" variant="secondary" type="submit" disabled={!detail.trim()}>{t('conversation.saveFeedback')}</Button>
         </form>
       )}
-      {confirmed && <p role="status" className="chat-feedback-confirmation">{t('conversation.savedFeedback')}</p>}
+      {confirmed && <p role="status" className="feedback__done">{t('conversation.savedFeedback')}</p>}
     </div>
   )
 }

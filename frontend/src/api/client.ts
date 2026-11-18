@@ -7,7 +7,7 @@ import { ApiError } from './errors'
 import { caseStorageKey, subscribeToMockCaseChanges } from './mocks/case-events'
 import type {
   AnalyticsAlert, AnalyticsSummary, CaseChangeKind, ChatMessage, ChatReply, ChatSession, Citation,
-  FaqReport, InboxItem, Level, LoginReply, StaffMember, Ticket, TicketDepartment, TicketPatch,
+  FaqReport, InboxItem, Level, LoginReply, PublicDocument, StaffMember, Ticket, TicketDepartment, TicketPatch,
 } from './types'
 
 export { ApiError } from './errors'
@@ -318,6 +318,26 @@ export async function getKnowledgeBase(): Promise<Citation[]> {
   const path = '/api/documents'
   return request(path, async () => documents(await read(path, { staff: true })),
     async () => (await loadMocks()).getKnowledgeBase(), mockStaffSession)
+}
+
+export async function getPublicDocuments(lang: 'uz-latn' | 'uz-cyrl' | 'ru'): Promise<PublicDocument[]> {
+  // TODO(backend): GET /api/documents/public?lang= — the public, unauthenticated document list.
+  const path = '/api/documents/public'
+  return request(path, async () => {
+    const payload = await read(`${path}?lang=${encodeURIComponent(lang)}`)
+    return rows(payload).flatMap((entry) => {
+      const id = identifier(entry.id)
+      if (!id || typeof entry.title !== 'string' || typeof entry.url !== 'string') return []
+      return [{
+        id,
+        title: entry.title,
+        number: typeof entry.number === 'string' ? entry.number : '',
+        adopted_at: typeof entry.adopted_at === 'string' ? entry.adopted_at : '',
+        status: entry.status === 'repealed' ? 'repealed' as const : 'active' as const,
+        url: entry.url,
+      }]
+    })
+  }, async () => (await loadMocks()).getPublicDocuments(lang))
 }
 
 export async function markTicketViewed(id: string): Promise<void> {

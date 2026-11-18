@@ -1,183 +1,159 @@
 @import "tailwindcss";
 @import "./primitives.css" layer(components);
 
+/*
+ * Darcha Light — the single source of design tokens.
+ * See CLAUDE.md for the design direction. Change values here, never inline.
+ */
 @theme static {
-  --color-base: #070b16;
-  --color-deep: #0b1224;
-  --color-primary: #2f7bff;
-  --color-cyan: #22d3ee;
-  --color-violet: #7c5cff;
-  --color-text: #f1f5ff;
-  --color-secondary: #9aa6c3;
-  --color-muted: #5f6b88;
-  --color-green: #22c55e;
-  --color-amber: #f5b83d;
-  --color-red: #f2555a;
-  --color-border: rgb(255 255 255 / 12%);
-  --font-heading: "Manrope Variable", Manrope, system-ui, sans-serif;
-  --font-ui: "Inter Variable", Inter, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", Consolas, monospace;
+  /* Surfaces */
+  --color-bg: #fafaf9;
+  --color-surface: #ffffff;
+  --color-subtle: #f5f5f4;
+  --color-line: #e7e5e4;
+  --color-line-strong: #d6d3d1;
+
+  /* Ink */
+  --color-ink: #0c0a09;
+  --color-ink-2: #57534e;
+  --color-ink-3: #a8a29e;
+
+  /* Accent — the only brand colour */
+  --color-accent: #2453e6;
+  --color-accent-hover: #1d44c4;
+  --color-accent-tint: #eef2fe;
+
+  /* Status — only for statuses */
+  --color-ok: #15803d;
+  --color-ok-tint: #f0fdf4;
+  --color-warn: #b45309;
+  --color-warn-tint: #fffbeb;
+  --color-danger: #b91c1c;
+  --color-danger-tint: #fef2f2;
+
+  /* Type */
+  --font-sans: "Onest Variable", Onest, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Consolas, monospace;
+
+  /* Radius & depth */
+  --radius-control: 10px;
+  --radius-panel: 16px;
+  --shadow-sm: 0 1px 2px rgb(12 10 9 / 4%);
+  --shadow-md: 0 1px 2px rgb(12 10 9 / 4%), 0 8px 24px rgb(12 10 9 / 6%);
+  --shadow-lg: 0 1px 3px rgb(12 10 9 / 6%), 0 16px 48px rgb(12 10 9 / 12%);
+}
+
+:root {
+  color-scheme: light;
+
+  /* Frosted layer — floating surfaces only (header, composer, drawers, popovers) */
+  --frost-fill: rgb(255 255 255 / 72%);
+  --frost-blur: 16px;
+
+  --focus-ring: 0 0 0 3px rgb(36 83 230 / 22%);
+  --motion-fast: 150ms;
+  --motion-normal: 220ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --chat-width: 760px;
+  --panel-width: 1320px;
+
+  /*
+   * Legacy aliases. The staff panel (inbox, tickets, analytics) still uses the
+   * old variable names; mapping them here gives it a coherent light look until
+   * it is redesigned. Do not use these in new code.
+   */
+  --color-text: var(--color-ink);
+  --color-secondary: var(--color-ink-2);
+  --color-muted: var(--color-ink-3);
+  --color-primary: var(--color-accent);
+  --color-focus: var(--color-accent);
+  --color-cyan: var(--color-accent);
+  --color-violet: var(--color-accent);
+  --color-base: var(--color-bg);
+  --color-deep: var(--color-subtle);
+  --color-green: var(--color-ok);
+  --color-amber: var(--color-warn);
+  --color-red: var(--color-danger);
+  --color-border: var(--color-line);
+  --glass-fill: var(--color-surface);
+  --glass-fill-elevated: var(--color-surface);
+  --glass-fill-subtle: var(--color-subtle);
+  --glass-hairline: none;
+  --glass-highlight: none;
+  --glass-blur: 0px;
+  --control-fill: var(--color-surface);
+  --control-fill-hover: var(--color-subtle);
+  --control-border: var(--color-line);
+  --overlay-fill: var(--color-surface);
+  --shadow-panel: var(--shadow-md);
+  --shadow-elevated: var(--shadow-lg);
+  --radius-panel-subtle: var(--radius-panel);
+  --radius-panel-elevated: var(--radius-panel);
+  --font-heading: var(--font-sans);
+  --font-ui: var(--font-sans);
+  --ease-spring: var(--ease-out);
   --text-caption: 0.75rem;
-  --text-caption--line-height: 1.4;
   --text-ui: 0.875rem;
   --text-ui--line-height: 1.5;
   --text-heading: 1.25rem;
   --text-heading--line-height: 1.3;
-  --text-title: clamp(1.75rem, 4vw, 2.625rem);
-  --text-title--line-height: 1.12;
-  --text-display: clamp(2.5rem, 6vw, 4.75rem);
-  --text-display--line-height: 1.05;
-  --radius-panel: 24px;
-  --radius-panel-elevated: 28px;
-  --radius-panel-subtle: 20px;
-  --radius-control: 13px;
-  --shadow-panel: 0 15px 34px rgb(1 5 18 / 24%), 0 29px 92px rgb(4 13 39 / 29%);
-  --shadow-elevated: 0 20px 45px rgb(1 6 22 / 34%), 0 40px 114px rgb(5 16 49 / 41%);
-}
-
-:root {
-  color-scheme: dark;
-  --glass-fill: rgb(255 255 255 / 6%);
-  --glass-fill-elevated: rgb(255 255 255 / 8%);
-  --glass-fill-subtle: rgb(255 255 255 / 4%);
-  --glass-hairline: linear-gradient(145deg, rgb(228 240 255 / 27%), rgb(218 232 255 / 13%) 38%, rgb(215 232 255 / 7%) 75%, rgb(210 230 255 / 4%));
-  --glass-highlight: inset 0 1px 0 rgb(237 246 255 / 7%);
-  --glass-blur: 20px;
-  --control-fill: rgb(255 255 255 / 5%);
-  --control-fill-hover: rgb(255 255 255 / 9%);
-  --control-border: rgb(255 255 255 / 13%);
-  --color-focus: #8fb7ff;
-  --overlay-fill: #141e34;
-  --motion-fast: 150ms;
-  --motion-normal: 250ms;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.18, 0.78, 0.28, 1.17);
+  --text-title: clamp(1.625rem, 3.4vw, 2.25rem);
+  --text-title--line-height: 1.15;
 }
 
 @layer base {
   html {
-    background: var(--color-base);
-    color: var(--color-text);
-    font-family: var(--font-ui);
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 100%;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    min-width: 280px;
+    min-width: 320px;
     min-height: 100vh;
-    line-height: 1.5;
+    background: var(--color-bg);
+    font-size: 0.9375rem;
+    line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading);
-    font-weight: 700;
-    letter-spacing: -0.025em;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-wrap: balance;
   }
 
+  p { text-wrap: pretty; }
+
+  a { color: inherit; text-decoration: none; }
+
   :focus-visible {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 3px;
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 
   ::selection {
-    background: rgb(47 123 255 / 37%);
-    color: var(--color-text);
+    background: var(--color-accent-tint);
+    color: var(--color-ink);
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
   }
 }
 
-.aurora-background {
-  position: fixed;
-  z-index: -1;
-  inset: 0;
-  overflow: clip;
-  pointer-events: none;
-  background: radial-gradient(ellipse at 50% 0%, var(--color-deep), var(--color-base) 76%);
-}
-
-.aurora-background__blob {
-  position: absolute;
-  width: max(52vw, 30rem);
-  height: max(56vh, 28rem);
-  border-radius: 50%;
-  filter: blur(52px);
-  will-change: transform;
-  animation: aurora-drift var(--aurora-duration) ease-in-out infinite alternate;
-}
-
-.aurora-background__blob--blue {
-  top: -29%;
-  left: -12%;
-  --aurora-duration: 33s;
-  --aurora-x: 14%;
-  --aurora-y: 14%;
-  background: radial-gradient(ellipse, rgb(41 102 242 / 41%) 0%, transparent 72%);
-}
-
-.aurora-background__blob--cyan {
-  top: 3%;
-  right: -26%;
-  --aurora-duration: 39s;
-  --aurora-x: -10%;
-  --aurora-y: 13%;
-  background: radial-gradient(ellipse, rgb(34 211 238 / 19%) 0%, transparent 72%);
-}
-
-.aurora-background__blob--violet {
-  bottom: -34%;
-  left: 3%;
-  --aurora-duration: 36s;
-  --aurora-x: 16%;
-  --aurora-y: -10%;
-  background: radial-gradient(ellipse, rgb(124 92 255 / 21%) 0%, transparent 72%);
-}
-
-.aurora-background__blob--deep-blue {
-  right: -22%;
-  bottom: -28%;
-  --aurora-duration: 30s;
-  --aurora-x: -14%;
-  --aurora-y: -12%;
-  background: radial-gradient(ellipse, rgb(36 102 229 / 24%) 0%, transparent 72%);
-}
-
-.aurora-background__blob--veil {
-  bottom: 14%;
-  left: 27%;
-  width: max(38vw, 22rem);
-  height: max(34vh, 14rem);
-  --aurora-duration: 38s;
-  --aurora-x: 20%;
-  --aurora-y: -18%;
-  background: radial-gradient(ellipse, rgb(58 117 241 / 14%) 0%, transparent 71%);
-}
-
-.aurora-background__midlight {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 65% 25%, rgb(59 103 197 / 9%), transparent 55%),
-    radial-gradient(ellipse at 9% 92%, rgb(20 50 124 / 13%), transparent 64%);
-}
-
-.aurora-background__grain {
-  position: absolute;
-  inset: 0;
-  background: url("./grain.png") repeat;
-  opacity: 0.035;
-}
-
-.aurora-background[data-paused="true"] .aurora-background__blob {
-  animation-play-state: paused;
-}
-
-@keyframes aurora-drift {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to { transform: translate3d(var(--aurora-x), var(--aurora-y), 0) scale(1.12); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .aurora-background__blob {
-    animation: none;
-    will-change: auto;
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

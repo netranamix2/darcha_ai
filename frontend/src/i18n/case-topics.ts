@@ -10,5 +10,6 @@ export const caseTopicNames: Readonly<Record<string, readonly [string, string]>>
   'Hududiy boʻlim murojaati': ['Ҳудудий бўлим мурожаати', 'Обращения в районный отдел'],
   'Taʼlim muassasasiga kirish': ['Таълим муассасасига кириш', 'Поступление в учебное заведение'],
   'Qabuldagi firibgarlik': ['Қабулдаги фирибгарлик', 'Мошенничество при поступлении'],
+  'Mavzudan tashqari': ['Мавзудан ташқари', 'Не по теме'],
   'Boshqa murojaatlar': ['Бошқа мурожаатлар', 'Прочие обращения'],
 }

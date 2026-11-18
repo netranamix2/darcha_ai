@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Clock3, Phone, ShieldAlert, Ticket } from 'lucide-react'
+import { Phone, ShieldAlert } from 'lucide-react'
 import type { ChatReply } from '../../api/types'
 import { chatMessages, formatChatDate, formatChatDays } from '../../i18n/chat'
 import { useLanguage } from '../../i18n/useLanguage'
@@ -9,16 +9,11 @@ const ticketSteps = ['conversation.received', 'conversation.forwarded', 'convers
 
 export function ChatPending() {
   const t = useT(chatMessages)
-
   return (
-    <div className="chat-status chat-status--pending">
-      <span className="chat-status-icon"><Clock3 size={18} aria-hidden="true" /></span>
-      <div>
-        <p className="chat-status-title">{t('conversation.pendingTitle')}</p>
-        <p className="chat-status-detail">{t('conversation.pendingDetail')}</p>
-      </div>
-      <div className="chat-pending-track" aria-hidden="true"><span /></div>
-    </div>
+    <p className="note" data-tone="warn">
+      <span className="ui-dot" aria-hidden="true" />
+      {t('conversation.pendingNote')}
+    </p>
   )
 }
 
@@ -28,42 +23,44 @@ export function ChatTicket({ reply, createdAt, resolved }: { reply: ChatReply; c
   const deadline = reply.due_at ? new Date(reply.due_at) : null
   const duration = deadline ? Math.ceil((deadline.getTime() - new Date(createdAt).getTime()) / msInDay) : 0
   const date = deadline ? formatChatDate(deadline, language) : null
-  const due = date && (Number.isFinite(duration) && duration > 0
-    ? t('conversation.due').replace('{date}', date).replace('{duration}', formatChatDays(duration, language))
-    : t('conversation.dueNoDuration').replace('{date}', date))
+  const current = resolved ? 3 : 1
 
   return (
-    <div className="chat-status chat-status--ticket">
-      <div className="chat-ticket-header">
-        <span className="chat-status-icon"><Ticket size={18} aria-hidden="true" /></span>
-        <div>
-          <p className="chat-status-title">{t('conversation.ticketTitle')}</p>
-          {reply.ticket_number && <p className="chat-ticket-number">№{reply.ticket_number.replace(/^№\s*/u, '')}</p>}
-        </div>
+    <div className="ticket">
+      <div className="ticket__head">
+        <p className="ticket__title">{t('conversation.ticketTitle')}</p>
+        {reply.ticket_number && <p className="ticket__number mono">№ {reply.ticket_number.replace(/^№\s*/u, '')}</p>}
       </div>
-      {due && <p className="chat-ticket-due"><CalendarDays size={15} aria-hidden="true" />{due}</p>}
-      <ol className="chat-ticket-steps">
-        {ticketSteps.map((step, index) => (
-          <li key={step} data-complete={index < 2 || resolved}>
-            <span aria-hidden="true">{(index < 2 || resolved) && <Check size={10} />}</span>
-            {t(step)}
-          </li>
-        ))}
+      {date && (
+        <p className="ticket__due">
+          {t('conversation.dueLabel')}: <span className="mono">{date}</span>
+          {Number.isFinite(duration) && duration > 0 && <span className="ticket__duration"> · {formatChatDays(duration, language)}</span>}
+        </p>
+      )}
+      <ol className="ticket__steps" aria-label={t('conversation.ticketStatus')}>
+        {ticketSteps.map((step, index) => {
+          const state = index < current ? 'done' : index === current ? 'current' : 'todo'
+          return (
+            <li key={step} data-state={state} aria-current={state === 'current' ? 'step' : undefined}>
+              <span className="ticket__marker" aria-hidden="true" />
+              <span>{t(step)}</span>
+            </li>
+          )
+        })}
       </ol>
     </div>
   )
 }
 
-export function ChatFraud({ animate }: { animate: boolean }) {
+export function ChatFraud() {
   const t = useT(chatMessages)
-
   return (
-    <div className="chat-status chat-status--fraud" data-attention={animate || undefined}>
-      <span className="chat-status-icon"><ShieldAlert size={19} aria-hidden="true" /></span>
+    <div className="fraud" role="alert">
+      <ShieldAlert className="fraud__icon" size={18} aria-hidden="true" />
       <div>
-        <p className="chat-status-title">{t('conversation.fraudTitle')}</p>
-        <p className="chat-status-detail">{t('conversation.fraudBody')}</p>
-        <a className="chat-hotline" href="tel:1006"><Phone size={15} aria-hidden="true" />{t('conversation.hotline')}</a>
+        <p className="fraud__title">{t('conversation.fraudTitle')}</p>
+        <p className="fraud__body">{t('conversation.fraudBody')}</p>
+        <a className="fraud__hotline" href="tel:1006"><Phone size={14} aria-hidden="true" />{t('conversation.hotline')}</a>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 import { ApiError } from '../errors'
 import type { ChatMessage, ChatReply, ChatSession, FaqReport, InboxItem, Level, LoginReply, StaffRole, Ticket, TicketPatch } from '../types'
-import { determineReply } from './chat'
+import { determineReply, publicDocuments } from './chat'
+import type { MockLocale } from './chat'
 import {
   answeredTopics, cases, nonBlank, persistChatState, reports, requireRecord, resetChatState,
   sessions, ticketFallbackDelay, withChatState,
@@ -267,6 +268,11 @@ export async function convertInboxToTicket(id: string): Promise<Ticket> {
 export async function getStaff() {
   await pause()
   return structuredClone(staff)
+}
+
+export async function getPublicDocuments(lang: MockLocale) {
+  await pause()
+  return structuredClone(publicDocuments(lang))
 }
 
 export async function getKnowledgeBase() {

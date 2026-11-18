@@ -1,357 +1,137 @@
-.public-home {
-  max-width: 83rem;
-  margin-inline: auto;
+.home {
+  padding-inline: 1rem;
 }
 
-.public-hero {
+/* ---------- Documents ---------- */
+
+.docs {
+  width: min(100%, var(--chat-width));
+  margin: clamp(4rem, 12vh, 7rem) auto 0;
+}
+
+.docs__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.docs__subtitle {
+  margin-top: 0.375rem;
+  color: var(--color-ink-2);
+  font-size: 0.9375rem;
+}
+
+.docs__table {
+  margin-top: 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.docs__row {
   display: grid;
-  grid-template-columns: minmax(0, 0.87fr) minmax(0, 1.13fr);
+  grid-template-columns: minmax(0, 1fr) 6.5rem 6.5rem 6rem;
   align-items: center;
-  gap: clamp(2rem, 4vw, 4.5rem);
-  padding-block: clamp(1.5rem, 3.5vw, 3.5rem) clamp(3.25rem, 6vw, 6rem);
+  gap: 1rem;
+  min-height: 3.5rem;
+  padding: 0.75rem 1.125rem;
+  font-size: 0.875rem;
 }
 
-.public-hero-intro {
-  min-width: 0;
-  padding-block: 1rem;
+.docs__row + .docs__row { border-top: 1px solid var(--color-line); }
+
+.docs__row--head {
+  min-height: 2.5rem;
+  padding-block: 0.5rem;
+  background: var(--color-subtle);
+  color: var(--color-ink-3);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
-.public-headline {
-  max-width: 16ch;
-  color: var(--color-text);
-  font-size: clamp(2.6rem, 4.1vw, 4.3rem);
-  font-weight: 770;
-  line-height: 1.07;
-  letter-spacing: -0.061em;
+.docs__name a {
+  color: var(--color-ink);
+  font-weight: 500;
+  line-height: 1.4;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-line-strong);
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
-.public-headline-accent {
-  display: block;
-  color: color-mix(in srgb, var(--color-focus) 52%, var(--color-text));
+.docs__name a:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
 }
 
-.public-headline-word {
-  display: inline-block;
+.docs__number,
+.docs__date {
+  color: var(--color-ink-2);
+  font-size: 0.8125rem;
   white-space: nowrap;
 }
 
-.public-hero-description {
-  max-width: 45ch;
-  margin-top: 1.22rem;
-  color: var(--color-secondary);
-  font-size: clamp(0.935rem, 1.18vw, 1.06rem);
-  line-height: 1.72;
+.docs__skeleton { width: 70%; height: 0.875rem; }
+
+.docs__state {
+  margin-top: 1rem;
+  color: var(--color-ink-2);
+  font-size: 0.875rem;
 }
 
-.public-trust {
+/* ---------- Footer ---------- */
+
+.footer {
+  width: min(100%, var(--chat-width));
+  margin: 4rem auto 0;
+  padding: 1.75rem 0 2.5rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.footer__top {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.48rem 0.45rem;
-  margin-top: 1.45rem;
-}
-
-.public-trust li {
-  display: inline-flex;
   align-items: center;
-  gap: 0.42rem;
-  padding: 0.4rem 0.62rem;
-  border: 1px solid var(--control-border);
-  border-radius: 999px;
-  background: var(--glass-fill-subtle);
-  box-shadow: var(--glass-highlight);
-  color: var(--color-text);
-  font-size: var(--text-caption);
-  line-height: 1.25;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.public-trust svg,
-.public-step-icon,
-.ministry-card-icon,
-.public-qr-icon,
-.public-hotline svg {
-  flex: none;
-  color: var(--color-focus);
-}
+.footer .brand { font-size: 0.9375rem; }
 
-.public-steps {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
-  max-width: 30rem;
-  margin-top: 1.7rem;
-}
-
-.public-steps::before {
-  position: absolute;
-  inset: 1.15rem auto auto 1rem;
-  width: calc(66.667% + 0.45rem);
-  height: 1px;
-  background: linear-gradient(90deg, rgb(91 139 236 / 20%), rgb(135 173 252 / 76%), rgb(91 139 236 / 33%));
-  transform-origin: left center;
-  content: "";
-}
-
-.public-steps li {
-  position: relative;
-  display: grid;
-  justify-items: start;
-  align-content: start;
-  gap: 0.52rem;
-  color: var(--color-secondary);
-  font-size: var(--text-caption);
-  font-weight: 570;
-  line-height: 1.35;
-}
-
-.public-step-icon,
-.ministry-card-icon,
-.public-qr-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 2.35rem;
-  height: 2.35rem;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 31%, transparent);
-  border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-deep));
-  box-shadow: var(--glass-highlight);
-}
-
-.public-stat {
+.footer__links {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 0.15rem 0.55rem;
-  width: fit-content;
-  margin-top: 1.45rem;
-  color: var(--color-secondary);
-  font-size: var(--text-ui);
+  gap: 0.5rem 1.5rem;
+  font-size: 0.875rem;
 }
 
-.public-stat > svg {
-  flex: none;
-  color: color-mix(in srgb, var(--color-green) 65%, var(--color-text));
+.footer__link {
+  color: var(--color-ink-2);
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
-.public-stat-value {
-  min-width: 5ch;
-  color: var(--color-text);
-  font-size: 1rem;
-  font-weight: 750;
-  text-align: end;
-  font-variant-numeric: tabular-nums;
-}
+.footer__link:hover { color: var(--color-accent); }
+.footer__phone { color: var(--color-ink); font-weight: 600; }
+.footer__muted { color: var(--color-ink-3); }
 
-.public-stat small {
-  padding-inline-start: 0.5rem;
-  border-inline-start: 1px solid var(--color-border);
-  color: var(--color-secondary);
-  font-size: var(--text-caption);
-}
-
-.public-chat-slot {
-  --public-chat-height: min(40rem, max(35rem, calc(100svh - 9.25rem)));
-  min-width: 0;
-}
-
-.public-details-slot:empty {
-  min-block-size: 20rem;
-}
-
-.ministry-section h2 {
-  margin-bottom: 1.15rem;
-  font-size: var(--text-title);
-  line-height: var(--text-title--line-height);
-}
-
-.ministry-cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: stretch;
-  gap: 0.8rem;
-}
-
-.ministry-card {
-  height: 100%;
-  padding: clamp(1.05rem, 2.5vw, 1.75rem);
-}
-
-.ministry-card-icon {
-  width: 2.65rem;
-  height: 2.65rem;
-  margin-bottom: 0.95rem;
-}
-
-.ministry-card h3 {
-  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
-  line-height: 1.28;
-}
-
-.ministry-card p {
-  margin-top: 0.52rem;
-  color: var(--color-secondary);
-  font-size: var(--text-ui);
+.footer__disclaimer {
+  max-width: 40rem;
+  margin-top: 1rem;
+  color: var(--color-ink-3);
+  font-size: 0.8125rem;
   line-height: 1.6;
 }
 
-.public-footer {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 1rem clamp(1rem, 3vw, 2.5rem);
-  margin-top: clamp(2.25rem, 5vw, 4rem);
-  padding-top: 1.2rem;
-  border-top: 1px solid var(--color-border);
-  font-size: var(--text-ui);
-}
+@media (max-width: 640px) {
+  .docs__row--head { display: none; }
 
-.public-qr,
-.public-hotline {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.public-qr-icon {
-  width: 2.75rem;
-  height: 2.75rem;
-}
-
-.public-qr p {
-  font-weight: 650;
-}
-
-.public-qr small,
-.public-disclaimer {
-  color: var(--color-secondary);
-  font-size: var(--text-caption);
-}
-
-.public-hotline {
-  width: fit-content;
-  border-radius: 0.3rem;
-  color: var(--color-secondary);
-}
-
-.public-hotline strong {
-  margin-inline-start: 0.22rem;
-  color: var(--color-text);
-  font-weight: 700;
-}
-
-.public-hotline:hover {
-  color: var(--color-text);
-  text-decoration: underline;
-  text-underline-offset: 0.22em;
-}
-
-.public-disclaimer {
-  max-width: 42ch;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .public-shell:has(.public-home[data-intro]) > .public-header .brand {
-    animation: public-logo-in 340ms var(--ease-out) both;
+  .docs__row {
+    grid-template-columns: auto auto 1fr;
+    gap: 0.375rem 0.875rem;
+    padding: 0.875rem 1rem;
   }
 
-  .public-home[data-intro] .public-headline-word {
-    animation: public-rise-in 370ms var(--ease-out) calc(170ms + var(--word-index) * 40ms) both;
-  }
-
-  .public-home[data-intro] .public-chat-slot {
-    animation: public-rise-in 420ms var(--ease-out) 630ms both;
-  }
-
-  .public-steps::before {
-    animation: public-line-in 410ms var(--ease-out) both;
-  }
-
-  .public-home[data-intro] .public-steps::before {
-    animation-delay: 470ms;
-  }
-}
-
-@keyframes public-logo-in {
-  from { opacity: 0.1; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes public-rise-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes public-line-in {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-
-@media (max-width: 960px) {
-  .public-home {
-    max-width: 46rem;
-  }
-
-  .public-hero {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2rem;
-    padding-top: 1rem;
-  }
-
-  .public-chat-slot {
-    grid-row: 1;
-  }
-
-  .public-hero-intro {
-    padding-block: 0;
-  }
-
-  .public-footer {
-    grid-template-columns: 1fr auto;
-    justify-items: start;
-  }
-
-  .public-footer .language-switch {
-    justify-self: end;
-  }
-}
-
-@media (max-width: 600px) {
-  .public-headline {
-    font-size: clamp(2rem, 7.9vw, 2.6rem);
-  }
-
-  .public-hero {
-    gap: 1.85rem;
-  }
-
-  .ministry-cards {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .ministry-card {
-    padding: 1.15rem;
-  }
-
-  .public-disclaimer {
-    grid-row: 2;
-    grid-column: 1 / -1;
-  }
-
-  .public-footer .language-switch {
-    grid-row: 3;
-    grid-column: 1 / -1;
-    justify-self: start;
-    padding-inline-start: 0.25rem;
-  }
-}
-
-@media (max-width: 360px) {
-  .public-footer {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .public-disclaimer,
-  .public-footer .language-switch {
-    grid-row: auto;
-  }
+  .docs__row > :first-child { grid-column: 1 / -1; }
+  .docs__row > :last-child { justify-self: end; }
 }

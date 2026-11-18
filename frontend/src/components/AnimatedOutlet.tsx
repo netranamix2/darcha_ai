@@ -12,9 +12,9 @@ export function AnimatedOutlet({ context }: { context?: unknown }) {
     <Suspense fallback={<RouteLoading />}>
       <motion.div
         key={pathname}
-        initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: reducedMotion ? 0 : 0.25, ease: 'easeOut' }}
+        initial={reducedMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }}
       >
         {currentPage}
       </motion.div>

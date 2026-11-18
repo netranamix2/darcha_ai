@@ -56,7 +56,7 @@ export function summarizeAnalytics(from: string, to: string): AnalyticsSummary {
   const now = Date.now()
   const currentTickets = Array.from(tickets.values()).filter((ticket) => inRange(ticket.created_at))
   const overdue = currentTickets.filter((ticket) => (
-    ticket.status !== 'answered' && (ticket.status === 'overdue' || Date.parse(ticket.due_at) < now)
+    ticket.status !== 'answered' && Date.parse(ticket.due_at) < now
   )).length
 
   return {

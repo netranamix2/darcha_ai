@@ -1,6 +1,6 @@
 import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ApiError, createChatSession, getChatMessages, sendChatMessage } from '../api/client'
+import { ApiError, createChatSession, getChatMessages, sendChatMessage, subscribeToCaseChanges } from '../api/client'
 import type { ChatMessage } from '../api/types'
 
 const sessionKey = 'darcha.chat.session'
@@ -150,6 +150,13 @@ export function usePublicChat() {
     staleTime: pollInterval,
     retry: false,
   })
+
+  useEffect(() => {
+    if (!sessionId) return
+    return subscribeToCaseChanges(() => {
+      void queryClient.invalidateQueries({ queryKey: historyKey(sessionId), exact: true })
+    })
+  }, [queryClient, sessionId])
 
   useEffect(() => {
     if (sessionId && !history.data && isExpired(history.error) && currentSession.current === sessionId) {

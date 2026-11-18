@@ -1,13 +1,16 @@
 import { ApiError } from './errors'
+import { subscribeToMockCaseChanges } from './mocks/case-events'
 import type {
   AnalyticsSummary,
   ChatMessage,
   ChatReply,
   ChatSession,
+  Citation,
   FaqReport,
   InboxItem,
   Level,
   LoginReply,
+  StaffMember,
   Ticket,
   TicketPatch,
 } from './types'
@@ -20,6 +23,11 @@ let staffToken: string | undefined
 
 function loadMocks() {
   return import('./mocks/index')
+}
+
+export function subscribeToCaseChanges(listener: () => void): () => void {
+  if (apiUrl) return () => {}
+  return subscribeToMockCaseChanges(listener)
 }
 
 interface RequestOptions {
@@ -111,6 +119,30 @@ export async function editResponse(id: string, text: string): Promise<void> {
 export async function getTickets(): Promise<Ticket[]> {
   if (!apiUrl) return (await loadMocks()).getTickets()
   return read('/api/tickets', { staff: true })
+}
+
+export async function convertInboxToTicket(id: string): Promise<Ticket> {
+  if (!apiUrl) return (await loadMocks()).convertInboxToTicket(id)
+  // TODO(backend): POST /api/inbox/{id}/ticket
+  return read(`/api/inbox/${encodeURIComponent(id)}/ticket`, { method: 'POST', staff: true })
+}
+
+export async function getStaff(): Promise<StaffMember[]> {
+  if (!apiUrl) return (await loadMocks()).getStaff()
+  // TODO(backend): GET /api/staff
+  return read('/api/staff', { staff: true })
+}
+
+export async function getKnowledgeBase(): Promise<Citation[]> {
+  if (!apiUrl) return (await loadMocks()).getKnowledgeBase()
+  // TODO(backend): GET /api/knowledge-base
+  return read('/api/knowledge-base', { staff: true })
+}
+
+export async function markTicketViewed(id: string): Promise<void> {
+  if (!apiUrl) return (await loadMocks()).markTicketViewed(id)
+  // TODO(backend): POST /api/tickets/{id}/view
+  await fetchApi(`/api/tickets/${encodeURIComponent(id)}/view`, { method: 'POST', staff: true })
 }
 
 export async function updateTicket(id: string, patch: TicketPatch): Promise<void> {

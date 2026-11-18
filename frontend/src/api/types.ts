@@ -53,6 +53,24 @@ export interface InboxItem {
     confidence: number
   } | null
   status: 'draft' | 'approved' | 'sent' | 'rejected'
+  ticket_id?: string | null
+  ticket_number?: string | null
+}
+
+export type TicketDepartment = 'higher' | 'schools' | 'attestation' | 'regional'
+
+export interface StaffMember {
+  id: string
+  name: string
+  department: TicketDepartment
+  is_current?: boolean
+}
+
+export interface TicketEvent {
+  type: 'created' | 'assigned' | 'viewed' | 'answered' | 'rated' | 'extended' | 'status_changed'
+  actor: string
+  created_at: string
+  note?: string
 }
 
 export interface Ticket {
@@ -69,7 +87,14 @@ export interface Ticket {
   channel: Channel
   draft_answer: string | null
   final_answer: string | null
-  similar_cases: { number: string; summary: string }[]
+  similar_cases: { number: string; summary: string; answer?: string }[]
+  department?: TicketDepartment
+  assignee_id?: string | null
+  flags?: string[]
+  // TODO(backend): ticket_events
+  events?: TicketEvent[]
+  extension_reason?: string | null
+  original_due_at?: string
 }
 
 export type TicketPatch = Partial<Omit<Ticket, 'id'>>

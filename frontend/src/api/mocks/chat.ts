@@ -204,12 +204,12 @@ function isFraud(text: string) {
   return hasMoney && (words.length === 1 || solicitation || (admission && !topics.contract.pattern.test(text)))
 }
 
-export function determineReply(text: string) {
+export function determineReply(text: string, forceEscalation = false) {
   const locale = detectLocale(text)
   const normalized = text.toLowerCase().replace(/[ʻʼ‘’`´]/g, "'")
   const topic = Object.values(topics).find(({ pattern }) => pattern.test(normalized))
   const fraud = isFraud(normalized)
-  const escalated = fraud || /shikoyat|şikoyat|шикоят|жалоб|rad etildi|рад этилди|отказал|muddati o'tdi|муддати ўтди|просроч/i.test(normalized)
+  const escalated = forceEscalation || fraud || /shikoyat|şikoyat|шикоят|жалоб|rad etildi|рад этилди|отказал|muddati o'tdi|муддати ўтди|просроч/i.test(normalized)
   const level: Level = escalated ? 'red' : topic?.level ?? 'yellow'
   const source = escalated ? appealSource : topic?.source ?? appealSource
   let answer = replyText.pending[locale]

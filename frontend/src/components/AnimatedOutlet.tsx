@@ -3,8 +3,8 @@ import { Suspense } from 'react'
 import { useLocation, useOutlet } from 'react-router'
 import { useT } from '../i18n/useT'
 
-export function AnimatedOutlet() {
-  const currentPage = useOutlet()
+export function AnimatedOutlet({ context }: { context?: unknown }) {
+  const currentPage = useOutlet(context)
   const { pathname } = useLocation()
   const reducedMotion = useReducedMotion()
   const t = useT()

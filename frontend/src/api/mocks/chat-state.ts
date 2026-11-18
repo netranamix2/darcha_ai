@@ -1,8 +1,11 @@
 import type { ChatMessage, Citation, InboxItem, Ticket } from '../types'
+import { ApiError } from '../errors'
+import { caseStorageKey, publishMockCaseChanges } from './case-events'
 import { inbox, responseSeconds, tickets } from './fixtures'
+import { departmentFor } from './ticket-examples'
 
-const storageKey = 'darcha.mock-chat.v1'
 const firstTicketNumber = 1045
+export const ticketFallbackDelay = 180_000
 
 interface FollowUp {
   availableAt: number
@@ -29,13 +32,44 @@ interface Snapshot {
   nextTicketNumber: number
 }
 
+interface SharedSnapshot {
+  version: 2
+  sessions: Snapshot['sessions']
+  cases: Array<[string, ChatCase]>
+  inbox: InboxItem[]
+  tickets: Ticket[]
+  responseSeconds: Array<[string, number]>
+  ratings: Array<[string, number]>
+  answeredTopics: string[]
+  nextTicketNumber: number
+  nextArrivalAt: number | null
+}
+
 export const sessions = new Map<string, ChatMessage[]>()
 export const cases = new Map<string, ChatCase>()
+export const ratings = new Map<string, number>()
+export const answeredTopics = new Set<string>()
+export const liveSchedule = { nextArrivalAt: null as number | null }
+const initialInbox = structuredClone([...inbox.values()])
+const initialTickets = structuredClone([...tickets.values()])
+const initialResponseSeconds = [...responseSeconds]
 let nextTicketNumber = firstTicketNumber
 let lastStored: string | null | undefined
 
 export function takeTicketNumber() {
   return nextTicketNumber++
+}
+
+export function nonBlank(text: string) {
+  const value = text.trim()
+  if (!value) throw new ApiError(422, 'Text is required')
+  return value
+}
+
+export function requireRecord<Value>(records: Map<string, Value>, id: string): Value {
+  const record = records.get(id)
+  if (!record) throw new ApiError(404, 'Record not found')
+  return record
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -56,17 +90,42 @@ function isMessage(value: unknown): value is ChatMessage {
     Array.isArray(reply.citations) && reply.citations.every(isCitation)
 }
 
-function isStoredCase(value: unknown): value is StoredCase {
-  if (!isRecord(value) || typeof value.sessionId !== 'string' || typeof value.messageId !== 'string') return false
-  if (!isRecord(value.item) || typeof value.item.id !== 'string' || typeof value.item.created_at !== 'string') return false
-  if (!isRecord(value.item.classification) || !Array.isArray(value.item.classification.flags)) return false
-  if (value.ticket !== null && (!isRecord(value.ticket) || value.ticket.id !== value.ticketId)) return false
+function isCase(value: unknown): value is ChatCase {
+  if (!isRecord(value) || typeof value.sessionId !== 'string' || typeof value.messageId !== 'string' ||
+    (value.ticketId !== null && typeof value.ticketId !== 'string')) return false
   const { followUp } = value
   return followUp === null || (isRecord(followUp) && typeof followUp.availableAt === 'number' &&
     typeof followUp.answer === 'string' && Array.isArray(followUp.citations) && followUp.citations.every(isCitation))
 }
 
-function readSnapshot(raw: string): Snapshot | null {
+function isInboxItem(value: unknown): value is InboxItem {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.created_at === 'string' &&
+    typeof value.text === 'string' && isRecord(value.classification) && Array.isArray(value.classification.flags)
+}
+
+function isTicket(value: unknown): value is Ticket {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.number === 'string' &&
+    typeof value.topic === 'string' && typeof value.created_at === 'string' && typeof value.due_at === 'string' &&
+    typeof value.summary === 'string' && typeof value.original_text === 'string' && Array.isArray(value.similar_cases) &&
+    (value.events === undefined || Array.isArray(value.events))
+}
+
+function isStoredCase(value: unknown): value is StoredCase {
+  return isRecord(value) && isInboxItem(value.item) &&
+    (value.ticket === null || (isTicket(value.ticket) && value.ticket.id === value.ticketId)) && isCase(value)
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function isEntryList<Value>(value: unknown, check: (entry: unknown) => entry is Value): value is Array<[string, Value]> {
+  return Array.isArray(value) && value.every((entry: unknown) => (
+    Array.isArray(entry) && typeof entry[0] === 'string' && check(entry[1])
+  ))
+}
+
+function readSnapshot(raw: string): Snapshot | SharedSnapshot | null {
   try {
     const value: unknown = JSON.parse(raw)
     if (!isRecord(value) || !Array.isArray(value.sessions) || !Array.isArray(value.cases) ||
@@ -76,65 +135,130 @@ function readSnapshot(raw: string): Snapshot | null {
       if (!Array.isArray(entry) || typeof entry[0] !== 'string' || !Array.isArray(entry[1]) || !entry[1].every(isMessage)) return null
       entries.push([entry[0], entry[1]])
     }
+    const nextNumber = Math.max(firstTicketNumber, value.nextTicketNumber)
+    if (value.version === 2) {
+      if (!isEntryList(value.cases, isCase) || !Array.isArray(value.inbox) || !value.inbox.every(isInboxItem) ||
+        !Array.isArray(value.tickets) || !value.tickets.every(isTicket) || !isEntryList(value.responseSeconds, isFiniteNumber) ||
+        !isEntryList(value.ratings, isFiniteNumber) || !Array.isArray(value.answeredTopics) ||
+        !value.answeredTopics.every((topic: unknown) => typeof topic === 'string') ||
+        (value.nextArrivalAt !== null && !isFiniteNumber(value.nextArrivalAt))) return null
+      return {
+        version: 2,
+        sessions: entries,
+        cases: value.cases,
+        inbox: value.inbox,
+        tickets: value.tickets,
+        responseSeconds: value.responseSeconds,
+        ratings: value.ratings,
+        answeredTopics: value.answeredTopics,
+        nextTicketNumber: nextNumber,
+        nextArrivalAt: value.nextArrivalAt,
+      }
+    }
     if (!value.cases.every(isStoredCase)) return null
-    return { sessions: entries, cases: value.cases, nextTicketNumber: Math.max(firstTicketNumber, value.nextTicketNumber) }
+    return { sessions: entries, cases: value.cases, nextTicketNumber: nextNumber }
   } catch {
     return null
   }
 }
 
+function replaceMap<Key, Value>(map: Map<Key, Value>, records: Iterable<[Key, Value]>) {
+  map.clear()
+  for (const [key, value] of records) map.set(key, value)
+}
+
+function restoreFixtures() {
+  replaceMap(inbox, structuredClone(initialInbox).map((item) => [item.id, item]))
+  replaceMap(tickets, structuredClone(initialTickets).map((ticket) => [ticket.id, ticket]))
+  replaceMap(responseSeconds, initialResponseSeconds)
+  cases.clear()
+  sessions.clear()
+  ratings.clear()
+  answeredTopics.clear()
+  nextTicketNumber = firstTicketNumber
+  liveSchedule.nextArrivalAt = null
+}
+
 function restore() {
   let raw: string | null
   try {
-    raw = localStorage.getItem(storageKey)
+    raw = localStorage.getItem(caseStorageKey)
   } catch {
     return
   }
 
-  if (!raw || raw === lastStored) return
+  if (raw === lastStored || (!raw && lastStored === undefined)) return
   lastStored = raw
+  if (!raw) {
+    restoreFixtures()
+    return
+  }
   const saved = readSnapshot(raw)
   if (!saved) return
 
-  for (const [inboxId, { ticketId }] of cases) {
-    inbox.delete(inboxId)
-    responseSeconds.delete(inboxId)
-    if (ticketId) tickets.delete(ticketId)
+  if ('version' in saved) {
+    replaceMap(sessions, saved.sessions)
+    nextTicketNumber = saved.nextTicketNumber
+    replaceMap(cases, saved.cases)
+    replaceMap(inbox, saved.inbox.map((item) => [item.id, item]))
+    replaceMap(tickets, saved.tickets.map((ticket) => [ticket.id, ticket]))
+    replaceMap(responseSeconds, saved.responseSeconds)
+    replaceMap(ratings, saved.ratings)
+    answeredTopics.clear()
+    for (const topic of saved.answeredTopics) answeredTopics.add(topic)
+    liveSchedule.nextArrivalAt = saved.nextArrivalAt
+    return
   }
-  cases.clear()
-  sessions.clear()
 
-  for (const [id, messages] of saved.sessions) sessions.set(id, messages)
+  restoreFixtures()
+  replaceMap(sessions, saved.sessions)
+  nextTicketNumber = saved.nextTicketNumber
   for (const { item, ticket, seconds, ...record } of saved.cases) {
     if (!sessions.has(record.sessionId)) continue
     cases.set(item.id, record)
     inbox.set(item.id, item)
-    if (ticket) tickets.set(ticket.id, ticket)
+    if (ticket) {
+      item.ticket_id = ticket.id
+      item.ticket_number = ticket.number
+      ticket.department ??= departmentFor(ticket.topic, ticket.original_text)
+      ticket.flags ??= [...item.classification.flags]
+      ticket.events ??= [
+        { type: 'created', actor: 'ai', created_at: ticket.created_at },
+      ]
+      const specialist = sessions.get(record.sessionId)?.find(({ role, reply }) => (
+        role === 'specialist' && reply?.ticket_number === ticket.number
+      ))
+      if (specialist && !ticket.events.some(({ type }) => type === 'answered')) {
+        ticket.events.push({ type: 'answered', actor: 'ai', created_at: specialist.created_at })
+      }
+      if (record.followUp) record.followUp.availableAt = Date.parse(ticket.created_at) + ticketFallbackDelay
+      tickets.set(ticket.id, ticket)
+    }
     if (typeof seconds === 'number') responseSeconds.set(item.id, seconds)
   }
-  nextTicketNumber = saved.nextTicketNumber
 }
 
 export function persistChatState() {
-  const savedCases: StoredCase[] = []
-  for (const [id, record] of cases) {
-    const item = inbox.get(id)
-    if (!item) continue
-    savedCases.push({
-      ...record,
-      item,
-      ticket: record.ticketId ? tickets.get(record.ticketId) ?? null : null,
-      seconds: responseSeconds.get(id) ?? null,
-    })
-  }
-
+  const raw = JSON.stringify({
+    version: 2,
+    sessions: [...sessions],
+    cases: [...cases],
+    inbox: [...inbox.values()],
+    tickets: [...tickets.values()],
+    responseSeconds: [...responseSeconds],
+    ratings: [...ratings],
+    answeredTopics: [...answeredTopics],
+    nextTicketNumber,
+    nextArrivalAt: liveSchedule.nextArrivalAt,
+  } satisfies SharedSnapshot)
+  if (raw === lastStored) return
   try {
-    const raw = JSON.stringify({ sessions: [...sessions], cases: savedCases, nextTicketNumber } satisfies Snapshot)
-    localStorage.setItem(storageKey, raw)
+    localStorage.setItem(caseStorageKey, raw)
     lastStored = raw
   } catch {
     // Keep this tab working when storage is blocked or full.
   }
+  publishMockCaseChanges()
 }
 
 export async function withChatState<Result>(task: () => Result): Promise<Result> {
@@ -144,7 +268,7 @@ export async function withChatState<Result>(task: () => Result): Promise<Result>
   }
 
   if (typeof navigator !== 'undefined' && navigator.locks) {
-    return navigator.locks.request(storageKey, transaction)
+    return navigator.locks.request(caseStorageKey, transaction)
   }
   return transaction()
 }

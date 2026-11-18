@@ -1,24 +1,49 @@
 import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import { Bell, Home, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router'
+import { usePanelCaseSubscription, useTicketRecords } from '../hooks/usePanelCases'
+import { useTicketClock } from '../hooks/useTicketClock'
+import { ticketPageMessages } from '../i18n/ticket-page'
 import { useT } from '../i18n/useT'
 import { panelSections } from '../lib/panel-sections'
+import { getTicketStatus } from '../lib/ticket-time'
 import { AnimatedOutlet } from './AnimatedOutlet'
 import { Brand } from './Brand'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { PanelSearch } from './PanelSearch'
 import { SkipLink } from './SkipLink'
-import { Avatar, Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownTrigger, GlassPanel, IconButton } from './ui'
+import { Avatar, Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownTrigger, GlassPanel, IconButton, Toast, ToastProvider, ToastViewport } from './ui'
+
+type Notice = { title: string; description?: string; variant?: 'default' | 'success' | 'warning' | 'error' }
+export type PanelNotify = (notice: Notice) => void
 
 export default function PanelLayout() {
   const [collapsed, setCollapsed] = useState(false)
+  const [notices, setNotices] = useState<(Notice & { id: number })[]>([])
+  const seen = useRef<Set<string> | null>(null)
   const reducedMotion = useReducedMotion()
-  const t = useT()
+  const t = useT(ticketPageMessages)
+  const { data: tickets } = useTicketRecords(true)
+  const now = useTicketClock()
+  usePanelCaseSubscription()
   const CollapseIcon = collapsed ? PanelLeftOpen : PanelLeftClose
   const collapseLabel = t(collapsed ? 'panel.expand' : 'panel.collapse')
+  const newCount = tickets?.filter((ticket) => getTicketStatus(ticket, now) === 'new').length ?? 0
+  const newNoticeTitle = t('tickets.newNotice')
+  const notify = useCallback<PanelNotify>((next) => {
+    setNotices((previous) => [...previous.slice(-2), { ...next, id: (previous.at(-1)?.id ?? 0) + 1 }])
+  }, [])
 
-  return (
+  useEffect(() => {
+    if (!tickets) return
+    const previous = seen.current
+    seen.current = new Set(tickets.map(({ id }) => id))
+    const incoming = previous && tickets.find(({ id, status }) => !previous.has(id) && status === 'new')
+    if (incoming) notify({ title: newNoticeTitle, description: `${incoming.number} · ${incoming.topic}` })
+  }, [newNoticeTitle, notify, tickets])
+
+  const shell = (
     <div className="panel-shell" data-collapsed={collapsed}>
       <SkipLink />
       <aside className="panel-sidebar">
@@ -52,6 +77,7 @@ export default function PanelLayout() {
                       )}
                       <SectionIcon size={19} aria-hidden="true" />
                       <span className="panel-nav-text">{t(label)}</span>
+                      {id === 'tickets' && newCount > 0 && <span className="panel-nav-count" aria-hidden="true">{newCount}</span>}
                     </>
                   )}
                 </NavLink>
@@ -96,9 +122,26 @@ export default function PanelLayout() {
           </GlassPanel>
         </header>
         <main id="main-content" className="panel-main" tabIndex={-1}>
-          <AnimatedOutlet />
+          <AnimatedOutlet context={notify} />
         </main>
       </div>
     </div>
+  )
+
+  return (
+    <ToastProvider label={t('panel.notifications')}>
+      {shell}
+      {notices.map((notice) => (
+        <Toast
+          key={notice.id}
+          defaultOpen
+          title={notice.title}
+          description={notice.description}
+          variant={notice.variant}
+          closeLabel={t('tickets.closeNotice')}
+        />
+      ))}
+      <ToastViewport className="panel-toast-viewport" label={t('tickets.toastViewport')} />
+    </ToastProvider>
   )
 }

@@ -1,6 +1,7 @@
-import type { AnalyticsAlert, Channel, InboxItem, Sentiment, Ticket } from '../types'
+import type { AnalyticsAlert, Channel, InboxItem, Sentiment, Ticket, TicketEvent } from '../types'
 import { cite, determineReply, topics } from './chat'
 import { dayMs } from './dates'
+import { currentStaff, departmentFor, similarResolvedTickets, staff, ticketExamples } from './ticket-examples'
 
 const now = Date.now()
 const hourMs = dayMs / 24
@@ -152,9 +153,27 @@ export const inbox = new Map(Object.values(items).map((item) => [item.id, item])
 function seedTicket(
   id: number,
   item: InboxItem,
-  details: Pick<Ticket, 'priority' | 'status' | 'summary'> & Partial<Pick<Ticket, 'draft_answer' | 'final_answer' | 'similar_cases'>>,
+  details: Pick<Ticket, 'priority' | 'status' | 'summary'> & Partial<Pick<Ticket, 'draft_answer' | 'final_answer' | 'department'>>,
 ): Ticket {
-  return {
+  const department = details.department ?? departmentFor(item.classification.topic, item.text)
+  const member = details.status === 'new' ? undefined : staff.find((person) => person.department === department)
+  const createdAt = Date.parse(item.created_at)
+  const events: TicketEvent[] = [{ type: 'created', actor: 'ai', created_at: item.created_at }]
+  if (member) {
+    events.push(
+      { type: 'assigned', actor: currentStaff.name, created_at: new Date(createdAt + 15 * 60_000).toISOString(), note: member.name },
+      { type: 'viewed', actor: member.name, created_at: new Date(createdAt + 60 * 60_000).toISOString() },
+    )
+  }
+  if (details.status === 'answered') {
+    const answeredAt = createdAt + (8 + id % 4 * 3) * hourMs
+    events.push(
+      { type: 'answered', actor: member?.name ?? currentStaff.name, created_at: new Date(answeredAt).toISOString() },
+      { type: 'rated', actor: 'citizen', created_at: new Date(answeredAt + 20_000).toISOString(), note: '4' },
+    )
+    item.status = 'sent'
+  }
+  const ticket = {
     id: `T-${id}`,
     number: `DCH-${id}`,
     topic: item.classification.topic,
@@ -166,8 +185,15 @@ function seedTicket(
     draft_answer: null,
     final_answer: null,
     similar_cases: [],
+    department,
+    assignee_id: member?.id ?? null,
+    flags: [...item.classification.flags],
+    events,
     ...details,
-  }
+  } satisfies Ticket
+  item.ticket_id = ticket.id
+  item.ticket_number = ticket.number
+  return ticket
 }
 
 const ticketFixtures = [
@@ -175,7 +201,6 @@ const ticketFixtures = [
     status: 'new',
     priority: 'normal',
     summary: 'Talaba oʻqishni koʻchirish arizasi boʻyicha rad etish sababini soʻramoqda.',
-    similar_cases: [{ number: 'DCH-1041', summary: 'Oʻqishni koʻchirish arizasi boʻyicha yozma qaror soʻralgan.' }],
   }),
   seedTicket(1043, items.fraud, {
     status: 'in_progress',
@@ -190,17 +215,57 @@ const ticketFixtures = [
     final_answer: 'Murojaatingiz hududiy taʼlim boʻlimiga koʻrib chiqish uchun yuborildi. Rasmiy javob roʻyxatdan oʻtgan aloqa kanalingizga joʻnatiladi.',
   }),
   seedTicket(1041, items.oldComplaint, {
-    status: 'overdue',
+    status: 'in_progress',
     priority: 'high',
     summary: 'Talaba oʻqishni koʻchirish boʻyicha yozma qarorning nusxasini soʻragan.',
   }),
 ]
+
+const fixturePlans = [
+  ['new', 0.2], ['new', 1], ['new', 1.5], ['new', 3], ['new', 12],
+  ['in_progress', 6], ['in_progress', 9], ['in_progress', 13], ['in_progress', 14],
+  ['answered', 4], ['answered', 8], ['answered', 10], ['answered', 12], ['answered', 16],
+  ['in_progress', 17], ['in_progress', 21],
+] as const
+
+for (const [index, [status, daysAgo]] of fixturePlans.entries()) {
+  const example = ticketExamples[index]
+  const id = 1025 + index
+  const item = seedItem(`IN-${id}`, {
+    channel: example.channel,
+    text: example.text,
+    ageHours: daysAgo * 24,
+    region: example.region,
+    sentiment: 'negative',
+  })
+  item.level = 'red'
+  item.status = status === 'answered' ? 'sent' : 'draft'
+  item.classification.type = 'Shikoyat'
+  item.classification.topic = example.topic
+  item.classification.flags = example.flags ?? []
+  inbox.set(item.id, item)
+  ticketFixtures.push(seedTicket(id, item, {
+    status,
+    priority: example.priority,
+    summary: example.summary,
+    department: example.department,
+    draft_answer: example.answer,
+    final_answer: status === 'answered' ? example.answer : null,
+  }))
+}
+
+for (const ticket of ticketFixtures) ticket.similar_cases = similarResolvedTickets(ticket, ticketFixtures)
 
 export const tickets = new Map(ticketFixtures.map((ticket) => [ticket.id, ticket]))
 export const responseSeconds = new Map([
   ['IN-1001', 5], ['IN-1004', 6], ['IN-1005', 810], ['IN-1007', 4],
   ['IN-1008', 7], ['IN-1010', 2700], ['IN-1012', 6], ['IN-1014', 4], ['IN-1015', 5],
 ])
+for (const item of inbox.values()) {
+  const ticket = item.ticket_id ? tickets.get(item.ticket_id) : undefined
+  const answered = ticket?.events?.find(({ type }) => type === 'answered')
+  if (answered) responseSeconds.set(item.id, (Date.parse(answered.created_at) - Date.parse(item.created_at)) / 1_000)
+}
 
 export const spikeAlert: AnalyticsAlert = {
   id: 'AL-1001',

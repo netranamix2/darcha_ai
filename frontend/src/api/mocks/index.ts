@@ -1,30 +1,23 @@
 import { ApiError } from '../errors'
-import type { ChatMessage, ChatReply, ChatSession, Citation, FaqReport, InboxItem, Level, LoginReply, StaffRole, Ticket, TicketPatch } from '../types'
+import type { ChatMessage, ChatReply, ChatSession, FaqReport, InboxItem, Level, LoginReply, StaffRole, Ticket, TicketPatch } from '../types'
 import { determineReply } from './chat'
-import { cases, persistChatState, sessions, takeTicketNumber, withChatState } from './chat-state'
+import {
+  answeredTopics, cases, nonBlank, persistChatState, requireRecord, sessions, ticketFallbackDelay, withChatState,
+} from './chat-state'
 import type { ChatCase } from './chat-state'
-import { dayMs } from './dates'
 import { inbox, responseSeconds, tickets } from './fixtures'
 import { buildFaqReport, summarizeAnalytics } from './reports'
+import { currentStaff, staff } from './ticket-examples'
+import {
+  answerCitations, convertInboxItem, createTicketForInbox, getMockKnowledgeBase, markDelivered, patchTicket,
+  processTicketActivity, resolveTicket, viewTicket,
+} from './ticket-operations'
 
 const reports = new Map<string, FaqReport>()
-const answeredTopics = new Set<string>()
 
 function pause() {
   const milliseconds = 400 + Math.floor(Math.random() * 801)
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds))
-}
-
-function nonBlank(text: string) {
-  const value = text.trim()
-  if (!value) throw new ApiError(422, 'Text is required')
-  return value
-}
-
-function requireRecord<Value>(records: Map<string, Value>, id: string): Value {
-  const record = records.get(id)
-  if (!record) throw new ApiError(404, 'Record not found')
-  return record
 }
 
 function newestFirst<T extends { created_at: string }>(items: T[]) {
@@ -60,7 +53,10 @@ function recordMessage(sessionId: string, text: string, started: number): ChatRe
   const history = requireRecord(sessions, sessionId)
   const message = nonBlank(text)
   deliverReadyReplies(sessionId)
-  const result = determineReply(message)
+  const classified = determineReply(message)
+  const result = classified.level === 'yellow' && classified.topic !== 'Boshqa murojaatlar' && answeredTopics.has(classified.topic)
+    ? { ...classified, level: 'green' as const, answer: classified.followUp }
+    : classified
   const now = Date.now()
   const createdAt = new Date(now).toISOString()
   const inboxId = `IN-${crypto.randomUUID()}`
@@ -79,42 +75,13 @@ function recordMessage(sessionId: string, text: string, started: number): ChatRe
     messageId: reply.message_id,
     ticketId: null,
     followUp: result.level === 'green' ? null : {
-      availableAt: now + (result.level === 'yellow' ? 15_000 : 25_000),
+      availableAt: now + (result.level === 'yellow' ? 15_000 : ticketFallbackDelay),
       answer: result.followUp,
       citations: result.citations,
     },
   }
 
-  if (result.level === 'red') {
-    const sequence = takeTicketNumber()
-    const ticket: Ticket = {
-      id: `T-${sequence}`,
-      number: `DCH-${sequence}`,
-      topic,
-      region: null,
-      priority: result.fraud ? 'high' : 'normal',
-      status: 'new',
-      created_at: createdAt,
-      due_at: new Date(now + 15 * dayMs).toISOString(),
-      summary: message.length > 140 ? `${message.slice(0, 139)}…` : message,
-      original_text: message,
-      channel: 'web',
-      draft_answer: null,
-      final_answer: null,
-      similar_cases: Array.from(tickets.values())
-        .filter((existing) => existing.topic === topic && existing.status === 'answered')
-        .slice(0, 2)
-        .map(({ number, summary }) => ({ number, summary })),
-    }
-
-    tickets.set(ticket.id, ticket)
-    record.ticketId = ticket.id
-    reply.ticket_number = ticket.number
-    reply.due_at = ticket.due_at
-    if (result.fraud) reply.warning = 'fraud'
-  }
-
-  inbox.set(inboxId, {
+  const item: InboxItem = {
     id: inboxId,
     channel: 'web',
     text: message,
@@ -131,7 +98,16 @@ function recordMessage(sessionId: string, text: string, started: number): ChatRe
     },
     draft: null,
     status: result.level === 'green' ? 'sent' : 'draft',
-  })
+  }
+  inbox.set(inboxId, item)
+
+  if (result.level === 'red') {
+    const ticket = createTicketForInbox(item, now, result.followUp)
+    record.ticketId = ticket.id
+    reply.ticket_number = ticket.number
+    reply.due_at = ticket.due_at
+    if (result.fraud) reply.warning = 'fraud'
+  }
 
   if (result.level === 'green') responseSeconds.set(inboxId, (now - started) / 1000)
 
@@ -144,40 +120,6 @@ function recordMessage(sessionId: string, text: string, started: number): ChatRe
   return structuredClone(reply)
 }
 
-function markDelivered(record: ChatCase, item: InboxItem, now: number) {
-  record.followUp = null
-  item.status = 'sent'
-  responseSeconds.set(item.id, (now - Date.parse(item.created_at)) / 1000)
-}
-
-function recordSpecialistReply(
-  record: ChatCase,
-  item: InboxItem,
-  ticket: Ticket,
-  answer: string,
-  citations: Citation[] = [],
-) {
-  const now = Date.now()
-  const messages = requireRecord(sessions, record.sessionId)
-  const originalReply = messages.find(({ id }) => id === record.messageId)?.reply
-  const id = crypto.randomUUID()
-  messages.push({
-    id,
-    role: 'specialist',
-    text: answer,
-    created_at: new Date(now).toISOString(),
-    reply: {
-      message_id: id,
-      answer,
-      citations,
-      level: 'green',
-      ticket_number: originalReply?.ticket_number ?? ticket.number,
-      due_at: null,
-    },
-  })
-  markDelivered(record, item, now)
-}
-
 function deliverReadyReplies(sessionId?: string) {
   const now = Date.now()
   let changed = false
@@ -187,15 +129,16 @@ function deliverReadyReplies(sessionId?: string) {
     if (!followUp || (sessionId && record.sessionId !== sessionId)) continue
 
     const item = requireRecord(inbox, inboxId)
-    if (item.status === 'rejected' || (item.status !== 'approved' && now < followUp.availableAt)) continue
+    if (item.status === 'rejected') continue
 
     if (record.ticketId) {
+      if (now < followUp.availableAt) continue
       const ticket = requireRecord(tickets, record.ticketId)
-      const answer = ticket.final_answer ?? followUp.answer
-      ticket.status = 'answered'
-      ticket.final_answer = answer
-      recordSpecialistReply(record, item, ticket, answer, followUp.citations)
+      if (!resolveTicket(ticket, followUp.answer, 'ai', followUp.citations)) {
+        markDelivered(record, item, now)
+      }
     } else {
+      if (item.status !== 'approved' && now < followUp.availableAt) continue
       const messages = requireRecord(sessions, record.sessionId)
       const message = messages.find(({ id }) => id === record.messageId)
       if (!message?.reply) continue
@@ -234,12 +177,12 @@ export async function approveResponse(id: string): Promise<void> {
   await pause()
   await withChatState(() => {
     const item = requireRecord(inbox, id)
-    if (!item.draft || item.status === 'sent') throw new ApiError(409, 'No pending response to approve')
+    if (!item.draft || item.status === 'sent' || item.ticket_id) throw new ApiError(409, 'No pending response to approve')
     if (item.status === 'approved') return
 
     item.status = 'approved'
     responseSeconds.set(id, (Date.now() - Date.parse(item.created_at)) / 1000)
-    if (cases.has(id)) persistChatState()
+    persistChatState()
   })
 }
 
@@ -247,11 +190,11 @@ export async function rejectResponse(id: string): Promise<void> {
   await pause()
   await withChatState(() => {
     const item = requireRecord(inbox, id)
-    if (item.status === 'sent') throw new ApiError(409, 'Response has already been sent')
+    if (item.status === 'sent' || item.ticket_id) throw new ApiError(409, 'Response cannot be rejected')
 
     item.status = 'rejected'
     responseSeconds.delete(id)
-    if (cases.has(id)) persistChatState()
+    persistChatState()
   })
 }
 
@@ -259,7 +202,7 @@ export async function editResponse(id: string, text: string): Promise<void> {
   await pause()
   await withChatState(() => {
     const item = requireRecord(inbox, id)
-    if (item.status === 'sent') throw new ApiError(409, 'Response has already been sent')
+    if (item.status === 'sent' || item.ticket_id) throw new ApiError(409, 'Response cannot be edited')
 
     item.draft = {
       answer: nonBlank(text),
@@ -268,7 +211,7 @@ export async function editResponse(id: string, text: string): Promise<void> {
     }
     item.status = 'draft'
     responseSeconds.delete(id)
-    if (cases.has(id)) persistChatState()
+    persistChatState()
   })
 }
 
@@ -276,17 +219,34 @@ export async function getTickets(): Promise<Ticket[]> {
   await pause()
   return withChatState(() => {
     deliverReadyReplies()
+    processTicketActivity()
     return structuredClone(newestFirst(Array.from(tickets.values())))
   })
 }
 
+export async function convertInboxToTicket(id: string): Promise<Ticket> {
+  await pause()
+  return withChatState(() => structuredClone(convertInboxItem(id)))
+}
+
+export async function getStaff() {
+  await pause()
+  return structuredClone(staff)
+}
+
+export async function getKnowledgeBase() {
+  await pause()
+  return getMockKnowledgeBase()
+}
+
+export async function markTicketViewed(id: string): Promise<void> {
+  await pause()
+  await withChatState(() => viewTicket(id))
+}
+
 export async function updateTicket(id: string, patch: TicketPatch): Promise<void> {
   await pause()
-  await withChatState(() => {
-    const ticket = requireRecord(tickets, id)
-    tickets.set(id, { ...ticket, ...structuredClone(patch), id })
-    if (findTicketCase(id)) persistChatState()
-  })
+  await withChatState(() => patchTicket(id, patch))
 }
 
 export async function answerTicket(id: string, text: string, addToKb: boolean): Promise<void> {
@@ -294,23 +254,14 @@ export async function answerTicket(id: string, text: string, addToKb: boolean): 
   await withChatState(() => {
     const ticket = requireRecord(tickets, id)
     const answer = nonBlank(text)
-    const alreadyAnswered = ticket.status === 'answered' && ticket.final_answer === answer
-    ticket.status = 'answered'
-    ticket.final_answer = answer
-
-    const match = findTicketCase(id)
-    if (match && (!alreadyAnswered || match[1].followUp)) {
-      const [inboxId, record] = match
-      recordSpecialistReply(record, requireRecord(inbox, inboxId), ticket, answer)
-      persistChatState()
+    const changed = resolveTicket(ticket, answer, currentStaff.name, answerCitations(answer))
+    const learnedTopic = addToKb && !answeredTopics.has(ticket.topic)
+    if (learnedTopic) {
+      answeredTopics.add(ticket.topic)
+      reports.clear()
     }
-
-    if (addToKb) answeredTopics.add(ticket.topic)
+    if (changed || learnedTopic) persistChatState()
   })
-}
-
-function findTicketCase(id: string) {
-  return Array.from(cases).find(([, record]) => record.ticketId === id)
 }
 
 export async function getAnalyticsSummary(from: string, to: string) {
@@ -323,16 +274,17 @@ export async function getAnalyticsSummary(from: string, to: string) {
 
 export async function getFaqReport(period: string): Promise<FaqReport> {
   await pause()
-  let report = reports.get(period)
-  if (!report) {
-    report = buildFaqReport(period, answeredTopics)
+  return withChatState(() => {
+    const report = reports.get(period) ?? buildFaqReport(period, answeredTopics)
     reports.set(period, report)
-  }
-  return structuredClone(report)
+    return structuredClone(report)
+  })
 }
 
 export async function runFaqReport(): Promise<void> {
   await pause()
-  const periods = reports.size ? Array.from(reports.keys()) : ['7d']
-  for (const period of periods) reports.set(period, buildFaqReport(period, answeredTopics))
+  await withChatState(() => {
+    const periods = reports.size ? Array.from(reports.keys()) : ['7d']
+    for (const period of periods) reports.set(period, buildFaqReport(period, answeredTopics))
+  })
 }

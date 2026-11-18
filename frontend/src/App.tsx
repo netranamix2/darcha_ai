@@ -3,12 +3,13 @@ import { Navigate, Route, Routes } from 'react-router'
 import { AuroraBackground } from './components/AuroraBackground'
 import { PublicLayout } from './components/PublicLayout'
 import { useT } from './i18n/useT'
-import { panelSections } from './lib/panel-sections'
 
 const PublicChatPage = lazy(() => import('./pages/PublicChatPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const PanelLayout = lazy(() => import('./components/PanelLayout'))
 const PanelPage = lazy(() => import('./pages/PanelPage'))
+const TicketsPage = lazy(() => import('./pages/TicketsPage'))
+const InboxPage = lazy(() => import('./pages/InboxPage'))
 const UiPage = lazy(() => import('./pages/UiPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
@@ -34,9 +35,9 @@ export default function App() {
           }
         >
           <Route index element={<Navigate replace to="/panel/inbox" />} />
-          {panelSections.map(({ id }) => (
-            <Route key={id} path={id} element={<PanelPage sectionId={id} />} />
-          ))}
+          <Route path="inbox" element={<InboxPage />} />
+          <Route path="tickets" element={<TicketsPage />} />
+          <Route path="analytics" element={<PanelPage sectionId="analytics" />} />
         </Route>
       </Routes>
     </>

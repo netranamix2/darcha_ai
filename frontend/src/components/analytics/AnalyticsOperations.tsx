@@ -1,4 +1,3 @@
-import { ArrowUpRight, BellRing, Clock3, ShieldAlert, SlidersHorizontal, TrendingUp } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
@@ -8,7 +7,6 @@ import { localeCodes } from '../../i18n/locales'
 import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
 import { analyticsTimestamp } from '../../lib/analytics-date'
-import { GlassPanel } from '../ui'
 
 const maxMinutes = 60
 const minMinutes = 1
@@ -34,9 +32,8 @@ function TimeSavings({ summary, days, minutes, onMinutesChange }: SavingsOptions
   const minutesLabel = t('analytics.minutes').replace('{count}', String(minutes))
 
   return (
-    <GlassPanel variant="elevated" blur={false} className="analytics-savings" role="region" aria-labelledby={headingId}>
+    <section className="analytics-savings" aria-labelledby={headingId}>
       <div className="analytics-operations-heading">
-        <span className="analytics-operations-icon"><Clock3 size={19} aria-hidden="true" /></span>
         <h2 id={headingId}>{t('analytics.saved')}</h2>
       </div>
       <output className="analytics-savings-value" htmlFor={sliderId} aria-live="off">
@@ -44,7 +41,7 @@ function TimeSavings({ summary, days, minutes, onMinutesChange }: SavingsOptions
       </output>
       <p className="analytics-savings-fte" title={t('analytics.staffWeek')}>{t('analytics.fte').replace('{count}', format.format(staff))}</p>
       <div className="analytics-savings-control">
-        <label htmlFor={sliderId}><SlidersHorizontal size={15} aria-hidden="true" />{t('analytics.minutesPerAnswer')}</label>
+        <label htmlFor={sliderId}>{t('analytics.minutesPerAnswer')}</label>
         <span>{minutesLabel}</span>
         <input
           id={sliderId}
@@ -58,7 +55,7 @@ function TimeSavings({ summary, days, minutes, onMinutesChange }: SavingsOptions
         />
       </div>
       <p className="analytics-savings-note">{t('analytics.savedNote')}</p>
-    </GlassPanel>
+    </section>
   )
 }
 
@@ -71,23 +68,21 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
   const growth = useMemo(() => new Intl.NumberFormat(localeCodes[language], { style: 'percent', signDisplay: 'exceptZero' }), [language])
 
   return (
-    <GlassPanel blur={false} className="analytics-alerts" role="region" aria-labelledby={headingId}>
+    <section className="analytics-alerts" aria-labelledby={headingId}>
       <div className="analytics-operations-heading">
-        <span className="analytics-operations-icon"><BellRing size={19} aria-hidden="true" /></span>
         <h2 id={headingId}>{t('analytics.alerts')}</h2>
       </div>
       {recent.length ? (
-        <ul className="analytics-alert-list glass-stagger" aria-live="polite" aria-relevant="additions">
+        <ul className="analytics-alert-list" tabIndex={recent.length > 5 ? 0 : undefined} aria-live="polite" aria-relevant="additions">
           {recent.map((alert) => {
             const fraud = alert.kind === 'fraud'
-            const AlertIcon = fraud ? ShieldAlert : TrendingUp
             const canOpen = fraud && alert.inbox_id
             const text = !fraud && alert.appeal_count != null && alert.growth_pct != null
               ? t('analytics.spikeDetail').replace('{count}', number.format(alert.appeal_count)).replace('{growth}', growth.format(alert.growth_pct / 100))
               : alert.text
             const body = (
               <>
-                <span className="analytics-alert-mark"><AlertIcon aria-hidden="true" size={17} /></span>
+                <span className="analytics-alert-mark" aria-hidden="true" />
                 <span className="analytics-alert-body">
                   <span className="analytics-alert-meta">
                     <strong>{t(fraud ? 'analytics.fraud' : 'analytics.spike')}</strong>
@@ -95,7 +90,6 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
                   </span>
                   <span className="analytics-alert-text">{text}</span>
                 </span>
-                {canOpen && <ArrowUpRight className="analytics-alert-link-icon" size={17} aria-hidden="true" />}
               </>
             )
             return (
@@ -111,7 +105,7 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
           })}
         </ul>
       ) : <p className="analytics-alert-empty">{t('analytics.noAlerts')}</p>}
-    </GlassPanel>
+    </section>
   )
 }
 

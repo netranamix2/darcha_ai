@@ -1,7 +1,7 @@
 import { ApiError } from '../errors'
 import { getTicketExtensionLimit } from '../ticket-deadlines'
 import type { Citation, InboxItem, Ticket, TicketEvent, TicketPatch } from '../types'
-import { cite, determineReply, topics } from './chat'
+import { appealSource, cite, determineReply, topics } from './chat'
 import type { ChatCase } from './chat-state'
 import {
   cases, liveSchedule, persistChatState, ratings, requireRecord, sessions, takeTicketNumber, ticketFallbackDelay,
@@ -14,7 +14,7 @@ const ratingDelay = 20_000
 const arrivalInterval = 40_000
 const knowledgeBase = [
   ...Object.values(topics).map(({ source }) => cite(source, 'uz-latn')),
-  ...determineReply('shikoyat').citations,
+  cite(appealSource, 'uz-latn'),
 ]
 
 export function getMockKnowledgeBase() {

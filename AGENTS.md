@@ -14,21 +14,21 @@ Darcha is an AI platform that answers citizens' appeals to Uzbekistan's Ministry
 - If `VITE_API_URL` is empty, the client returns mock data from `frontend/src/api/mocks/` with a realistic delay (400–1200 ms). Components must never know whether data is mock or real.
 - The API contract is fixed (see types.ts). Never invent new endpoints without a comment `// TODO(backend): ...`.
 
-## Design system — "Liquid glass", dark, premium
-- Dark background with slow, soft aurora gradient blobs; frosted glass surfaces on top.
-- Glass surface: semi-transparent white fill (4–8%), backdrop blur 16–24px, 1px border white 10–14%, subtle inner top highlight, large soft shadow. Radius 20–28px for panels, 12–14px for controls.
-- Colors (CSS variables in one theme file): base #070B16, deep #0B1224; primary #2F7BFF; accent cyan #22D3EE; violet glow #7C5CFF (sparingly); text #F1F5FF / secondary #9AA6C3 / muted #5F6B88.
-- Status colors ONLY for statuses: green #22C55E (auto-answered / on time), amber #F5B83D (draft / due soon), red #F2555A (ticket / overdue / fraud).
-- Fonts: "Manrope" for headings, "Inter" for UI text. Both must support Uzbek Latin (oʻ, gʻ) and Cyrillic.
-- Never: neon overload, rainbow gradients, emoji as icons, cluttered layouts, generic "AI startup" look. Restraint = premium.
+## Design system — "Darcha: the window"
+- Draw on Uzbek carved window lattices (panjara and girih geometry) and Samarkand turquoise tilework. Keep the product editorial, restrained, and suitable for government use.
+- Use space, alignment, typography, and 1px hairlines to organize content. Keep at most one level of containers. Use rows for lists. Icons are sparse, inline, and typically 16px with a 1.5px stroke.
+- Keep colors in one theme file. Use flat ink #0D1219, raised #131A24, hairline #222C3A, and row hover #17202C. Use ivory #EDE7DC, secondary #A3A9B4, and muted #6B7380 for text.
+- Use Samarkand turquoise #1FB5A8 (hover #2BCFC0) for primary actions, focus, active navigation, links, and the lit logo pane. Saffron #D9A441 can highlight one or two items per screen. Statuses use a small dot or rule with text in green #3FB27F, amber #D9A441, or red #E05D5D.
+- Glass is reserved for sticky headers, the chat composer, drawers, modals, and popovers. Use 14px backdrop blur, rgba(19, 26, 36, 0.72) fill, and a hairline border. Use solid surfaces elsewhere.
+- Use Source Serif 4 at 500–600 with optical sizing for one main heading per page. Use IBM Plex Sans at 15px / 1.55 for the UI, 13px secondary for section labels, and IBM Plex Mono with tabular figures for data, IDs, dates, and timers. Verify Uzbek Latin including U+02BB and Cyrillic coverage.
+- Use a thin SVG eight-point star and octagon lattice at 4–6% opacity with a radial fade on the public hero, empty states, and the login side. Keep dense data clear of the pattern. Use the square window mark with four panes, a fine star, and one turquoise pane as the brand and assistant avatar.
+- Remove glowing orbs, gradient headlines, trust pills, connected steppers, feature-card grids, decorative arrows, fake stats, drifting blobs, cursor spotlights, floating card shells, magnetic buttons, and icons in rounded-square tiles.
 
-## Motion rules (smooth, never laggy)
-- Animate ONLY `transform` and `opacity`. Never animate width/height/top/left/blur/box-shadow.
-- Durations 150–450 ms, spring or easeOut curves. Stagger lists by 30–60 ms.
-- Backdrop-filter is expensive: max ~6 blurred surfaces visible at once; never blur large scrolling lists item-by-item (blur the container instead).
-- Background aurora: CSS keyframes on transform only, very slow (20–40 s), `will-change: transform`, pauses when tab is hidden.
-- Respect `prefers-reduced-motion`: disable non-essential animation.
-- Target 60 fps on a mid-range laptop. Lazy-load route pages.
+## Motion rules — purposeful and quiet
+- Animate only `transform` and `opacity`. Use a 200ms route fade, 30ms row stagger on first load, spring drawer and modal slides, and message entrance with a 6px translation. Roll up KPI numerals on first view.
+- The thinking indicator lights the window panes in sequence using opacity, alongside the localized analysis, document search, and verification steps.
+- Keep at most one decorative animation per screen. Remove spotlight, magnetic, glow-pulse, and floating-blob effects.
+- Respect `prefers-reduced-motion` by disabling nonessential animation. Lazy-load route pages and target 60 fps on a mid-range laptop.
 
 ## i18n
 - UI languages: Uzbek Latin (default), Uzbek Cyrillic, Russian. All UI strings in `frontend/src/i18n/` dictionaries, never hardcoded in components.

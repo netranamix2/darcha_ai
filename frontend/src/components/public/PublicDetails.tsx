@@ -1,56 +1,62 @@
-import { FileCheck2, Layers3, Phone, QrCode, UserRoundCheck } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+import { useQuery } from '@tanstack/react-query'
+import { getPublicRegulations } from '../../api/client'
 import { publicHomeMessages } from '../../i18n/public-home'
+import { useLanguage } from '../../i18n/useLanguage'
 import { useT } from '../../i18n/useT'
-import { LanguageSwitcher } from '../LanguageSwitcher'
-import { GlassPanel } from '../ui/glass-panel'
+import { Skeleton } from '../ui'
 
-const ministryCards = [
-  { title: 'public.sourceTitle', body: 'public.sourceBody', icon: FileCheck2 },
-  { title: 'public.reviewTitle', body: 'public.reviewBody', icon: UserRoundCheck },
-  { title: 'public.channelsTitle', body: 'public.channelsBody', icon: Layers3 },
-] as const
+const ministryBot = 'https://t.me/eduuzuniversalbot'
+
+function documentDate(value: string | undefined) {
+  if (!value) return ''
+  const [year, month, day] = value.split('-')
+  return [day, month, year].filter(Boolean).join('.')
+}
 
 export default function PublicDetails() {
-  const reducedMotion = useReducedMotion()
   const t = useT(publicHomeMessages)
+  const { language } = useLanguage()
+  const { data = [], isPending, isError, refetch } = useQuery({
+    queryKey: ['public-regulations', language],
+    queryFn: () => getPublicRegulations(language),
+    staleTime: 15 * 60_000,
+  })
 
   return (
     <>
-      <section className="ministry-section" aria-labelledby="ministry-title">
-        <h2 id="ministry-title">{t('public.how')}</h2>
-        <div className="ministry-cards">
-          {ministryCards.map(({ title, body, icon: Icon }, index) => (
-            <motion.article
-              key={title}
-              initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: reducedMotion ? 0 : 0.35, delay: reducedMotion ? 0 : index * 0.04, ease: 'easeOut' }}
-            >
-              <GlassPanel variant="subtle" className="ministry-card">
-                <span className="ministry-card-icon"><Icon aria-hidden="true" size={21} /></span>
-                <h3>{t(title)}</h3>
-                <p>{t(body)}</p>
-              </GlassPanel>
-            </motion.article>
-          ))}
-        </div>
+      <section className="public-regulations" aria-labelledby="regulations-title">
+        <h2 id="regulations-title">{t('public.regulations')}</h2>
+        {isPending ? (
+          <div className="regulations-loading" role="status" aria-label={t('common.loading')}>
+            <Skeleton className="regulations-skeleton" />
+            <Skeleton className="regulations-skeleton" />
+          </div>
+        ) : isError ? (
+          <div className="regulations-state">
+            <p role="alert">{t('common.loadError')}</p>
+            <button type="button" className="public-inline-action" onClick={() => { void refetch() }}>{t('common.retry')}</button>
+          </div>
+        ) : data.length ? (
+          <ul className="regulations-list">
+            {data.map((document) => (
+              <li className="regulations-entry" key={document.url}>
+                <a href={document.url} target="_blank" rel="noopener noreferrer">{document.title}</a>
+                <p className="regulations-meta">
+                  <span>{document.document_number ? `№ ${document.document_number}` : document.ref}</span>
+                  {document.document_date && <time dateTime={document.document_date}>{documentDate(document.document_date)}</time>}
+                  <span className="regulations-active">{t('public.active')}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="regulations-state">{t('public.regulationsEmpty')}</p>}
       </section>
       <footer className="public-footer">
-        <div className="public-qr">
-          <span className="public-qr-icon"><QrCode aria-hidden="true" size={25} /></span>
-          <div>
-            <p>{t('public.telegram')}</p>
-            <small>{t('public.qrPending')}</small>
-          </div>
+        <div className="public-support">
+          <a href="tel:1006">{t('public.hotline')} <span>1006</span></a>
+          <a href={ministryBot} target="_blank" rel="noopener noreferrer">{t('public.telegram')}</a>
         </div>
-        <a className="public-hotline" href="tel:1006">
-          <Phone aria-hidden="true" size={16} />
-          <span>{t('public.hotline')} <strong>1006</strong></span>
-        </a>
-        <p className="public-disclaimer">{t('public.disclaimer')}</p>
-        <LanguageSwitcher />
+        <p>{t('public.disclaimer')}</p>
       </footer>
     </>
   )

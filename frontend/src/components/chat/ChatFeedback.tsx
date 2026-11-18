@@ -39,21 +39,20 @@ export function ChatFeedback({ messageId }: { messageId: string }) {
   return (
     <div className="chat-feedback">
       <div className="chat-feedback-summary">
-        <p>{t('conversation.aiReply')}</p>
         <div className="chat-feedback-controls">
           <IconButton
             size="sm"
             aria-pressed={feedback.reaction === 'up'}
             aria-label={t('conversation.helpful')}
             onClick={() => react('up')}
-          ><ThumbsUp size={14} aria-hidden="true" /></IconButton>
+          ><ThumbsUp size={15} strokeWidth={1.5} aria-hidden="true" /></IconButton>
           <IconButton
             size="sm"
             aria-pressed={feedback.reaction === 'down'}
             aria-expanded={showDetail}
             aria-label={t('conversation.unhelpful')}
             onClick={() => react('down')}
-          ><ThumbsDown size={14} aria-hidden="true" /></IconButton>
+          ><ThumbsDown size={15} strokeWidth={1.5} aria-hidden="true" /></IconButton>
         </div>
       </div>
       {showDetail && (

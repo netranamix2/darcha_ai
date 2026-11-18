@@ -2,56 +2,61 @@
 @import "./primitives.css" layer(components);
 
 @theme static {
-  --color-base: #070b16;
-  --color-deep: #0b1224;
-  --color-primary: #2f7bff;
-  --color-cyan: #22d3ee;
-  --color-violet: #7c5cff;
-  --color-text: #f1f5ff;
-  --color-secondary: #9aa6c3;
-  --color-muted: #5f6b88;
-  --color-green: #22c55e;
-  --color-amber: #f5b83d;
-  --color-red: #f2555a;
-  --color-border: rgb(255 255 255 / 12%);
-  --font-heading: "Manrope Variable", Manrope, system-ui, sans-serif;
-  --font-ui: "Inter Variable", Inter, system-ui, sans-serif;
+  --color-base: #0d1219;
+  --color-deep: #131a24;
+  --color-surface: #131a24;
+  --color-row: #17202c;
+  --color-border: #222c3a;
+  --color-text: #ede7dc;
+  --color-secondary: #a3a9b4;
+  --color-muted: #6b7380;
+  --color-primary: #1fb5a8;
+  --color-primary-hover: #2bcfc0;
+  --color-cyan: var(--color-primary);
+  --color-violet: var(--color-secondary);
+  --color-saffron: #d9a441;
+  --color-green: #3fb27f;
+  --color-amber: #d9a441;
+  --color-red: #e05d5d;
+  --font-heading: "Source Serif 4 Variable", Georgia, serif;
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, monospace;
-  --text-caption: 0.75rem;
+  --text-caption: 0.8125rem;
   --text-caption--line-height: 1.4;
-  --text-ui: 0.875rem;
-  --text-ui--line-height: 1.5;
+  --text-ui: 0.9375rem;
+  --text-ui--line-height: 1.55;
   --text-heading: 1.25rem;
   --text-heading--line-height: 1.3;
-  --text-title: clamp(1.75rem, 4vw, 2.625rem);
+  --text-title: clamp(2.1rem, 4vw, 3.25rem);
   --text-title--line-height: 1.12;
-  --text-display: clamp(2.5rem, 6vw, 4.75rem);
-  --text-display--line-height: 1.05;
-  --radius-panel: 24px;
-  --radius-panel-elevated: 28px;
-  --radius-panel-subtle: 20px;
-  --radius-control: 13px;
-  --shadow-panel: 0 15px 34px rgb(1 5 18 / 24%), 0 29px 92px rgb(4 13 39 / 29%);
-  --shadow-elevated: 0 20px 45px rgb(1 6 22 / 34%), 0 40px 114px rgb(5 16 49 / 41%);
+  --text-display: clamp(2.5rem, 6vw, 3.5rem);
+  --text-display--line-height: 1.07;
+  --radius-panel: 6px;
+  --radius-panel-elevated: 8px;
+  --radius-panel-subtle: 4px;
+  --radius-control: 5px;
+  --shadow-panel: none;
+  --shadow-elevated: 0 8px 24px rgb(0 0 0 / 24%);
 }
 
 :root {
   color-scheme: dark;
-  --glass-fill: rgb(255 255 255 / 6%);
-  --glass-fill-elevated: rgb(255 255 255 / 8%);
-  --glass-fill-subtle: rgb(255 255 255 / 4%);
-  --glass-hairline: linear-gradient(145deg, rgb(228 240 255 / 27%), rgb(218 232 255 / 13%) 38%, rgb(215 232 255 / 7%) 75%, rgb(210 230 255 / 4%));
-  --glass-highlight: inset 0 1px 0 rgb(237 246 255 / 7%);
-  --glass-blur: 20px;
-  --control-fill: rgb(255 255 255 / 5%);
-  --control-fill-hover: rgb(255 255 255 / 9%);
-  --control-border: rgb(255 255 255 / 13%);
-  --color-focus: #8fb7ff;
-  --overlay-fill: #141e34;
+  --floating-fill: rgb(19 26 36 / 72%);
+  --glass-fill: var(--color-surface);
+  --glass-fill-elevated: var(--color-surface);
+  --glass-fill-subtle: var(--color-surface);
+  --glass-hairline: var(--color-border);
+  --glass-highlight: inset 0 0 0 transparent;
+  --glass-blur: 14px;
+  --control-fill: var(--color-surface);
+  --control-fill-hover: var(--color-row);
+  --control-border: var(--color-border);
+  --color-focus: var(--color-primary-hover);
+  --overlay-fill: var(--color-surface);
   --motion-fast: 150ms;
-  --motion-normal: 250ms;
+  --motion-normal: 200ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.18, 0.78, 0.28, 1.17);
+  --ease-spring: cubic-bezier(0.18, 0.78, 0.28, 1.10);
 }
 
 @layer base {
@@ -65,14 +70,18 @@
   body {
     min-width: 280px;
     min-height: 100vh;
-    line-height: 1.5;
+    font-size: var(--text-ui);
+    line-height: 1.55;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    font-weight: 700;
-    letter-spacing: -0.025em;
+    font-optical-sizing: auto;
+    font-weight: 550;
+    letter-spacing: normal;
   }
+
+  svg.lucide { stroke-width: 1.5; }
 
   :focus-visible {
     outline: 2px solid var(--color-focus);
@@ -80,104 +89,7 @@
   }
 
   ::selection {
-    background: rgb(47 123 255 / 37%);
+    background: color-mix(in srgb, var(--color-primary) 30%, transparent);
     color: var(--color-text);
-  }
-}
-
-.aurora-background {
-  position: fixed;
-  z-index: -1;
-  inset: 0;
-  overflow: clip;
-  pointer-events: none;
-  background: radial-gradient(ellipse at 50% 0%, var(--color-deep), var(--color-base) 76%);
-}
-
-.aurora-background__blob {
-  position: absolute;
-  width: max(52vw, 30rem);
-  height: max(56vh, 28rem);
-  border-radius: 50%;
-  filter: blur(52px);
-  will-change: transform;
-  animation: aurora-drift var(--aurora-duration) ease-in-out infinite alternate;
-}
-
-.aurora-background__blob--blue {
-  top: -29%;
-  left: -12%;
-  --aurora-duration: 33s;
-  --aurora-x: 14%;
-  --aurora-y: 14%;
-  background: radial-gradient(ellipse, rgb(41 102 242 / 41%) 0%, transparent 72%);
-}
-
-.aurora-background__blob--cyan {
-  top: 3%;
-  right: -26%;
-  --aurora-duration: 39s;
-  --aurora-x: -10%;
-  --aurora-y: 13%;
-  background: radial-gradient(ellipse, rgb(34 211 238 / 19%) 0%, transparent 72%);
-}
-
-.aurora-background__blob--violet {
-  bottom: -34%;
-  left: 3%;
-  --aurora-duration: 36s;
-  --aurora-x: 16%;
-  --aurora-y: -10%;
-  background: radial-gradient(ellipse, rgb(124 92 255 / 21%) 0%, transparent 72%);
-}
-
-.aurora-background__blob--deep-blue {
-  right: -22%;
-  bottom: -28%;
-  --aurora-duration: 30s;
-  --aurora-x: -14%;
-  --aurora-y: -12%;
-  background: radial-gradient(ellipse, rgb(36 102 229 / 24%) 0%, transparent 72%);
-}
-
-.aurora-background__blob--veil {
-  bottom: 14%;
-  left: 27%;
-  width: max(38vw, 22rem);
-  height: max(34vh, 14rem);
-  --aurora-duration: 38s;
-  --aurora-x: 20%;
-  --aurora-y: -18%;
-  background: radial-gradient(ellipse, rgb(58 117 241 / 14%) 0%, transparent 71%);
-}
-
-.aurora-background__midlight {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 65% 25%, rgb(59 103 197 / 9%), transparent 55%),
-    radial-gradient(ellipse at 9% 92%, rgb(20 50 124 / 13%), transparent 64%);
-}
-
-.aurora-background__grain {
-  position: absolute;
-  inset: 0;
-  background: url("./grain.png") repeat;
-  opacity: 0.035;
-}
-
-.aurora-background[data-paused="true"] .aurora-background__blob {
-  animation-play-state: paused;
-}
-
-@keyframes aurora-drift {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to { transform: translate3d(var(--aurora-x), var(--aurora-y), 0) scale(1.12); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aurora-background__blob {
-    animation: none;
-    will-change: auto;
   }
 }

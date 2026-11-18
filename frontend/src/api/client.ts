@@ -9,6 +9,7 @@ import type {
   AnalyticsAlert, AnalyticsSummary, CaseChangeKind, ChatMessage, ChatReply, ChatSession, Citation,
   FaqReport, InboxItem, Level, LoginReply, StaffMember, Ticket, TicketDepartment, TicketPatch,
 } from './types'
+import type { Language } from '../i18n/locales'
 
 export { ApiError } from './errors'
 
@@ -318,6 +319,11 @@ export async function getKnowledgeBase(): Promise<Citation[]> {
   const path = '/api/documents'
   return request(path, async () => documents(await read(path, { staff: true })),
     async () => (await loadMocks()).getKnowledgeBase(), mockStaffSession)
+}
+
+// TODO(backend): Provide a public catalog of active sources. The staff document endpoint requires a token.
+export async function getPublicRegulations(language: Language): Promise<Citation[]> {
+  return (await loadMocks()).getPublicRegulations(language)
 }
 
 export async function markTicketViewed(id: string): Promise<void> {

@@ -86,7 +86,7 @@ export function summarizeAnalytics(from: string, to: string): AnalyticsSummary {
   const activeUntil = Math.min(end, Date.now())
   const overdueTickets = [...tickets.values()].filter((ticket) => {
     const due = Date.parse(ticket.due_at)
-    return due >= start && due < activeUntil && wasOpen(ticket, activeUntil)
+    return due < activeUntil && wasOpen(ticket, activeUntil)
   })
   const overdueByDay = new Map<string, number>()
   for (const { due_at } of overdueTickets) {

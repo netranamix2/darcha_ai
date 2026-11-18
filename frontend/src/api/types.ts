@@ -6,6 +6,8 @@ export interface Citation {
   title: string
   ref: string
   url: string
+  document_number?: string
+  document_date?: string
 }
 
 export type Level = 'green' | 'yellow' | 'red'

@@ -10,7 +10,6 @@ import {
   Layers2,
   LayoutGrid,
   MessageSquareText,
-  MousePointer2,
   PanelTop,
   RotateCcw,
   Rows3,
@@ -101,13 +100,12 @@ function SurfaceSamples() {
     <SampleSection section={sections.surfaces}>
       <div className="ui-surface-grid glass-stagger">
         {surfaceSamples.map(({ variant, label, icon: Icon }) => (
-          <GlassPanel className="ui-surface-preview glass-lift" variant={variant} key={variant}>
-            <span className="ui-surface-symbol" aria-hidden="true"><Icon size={20} /></span>
+          <GlassPanel className="ui-surface-preview" variant={variant} key={variant}>
+            <Icon size={16} aria-hidden="true" />
             <span>{t(label)}</span>
           </GlassPanel>
         ))}
       </div>
-      <p className="ui-pointer-hint"><MousePointer2 size={15} aria-hidden="true" /> {t('ui.spotlightHint')}</p>
     </SampleSection>
   );
 }
@@ -125,7 +123,6 @@ function ActionSamples({ onPress }: { onPress: (action: ActionName) => void }) {
         <Button variant="secondary" onClick={() => onPress('ui.secondary')}>{t('ui.secondary')}</Button>
         <Button variant="ghost" onClick={() => onPress('ui.ghost')}>{t('ui.ghost')}</Button>
       </div>
-      <p className="ui-pointer-hint"><MousePointer2 size={15} aria-hidden="true" /> {t('ui.magnetHint')}</p>
       <Divider className="ui-sample-divider" />
       <div className="ui-inline-samples">
         <Button variant="primary" size="sm" data-preview-state="hover" onClick={() => onPress('ui.hover')}>
@@ -153,13 +150,13 @@ function MotionSamples() {
           <span>{t('ui.stagger')}</span>
           <ol className="ui-motion-steps glass-stagger" key={sequence}>
             {motionSteps.map(({ icon: Icon, label }) => (
-              <li className="glass-lift" key={label}><Icon size={16} aria-hidden="true" />{t(label)}</li>
+              <li key={label}><Icon size={16} aria-hidden="true" />{t(label)}</li>
             ))}
           </ol>
         </div>
-        <GlassPanel variant="subtle" blur={false} className="ui-motion-counter glass-lift">
+        <GlassPanel variant="subtle" className="ui-motion-counter">
           <span>{t('ui.counter')}</span>
-          <ViewportCounter value={1284} locale={localeCodes[language]} key={sequence} />
+          <ViewportCounter value={100} locale={localeCodes[language]} key={sequence} />
         </GlassPanel>
       </div>
       <Button size="sm" variant="ghost" className="ui-motion-replay" onClick={() => setSequence((value) => value + 1)}>

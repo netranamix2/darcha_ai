@@ -123,6 +123,16 @@ export interface AnalyticsDay {
   ai_resolved_pct?: number
   avg_response_sec?: number
   overdue?: number
+  // TODO(backend): per-day split by who answered (chatbot / specialist / still waiting).
+  ai?: number
+  specialist?: number
+  waiting?: number
+}
+
+export interface AnalyticsOutcome {
+  ai: number
+  specialist: number
+  waiting: number
 }
 
 export interface AnalyticsSummary {
@@ -139,6 +149,8 @@ export interface AnalyticsSummary {
   alerts: AnalyticsAlert[]
   // TODO(backend): add daily AI share, average response time and overdue count.
   daily?: AnalyticsDay[]
+  // TODO(backend): who answered each appeal in the period; ai + specialist + waiting = total.
+  by_outcome?: AnalyticsOutcome
 }
 
 export interface BackendAnalyticsSummary {

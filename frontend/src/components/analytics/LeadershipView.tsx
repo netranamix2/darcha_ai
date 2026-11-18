@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { Cell, Pie, PieChart, Tooltip } from 'recharts'
 import type { AnalyticsSummary, Level, Ticket, TicketDepartment } from '../../api/types'
-import { useTicketRecords } from '../../hooks/usePanelCases'
+import { useInboxRecords, useTicketRecords } from '../../hooks/usePanelCases'
 import { leadershipMessages } from '../../i18n/leadership'
 import { localeCodes } from '../../i18n/locales'
 import { useLanguage } from '../../i18n/useLanguage'
@@ -13,6 +13,8 @@ import { localizeCaseRegion, localizeCaseTopic } from '../../lib/case-labels'
 import { Dropdown, DropdownContent, DropdownItem, DropdownTrigger, GlassPanel, Button } from '../ui'
 import { AlertFeed } from './AnalyticsOperations'
 import { ChannelChart, ChartCard } from './AnalyticsCharts'
+import { AnsweredByCard, DailyDynamicsChart, TopQuestionsCard } from './LeadershipCharts'
+import { outcomeTotals } from '../../lib/leadership-data'
 import './leadership.css'
 
 const minutesPerAnswer = 15
@@ -102,6 +104,8 @@ export function LeadershipView({ summary, days, now }: { summary: AnalyticsSumma
   const { language } = useLanguage()
   const locale = localeCodes[language]
   const tickets = useTicketRecords()
+  const inbox = useInboxRecords()
+  const outcome = outcomeTotals(summary)
   const stats = useTicketStats(tickets.data ?? [], now)
   const number = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }), [locale])
   const decimal = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }), [locale])
@@ -235,6 +239,12 @@ export function LeadershipView({ summary, days, now }: { summary: AnalyticsSumma
           {summary.overdue > 0 ? <Link className="leader-kpi-link" to="/panel/tickets?status=overdue">{t('lead.overdueOpen')}</Link> : null}
         </GlassPanel>
       </dl>
+
+      <div className="leader-grid">
+        <div className={outcome ? 'leader-span-8' : 'leader-span-12'}><DailyDynamicsChart summary={summary} locale={locale} /></div>
+        {outcome ? <div className="leader-span-4"><AnsweredByCard totals={outcome} locale={locale} /></div> : null}
+        <div className="leader-span-12"><TopQuestionsCard items={inbox.data ?? []} days={days} now={now} locale={locale} /></div>
+      </div>
 
       <div className="leader-row leader-row--two">
         <ChannelChart byChannel={summary.by_channel} locale={locale} />

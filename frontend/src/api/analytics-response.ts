@@ -1,5 +1,5 @@
 import { analyticsAlerts, channel, dateValue, finiteNumber, identifier, level, optionalString, record, rows, stringValue } from './backend-response'
-import type { AnalyticsSummary, Channel, FaqReport } from './types'
+import type { AnalyticsOutcome, AnalyticsSummary, Channel, FaqReport } from './types'
 
 const dayMs = 86_400_000
 
@@ -57,8 +57,18 @@ export function analyticsSummary(value: unknown): AnalyticsSummary {
       ai_resolved_pct: typeof row.ai_resolved_pct === 'number' ? finiteNumber(row.ai_resolved_pct) : undefined,
       avg_response_sec: typeof row.avg_response_sec === 'number' ? finiteNumber(row.avg_response_sec) : undefined,
       overdue: typeof row.overdue === 'number' ? finiteNumber(row.overdue) : undefined,
+      ...(typeof row.ai === 'number' && typeof row.specialist === 'number' && typeof row.waiting === 'number'
+        ? { ai: finiteNumber(row.ai), specialist: finiteNumber(row.specialist), waiting: finiteNumber(row.waiting) }
+        : {}),
     })),
+    by_outcome: outcome(response.by_outcome),
   }
+}
+
+function outcome(value: unknown): AnalyticsOutcome | undefined {
+  const data = record(value)
+  if (typeof data.ai !== 'number' || typeof data.specialist !== 'number' || typeof data.waiting !== 'number') return undefined
+  return { ai: finiteNumber(data.ai), specialist: finiteNumber(data.specialist), waiting: finiteNumber(data.waiting) }
 }
 
 function translation(value: unknown) {

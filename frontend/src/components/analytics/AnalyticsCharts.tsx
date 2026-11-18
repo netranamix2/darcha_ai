@@ -43,7 +43,7 @@ export function ChartCard({ title, detail, className = '', children }: {
   )
 }
 
-function ChartTooltip({ active, payload, label, locale, dateLabel }: Pick<TooltipContentProps, 'active' | 'payload' | 'label'> & {
+export function ChartTooltip({ active, payload, label, locale, dateLabel }: Pick<TooltipContentProps, 'active' | 'payload' | 'label'> & {
   locale: string
   dateLabel?: (value: string) => string
 }) {

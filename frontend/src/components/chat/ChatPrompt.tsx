@@ -22,9 +22,8 @@ export function ChatPrompt({ disabled, onPrompt }: { disabled: boolean; onPrompt
         {prompts.map(({ key, icon: TopicIcon }, index) => (
           <li key={key} style={{ '--stagger-index': index } as CSSProperties}>
             <button type="button" className="chat-prompt-chip" disabled={disabled} onClick={() => onPrompt(t(key))}>
-              <TopicIcon className="chat-chip-icon" aria-hidden="true" size={16} />
+              <span className="chat-chip-icon" aria-hidden="true"><TopicIcon size={16} /></span>
               <span>{t(key)}</span>
-
             </button>
           </li>
         ))}

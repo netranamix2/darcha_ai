@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, type MouseEvent } from 'react'
+import { useReducedMotion } from 'motion/react'
 import { useLocation } from 'react-router'
 import PublicChat from '../components/chat/PublicChat'
 import { PublicOverview, PublicFaq, PublicFooter } from '../components/public/PublicDetails'
@@ -27,6 +28,16 @@ const botUrl = telegramUrl()
 export default function PublicChatPage() {
   const t = useT(publicHomeMessages)
   const { hash } = useLocation()
+  const reducedMotion = useReducedMotion()
+
+  function goToChat(event: MouseEvent<HTMLAnchorElement>) {
+    const section = document.getElementById('chat')
+    if (!section) return
+    event.preventDefault()
+    section.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' })
+    window.history.replaceState(null, '', '#chat')
+    section.querySelector<HTMLTextAreaElement>('textarea:not(:disabled)')?.focus({ preventScroll: true })
+  }
 
   useEffect(() => {
     const target = hash.slice(1)
@@ -43,7 +54,7 @@ export default function PublicChatPage() {
           </h1>
           <p className="public-hero-description">{t('public.heroDescription')}</p>
           <div className="public-hero-actions">
-            <Button asChild size="lg"><a href="#chat">{t('public.ask')}</a></Button>
+            <Button asChild size="lg"><a href="#chat" onClick={goToChat}>{t('public.ask')}</a></Button>
             {botUrl && <Button asChild size="lg" variant="secondary"><a href={botUrl}>{t('public.telegram')}</a></Button>}
           </div>
           <ul className="public-trust">
@@ -59,10 +70,13 @@ export default function PublicChatPage() {
           </figure>
         </GlassPanel>
       </section>
-      <PublicOverview />
-      <PublicSection id="chat" title={t('public.chatTitle')} className="landing-chat">
-        <PublicChat />
-      </PublicSection>
+      <PublicOverview afterHow={(
+        <PublicSection id="chat" title={t('public.chatTitle')} className="landing-chat">
+          <div className="chat-window">
+            <PublicChat />
+          </div>
+        </PublicSection>
+      )} />
       <PublicFaq />
       <PublicFooter botUrl={botUrl} />
     </div>

@@ -26,6 +26,15 @@ function wasOpen(ticket: Ticket, at: number) {
   return answered !== undefined && Date.parse(answered.created_at) > at
 }
 
+type Outcome = 'ai' | 'specialist' | 'waiting'
+
+function outcomeOf(item: InboxItem): Outcome {
+  if (item.level === 'green') return 'ai'
+  const ticket = item.ticket_id ? tickets.get(item.ticket_id) : undefined
+  if (ticket) return ticket.status === 'answered' ? 'specialist' : 'waiting'
+  return item.status === 'approved' || item.status === 'sent' ? 'specialist' : 'waiting'
+}
+
 function meanResponse(total: number, count: number) {
   return count ? Math.round(total / count) : 0
 }
@@ -98,7 +107,9 @@ export function summarizeAnalytics(from: string, to: string): AnalyticsSummary {
     green: number
     responseTotal: number
     responseCount: number
+    outcome: Record<Outcome, number>
   }>()
+  const outcomes: Record<Outcome, number> = { ai: 0, specialist: 0, waiting: 0 }
 
   let totalResponseSeconds = 0
   let responseCount = 0
@@ -106,11 +117,14 @@ export function summarizeAnalytics(from: string, to: string): AnalyticsSummary {
     const day = dateKey(Date.parse(item.created_at))
     const value = daily.get(day) ?? {
       sentiment: { positive: 0, neutral: 0, negative: 0 },
-      total: 0, green: 0, responseTotal: 0, responseCount: 0,
+      total: 0, green: 0, responseTotal: 0, responseCount: 0, outcome: { ai: 0, specialist: 0, waiting: 0 },
     }
     value.sentiment[item.classification.sentiment] += 1
     value.total += 1
     if (item.level === 'green') value.green += 1
+    const outcome = outcomeOf(item)
+    value.outcome[outcome] += 1
+    outcomes[outcome] += 1
 
     const elapsed = responseSeconds.get(item.id)
     if (elapsed !== undefined) {
@@ -146,6 +160,7 @@ export function summarizeAnalytics(from: string, to: string): AnalyticsSummary {
         ai_resolved_pct: value ? Math.round(value.green / value.total * 100) : 0,
         avg_response_sec: value ? meanResponse(value.responseTotal, value.responseCount) : 0,
         overdue: countOverdue(Math.min(dateBoundary(date, true), end, now)),
+        ...(value?.outcome ?? { ai: 0, specialist: 0, waiting: 0 }),
       }
     }),
     top_topics: Array.from(topicCounts, ([topic, count]) => ({
@@ -153,6 +168,7 @@ export function summarizeAnalytics(from: string, to: string): AnalyticsSummary {
     })).sort((a, b) => b.count - a.count),
     by_region: Array.from(regionCounts, ([region, count]) => ({ region, count })).sort((a, b) => b.count - a.count),
     alerts: alerts.sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    by_outcome: outcomes,
   }
 }
 

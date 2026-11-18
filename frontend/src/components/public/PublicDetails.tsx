@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, Globe2, Inbox, Instagram, Phone, Send } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { getPublicKnowledgeBase } from '../../api/client'
 import { publicHomeMessages } from '../../i18n/public-home'
@@ -72,7 +73,7 @@ function PublicDocuments() {
   )
 }
 
-export function PublicOverview() {
+export function PublicOverview({ afterHow }: { afterHow?: ReactNode }) {
   const t = useT(publicHomeMessages)
   return (
     <>
@@ -94,6 +95,7 @@ export function PublicOverview() {
           ))}
         </ol>
       </PublicSection>
+      {afterHow}
       <PublicSection id="levels" title={t('public.levels')}>
         <div className="landing-levels">
           {levels.map(({ tone, title, body }) => (

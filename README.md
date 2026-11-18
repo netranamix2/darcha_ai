@@ -1,6 +1,7 @@
 # Darcha
 
 **Live demo: https://81-26-189-83.sslip.io** · staff panel: [/login](https://81-26-189-83.sslip.io/login) (one-click demo roles) · API docs: [/docs](https://81-26-189-83.sslip.io/docs)
+**Pitch deck:** [PDF](docs/Darcha%20—%20Pitch%20Day%20(RU)%20(7).pdf)
 
 > **Qisqacha (oʻzbekcha).** Darcha — Oliy taʼlim, fan va innovatsiyalar vazirligiga fuqarolar murojaatlariga
 > rasmiy meʼyoriy hujjatlar asosida javob beradigan AI platforma. Telegram-bot, sayt chati va Instagram bitta

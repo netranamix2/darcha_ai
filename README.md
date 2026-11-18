@@ -1,5 +1,7 @@
 # Darcha
 
+**Live demo: coming soon**
+
 > **Qisqacha (oʻzbekcha).** Darcha — Oliy taʼlim, fan va innovatsiyalar vazirligiga fuqarolar murojaatlariga
 > rasmiy meʼyoriy hujjatlar asosida javob beradigan AI platforma. Telegram-bot, sayt chati va Instagram bitta
 > quvurdan oʻtadi. Oddiy savollarga bir necha soniyada **lex.uz havolasi bilan** javob beriladi; ishonch past

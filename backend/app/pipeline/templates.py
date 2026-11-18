@@ -43,6 +43,48 @@ T = {
         "ru": "Я отвечаю только на вопросы о системе образования: приём, перевод, контракт, аттестация и другие. "
               "Пожалуйста, задайте вопрос по этой теме.",
     },
+    # ---- fixed refusals (level "gray"): firm, polite, no AI-generated text
+    "personal_data_request": {
+        "uz": "Kechirasiz, boshqa shaxslarning shaxsiy ma'lumotlarini (manzil, telefon, pasport va h.k.) bera olmayman — "
+              "ular qonun bilan himoyalangan. Ta'lim bo'yicha savolingiz bo'lsa, yordam beraman.",
+        "ru": "Извините, я не предоставляю персональные данные других людей (адрес, телефон, паспорт и т. п.) — "
+              "они защищены законом. Если у вас вопрос об образовании, с радостью помогу.",
+    },
+    "forgery": {
+        "uz": "Bunda yordam bera olmayman: hujjatlarni soxtalashtirish qonunga ziddir. Haqiqiy ma'lumotnoma yoki "
+              "hujjatni o'qish joyingiz yoki my.gov.uz orqali rasmiy tartibda olishingiz mumkin.",
+        "ru": "С этим помочь не могу: подделка документов противозаконна. Настоящую справку или документ можно "
+              "получить официально — в учебном заведении или через my.gov.uz.",
+    },
+    "cheating": {
+        "uz": "Bunda yordam bera olmayman — bu akademik halollik qoidalariga zid. Imtihon yoki ish tartibi, "
+              "qayta topshirish va tayyorgarlik bo'yicha savollaringizga javob beraman.",
+        "ru": "С этим помочь не могу — это нарушает правила академической честности. Могу ответить на вопросы "
+              "о порядке экзаменов, пересдачах и подготовке.",
+    },
+    "defamation": {
+        "uz": "Men shaxslar haqida ayblov yoki baho bildirmayman. Agar biror mansabdor shaxsning qonunbuzarligi "
+              "haqida ma'lumotingiz bo'lsa, rasmiy murojaat yuboring yoki ishonch telefoniga qo'ng'iroq qiling: {hotlines}.",
+        "ru": "Я не делаю заявлений и оценок о конкретных людях. Если у вас есть сведения о нарушениях со стороны "
+              "должностного лица, направьте официальное обращение или позвоните на телефон доверия: {hotlines}.",
+    },
+    "harmful_request": {
+        "uz": "Bunday matn yoza olmayman. Agar o'qishingiz bo'yicha muammo bo'lsa (baho, sinov, dekanat qarori), "
+              "uni qanday rasmiy hal qilish mumkinligini tushuntirib beraman.",
+        "ru": "Такой текст я написать не могу. Если у вас проблема с учёбой (оценка, зачёт, решение деканата), "
+              "подскажу, как решить её официальным путём.",
+    },
+    "political": {
+        "uz": "Men siyosiy mavzularda fikr bildirmayman. Ta'lim bo'yicha savollaringizga javob beraman: qabul, "
+              "o'qishni ko'chirish, kontrakt, attestatsiya va boshqalar.",
+        "ru": "Я не обсуждаю политические темы. Отвечу на вопросы об образовании: приём, перевод, контракт, "
+              "аттестация и другие.",
+    },
+    "insult_calm": {
+        "uz": "Tushunaman, javobim sizga yoqmagan bo'lishi mumkin. Savolingizni boshqacha yozib ko'ring — "
+              "yordam berishga harakat qilaman.",
+        "ru": "Понимаю, мой ответ мог вас не устроить. Попробуйте сформулировать вопрос иначе — постараюсь помочь.",
+    },
     "gratitude": {
         "uz": "Rahmat! Yana savollaringiz bo'lsa, yozing.",
         "ru": "Спасибо! Если появятся вопросы — пишите.",

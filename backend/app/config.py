@@ -25,7 +25,8 @@ DATA_DIR = Path(os.getenv("DATA_DIR", REPO_DIR / "data"))
 PROMPTS_DIR = Path(__file__).resolve().parent / "llm" / "prompts"
 
 # --- LLM (all calls go through app/llm/client.py) ---
-LLM_MODEL = os.getenv("LLM_MODEL", "claude-opus-5-5")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "anthropic")   # anthropic | gemini
+LLM_MODEL = os.getenv("LLM_MODEL", "claude-opus-5-5" if LLM_PROVIDER == "anthropic" else "gemini-3.8-flash")
 LLM_EFFORT = os.getenv("LLM_EFFORT", "low")          # low = fastest; target is <10 s per green answer
 LLM_TIMEOUT_S = float(os.getenv("LLM_TIMEOUT_S", "45"))
 

@@ -5,12 +5,12 @@ from dataclasses import dataclass
 
 from app.config import GREEN_MIN_CONFIDENCE, RED_MAX_CONFIDENCE
 from app.pipeline.answer import AnswerResult
-from app.pipeline.classify import SENSITIVE_FLAGS, ClassificationResult
+from app.pipeline.classify import REFUSAL_FLAGS, SENSITIVE_FLAGS, ClassificationResult
 
 
 @dataclass
 class Decision:
-    level: str              # green | yellow | red | none
+    level: str              # green (AI answer from the KB) | gray (fixed reply) | yellow | red | none
     action: str             # answer | template | draft | ticket | ignore
     template: str | None    # templates.T key when action == template (or extra notice)
     alert: str | None       # fraud | violence -> immediate alert to the responsible person
@@ -24,19 +24,28 @@ def decide(cls: ClassificationResult, ans: AnswerResult, *, is_public: bool, is_
         kind = "violence" if "violence" in flags else "fraud"
         return Decision("red", "ticket", kind, kind, f"flag={kind}: warning template + ticket + immediate alert")
 
-    if "prompt_injection" in flags or "political" in flags:
-        f = "prompt_injection" if "prompt_injection" in flags else "political"
-        return Decision("yellow", "draft", None, None, f"flag={f}: never answered automatically")
+    # gray = a fixed, pre-written reply sent automatically. Never green: green is only an AI answer from the KB.
+    refusal = next((f for f in REFUSAL_FLAGS if f in flags), None)
+    if refusal:
+        return Decision("gray", "template", refusal, None, f"flag={refusal}: fixed refusal")
+
+    if "prompt_injection" in flags:
+        return Decision("yellow", "draft", None, None, "flag=prompt_injection: never answered automatically")
+
+    if "political" in flags:
+        return Decision("gray", "template", "political", None, "flag=political: fixed reply, back to education")
 
     if "off_topic" in flags and cls.type not in {"spam", "insult"}:   # sincere off-topic question, not an ad
-        return Decision("green", "template", "off_topic", None, "off-topic: polite fixed reply")
+        return Decision("gray", "template", "off_topic", None, "off-topic: polite fixed reply")
 
     # Safety flags above outrank the type: the classifier sometimes calls an injection attempt "spam".
-    if cls.type in {"spam", "insult"}:
-        return Decision("none", "ignore", None, None, f"type={cls.type}: no reply, statistics only")
+    if cls.type == "insult":
+        return Decision("gray", "template", "insult_calm", None, "insult: calm fixed reply offering help")
+    if cls.type == "spam":
+        return Decision("none", "ignore", None, None, "type=spam: no reply, statistics only")
 
     if cls.type == "gratitude":
-        return Decision("green", "template", "gratitude", None, "gratitude: fixed reply")
+        return Decision("gray", "template", "gratitude", None, "gratitude: fixed reply")
 
     red_reasons = []
     if ans.failed:

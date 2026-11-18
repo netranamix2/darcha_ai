@@ -43,7 +43,8 @@ class ChatReply(BaseModel):
     message_id: int
     answer: str
     citations: list[Citation]
-    level: str = Field(description="green = AI answer; none = not answered (spam/abuse, answer is empty); "
+    level: str = Field(description="green = AI answer from the knowledge base; gray = fixed pre-written reply "
+                                   "(refusals, off-topic, thanks); none = not answered (spam, answer is empty); "
                                    "yellow = staff is preparing the answer (answer is empty); "
                                    "red = ticket created (ticket_number, due_at)")
     ticket_number: str | None = None

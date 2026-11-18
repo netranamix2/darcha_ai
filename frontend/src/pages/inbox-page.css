@@ -1,0 +1,178 @@
+.inbox-page {
+  padding: clamp(24px, 3.4vw, 40px) 0 40px;
+}
+
+.inbox-heading {
+  margin-bottom: 16px;
+}
+
+.inbox-heading h1 {
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+}
+
+.inbox-heading p {
+  margin-top: 8px;
+  color: var(--color-secondary);
+  font-size: var(--text-ui);
+}
+
+.inbox-tab-count,
+.inbox-ticket-number {
+  color: var(--color-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.inbox-list {
+  margin-top: 16px;
+  padding: 8px 16px;
+}
+
+.inbox-records {
+  display: grid;
+}
+
+.inbox-record {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 8px;
+}
+
+.inbox-record + .inbox-record {
+  border-top: 1px solid var(--color-border);
+}
+
+.inbox-record:hover,
+.inbox-record:focus-within {
+  background: var(--control-fill);
+}
+
+.inbox-record[data-highlighted="true"] {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  box-shadow: inset 2px 0 var(--color-primary);
+}
+
+.inbox-record[data-highlighted="true"] p {
+  display: block;
+  white-space: pre-wrap;
+}
+
+.inbox-record-icon {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--color-secondary);
+}
+
+.inbox-record-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--color-secondary);
+  font-size: var(--text-caption);
+}
+
+.inbox-record h2 {
+  margin-top: 4px;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.inbox-record p {
+  display: -webkit-box;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  color: var(--color-secondary);
+  font-size: var(--text-ui);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.inbox-record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 8px;
+}
+
+.inbox-draft {
+  margin-top: 0.48rem;
+  color: var(--color-focus);
+  font-size: var(--text-caption);
+}
+
+.inbox-draft summary {
+  width: fit-content;
+  padding-inline: 0.08rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.inbox-draft p {
+  display: block;
+  max-width: 64ch;
+  padding-inline-start: 0.65rem;
+  border-inline-start: 1px solid var(--color-border);
+  white-space: pre-wrap;
+}
+
+.inbox-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 0.4rem;
+  padding: 0.7rem 0.3rem 0.1rem;
+  color: var(--color-secondary);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.inbox-pagination > span {
+  margin-inline-end: 0.26rem;
+}
+
+.inbox-state {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.65rem;
+  min-height: 9rem;
+  color: var(--color-secondary);
+  font-size: var(--text-ui);
+  text-align: center;
+}
+
+.inbox-skeleton {
+  width: min(100%, 32rem);
+  height: 1.3rem;
+}
+
+@media (min-width: 801px) and (max-width: 1100px) {
+  .inbox-record-actions {
+    flex-direction: column;
+    align-items: end;
+  }
+}
+
+@media (max-width: 580px) {
+  .inbox-record {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    padding: 12px 4px;
+  }
+
+  .inbox-record-actions {
+    grid-column: 2;
+    justify-self: start;
+    justify-content: start;
+  }
+}

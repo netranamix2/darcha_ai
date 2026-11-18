@@ -1,6 +1,7 @@
 """Fixed (non-generated) replies, in the citizen's language and script."""
 from __future__ import annotations
 
+import re
 from datetime import datetime
 
 from app.config import HOTLINES
@@ -100,3 +101,40 @@ def render(key: str, lang: str, script: str, **kw) -> str:
     if lang != "ru" and script == "cyrillic":
         text = lat_to_cyr(text)
     return text
+
+
+SOURCES_LABEL = {("uz", "latin"): "📚 Asos", ("uz", "cyrillic"): "📚 Асос", ("ru", "cyrillic"): "📚 Основание",
+                 ("ru", "latin"): "📚 Основание"}
+
+
+def format_sources(citations: list[dict], lang: str | None, script: str | None) -> str:
+    """Plain-text sources block; chat adapters may render it richer (Telegram: clickable titles).
+        📚 Asos:
+        • <document title> — <point>
+          <url>"""
+    label = SOURCES_LABEL.get((lang or "uz", script or "latin"), "📚 Asos")
+    lines, seen = [f"{label}:"], set()
+    for c in citations:
+        key = (c.get("title"), c.get("ref"))
+        if key in seen:
+            continue
+        seen.add(key)
+        title = (c.get("title") or "").strip()
+        m = re.search(r"№\s*(\S+)\s*$", title)
+        number = m[1] if m else None
+        is_faq = title.startswith("Tez-tez beriladigan savollar")
+        if lang != "ru" and number:   # titles in the registry are Russian; show a neutral label to Uzbek readers
+            cyr = script == "cyrillic"
+            title = (f"Расмий савол-жавоблар (№{number})" if cyr else f"Rasmiy savol-javoblar (№{number})") if is_faq \
+                else (f"№{number}-сон ҳужжат" if cyr else f"№{number}-son hujjat")
+        elif is_faq:
+            title = "Официальные вопросы-ответы — " + title.split("—", 1)[-1].strip()
+        title = title if len(title) <= 90 else title[:87].rstrip() + "…"
+        ref = (c.get("ref") or "").strip()
+        show_ref = ref and ref not in title and ref.upper() != "FAQ"
+        lines.append(f"• {title}" + (f" — {ref}" if show_ref else ""))
+        if c.get("url"):
+            lines.append(f"  {c['url']}")
+        if len(seen) == 3:
+            break
+    return "\n".join(lines)

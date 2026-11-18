@@ -62,6 +62,7 @@ CHAT_RATE_LIMIT_PER_MIN = int(os.getenv("CHAT_RATE_LIMIT_PER_MIN", "20"))
 # --- Telegram ---
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_MODE = os.getenv("TELEGRAM_MODE", "polling")   # polling (dev, no public URL) | webhook | off
+TELEGRAM_GROUP_MODE = os.getenv("TELEGRAM_GROUP_MODE", "questions")   # questions | mention (only @bot / replies)
 TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")      # https://<host> for webhooks
 TG_ALERT_CHAT_ID = os.getenv("TG_ALERT_CHAT_ID", "")    # chat that receives fraud/violence/spike alerts + reports

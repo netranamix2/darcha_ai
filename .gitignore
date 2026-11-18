@@ -1,14 +1,32 @@
+# Environment files
 .env
+.env.local
+.env.*
+!.env.example
+
+# Backend
 .venv/
 __pycache__/
 *.pyc
 results/
-node_modules/
-frontend/dist/
 data/documents/uploads/
 .ruff_cache/
 .pytest_cache/
 *.egg-info/
+
+# Frontend
+node_modules/
+dist/
+frontend/dist/
+.vite/
+*.tsbuildinfo
+
+# Local files
+*.local
+*.log
 .DS_Store
 data/comments/private/
 data/documents/lex/_cache/
+
+# local key scratch files
+*_api.txt

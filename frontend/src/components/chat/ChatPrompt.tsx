@@ -1,0 +1,33 @@
+import { ArrowRightLeft, CreditCard, GraduationCap, RotateCcw } from 'lucide-react'
+import type { CSSProperties } from 'react'
+import { chatMessages } from '../../i18n/chat'
+import { useT } from '../../i18n/useT'
+import { WindowMark } from '../Brand'
+
+const prompts = [
+  { key: 'conversation.suggestTransfer', icon: ArrowRightLeft },
+  { key: 'conversation.suggestContract', icon: CreditCard },
+  { key: 'conversation.suggestCertification', icon: GraduationCap },
+  { key: 'conversation.suggestRestoration', icon: RotateCcw },
+] as const
+
+export function ChatPrompt({ disabled, onPrompt }: { disabled: boolean; onPrompt: (text: string) => void }) {
+  const t = useT(chatMessages)
+
+  return (
+    <div className="chat-prompt">
+      <WindowMark className="chat-mark chat-mark--large" />
+      <h3>{t('conversation.greeting')}</h3>
+      <ul className="chat-prompts glass-stagger" aria-label={t('conversation.suggestions')}>
+        {prompts.map(({ key, icon: TopicIcon }, index) => (
+          <li key={key} style={{ '--stagger-index': index } as CSSProperties}>
+            <button type="button" className="chat-prompt-chip" disabled={disabled} onClick={() => onPrompt(t(key))}>
+              <span className="chat-chip-icon" aria-hidden="true"><TopicIcon size={16} /></span>
+              <span>{t(key)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

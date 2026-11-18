@@ -9,8 +9,10 @@ Modes: TELEGRAM_MODE=polling (local dev, no public URL needed) | webhook (POST /
 from __future__ import annotations
 
 import asyncio
+import html
 import io
 import logging
+import re
 
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.enums import ChatAction, ChatType
@@ -19,7 +21,7 @@ from aiogram.types import ReplyParameters, Update
 from fastapi import APIRouter, Header, HTTPException, Request
 
 from app.adapters.base import register
-from app.config import (ENABLE_VOICE, PUBLIC_BASE_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_MODE,
+from app.config import (ENABLE_VOICE, PUBLIC_BASE_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_MODE, TELEGRAM_MODE,
                         TELEGRAM_WEBHOOK_SECRET)
 from app.db.models import Message
 from app.pipeline.inbound import Author, InboundMessage
@@ -57,6 +59,18 @@ def _mentions_bot(m: TgMessage) -> bool:
         if e.type == "text_mention" and e.user and e.user.id == _me.id:
             return True
     return False
+
+
+_Q_WORDS = re.compile(
+    r"(?i)\b(qanday|qachon|qayer\w*|nima\w*|nega|kim\w*|qancha|necha|qaysi|mumkinmi|bormi|kerakmi|"
+    r"қандай|қачон|қаер\w*|нима\w*|нега|ким\w*|қанча|неча|қайси|мумкинми|борми|керакми|"
+    r"как\w*|что|когда|где|почему|зачем|сколько|можно|нужно|ли)\b|\w+(mi|ми)\b")
+
+
+def _looks_like_question(text: str) -> bool:
+    """Group chatter ("salom", "ok", "rahmat") is left alone; real questions are answered without a mention."""
+    t = (text or "").strip()
+    return len(t) >= 12 and ("?" in t or bool(_Q_WORDS.search(t)))
 
 
 def _strip_mention(text: str) -> str:
@@ -114,12 +128,64 @@ async def on_group_text(m: TgMessage) -> None:
         await _process(m, _strip_mention(m.text), "telegram_comment", is_public=True, is_mention=_mentions_bot(m))
     elif _mentions_bot(m):
         await _process(m, _strip_mention(m.text), "telegram_group", is_public=True, is_mention=True)
+    elif TELEGRAM_GROUP_MODE == "questions" and _looks_like_question(m.text):
+        await _process(m, m.text, "telegram_group", is_public=True, is_mention=False)
 
 
 # ------------------------------------------------------------------ outbound
+FOOTER = {"ru": "🤖 Ответ подготовлен автоматически по документам lex.uz. Остались вопросы — напишите.",
+          "uz-cyrillic": "🤖 Жавоб lex.uz ҳужжатлари асосида автоматик тайёрланди. Савол қолса — ёзинг.",
+          "uz": "🤖 Javob lex.uz hujjatlari asosida avtomatik tayyorlandi. Savol qolsa — yozing."}
+
+
+def _esc(t: str) -> str:
+    return html.escape(t, quote=False)
+
+
+def to_html(text: str, lang: str | None = None, script: str | None = None) -> str:
+    """Plain reply -> Telegram HTML: bold first line, clickable sources, bold bullet labels, small footer."""
+    lines, out, i = text.split("\n"), [], 0
+    has_sources = any(line.startswith("📚 ") for line in lines)
+    first_done = False
+    while i < len(lines):
+        line = lines[i]
+        nxt = lines[i + 1] if i + 1 < len(lines) else ""
+        if line.startswith("📚 "):
+            out.append(f"<b>{_esc(line)}</b>")
+        elif line.startswith("• ") and nxt.startswith("  http"):
+            out.append(f'• <a href="{html.escape(nxt.strip(), quote=True)}">{_esc(line[2:])}</a>')
+            i += 1
+        elif line.startswith("👉 "):
+            out.append(f"<b>{_esc(line)}</b>")
+        elif line.startswith("• ") and ":" in line[:40]:
+            head, _, rest = line[2:].partition(":")
+            out.append(f"• <b>{_esc(head)}:</b>{_esc(rest)}")
+        elif not first_done and line.strip():
+            out.append(f"<b>{_esc(line)}</b>")
+            first_done = True
+        else:
+            out.append(_esc(line))
+        i += 1
+    body = re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip()
+    if has_sources:   # only on AI answers, not on templates/tickets
+        key = "ru" if lang == "ru" else ("uz-cyrillic" if script == "cyrillic" else "uz")
+        body += f"\n\n<i>{FOOTER[key]}</i>"
+    return body
+
+
 async def send(msg: Message, text: str) -> None:
     ctx = msg.reply_ctx or {}
     chat_id, reply_to = ctx.get("chat_id"), ctx.get("message_id")
+    rendered = to_html(text, msg.lang, msg.script)
+    if len(rendered) <= MAX_LEN:
+        try:
+            await _bot.send_message(
+                chat_id, rendered, parse_mode="HTML", disable_web_page_preview=True,
+                reply_parameters=ReplyParameters(message_id=reply_to, allow_sending_without_reply=True)
+                if reply_to else None)
+            return
+        except Exception:
+            log.warning("HTML send failed, falling back to plain text", exc_info=True)
     for i in range(0, len(text), MAX_LEN):
         await _bot.send_message(
             chat_id, text[i:i + MAX_LEN], disable_web_page_preview=True,

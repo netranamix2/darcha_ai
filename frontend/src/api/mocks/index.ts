@@ -83,6 +83,16 @@ function recordMessage(sessionId: string, text: string, started: number, shadow:
     ticket_number: null,
     due_at: null,
   }
+  const messages: ChatMessage[] = [
+    { id: crypto.randomUUID(), role: 'user', text: message, created_at: createdAt },
+    { id: reply.message_id, role: 'assistant', text: reply.answer, created_at: createdAt, reply },
+  ]
+  if (classified.refused) {
+    history.push(...messages)
+    persistChatState()
+    return structuredClone(reply)
+  }
+
   const record: ChatCase = {
     sessionId,
     shadow,
@@ -127,10 +137,7 @@ function recordMessage(sessionId: string, text: string, started: number, shadow:
 
   if (result.level === 'green') responseSeconds.set(inboxId, (now - started) / 1000)
 
-  history.push(
-    { id: crypto.randomUUID(), role: 'user', text: message, created_at: createdAt },
-    { id: reply.message_id, role: 'assistant', text: reply.answer, created_at: createdAt, reply },
-  )
+  history.push(...messages)
   cases.set(inboxId, record)
   persistChatState()
   return structuredClone(reply)
@@ -171,6 +178,11 @@ function deliverReadyReplies(sessionId?: string) {
   if (changed) persistChatState()
 }
 
+function refreshCases() {
+  deliverReadyReplies()
+  processTicketActivity()
+}
+
 export async function login(email: string, password: string): Promise<LoginReply> {
   await pause()
   if (!email.trim() || !password.trim()) throw new ApiError(401, 'Email and password are required')
@@ -183,7 +195,7 @@ export async function login(email: string, password: string): Promise<LoginReply
 export async function getInbox(level?: Level): Promise<InboxItem[]> {
   await pause()
   return withChatState(() => {
-    deliverReadyReplies()
+    refreshCases()
     const items = Array.from(inbox.values()).filter((item) => !level || item.level === level)
     return structuredClone(newestFirst(items))
   })
@@ -234,8 +246,7 @@ export async function editResponse(id: string, text: string): Promise<void> {
 export async function getTickets(): Promise<Ticket[]> {
   await pause()
   return withChatState(() => {
-    deliverReadyReplies()
-    processTicketActivity()
+    refreshCases()
     return structuredClone(newestFirst(Array.from(tickets.values())))
   })
 }
@@ -243,7 +254,7 @@ export async function getTickets(): Promise<Ticket[]> {
 export async function getTicket(id: string): Promise<Ticket> {
   await pause()
   return withChatState(() => {
-    deliverReadyReplies()
+    refreshCases()
     return structuredClone(requireRecord(tickets, id))
   })
 }
@@ -302,7 +313,7 @@ export async function answerTicket(id: string, text: string, addToKb: boolean): 
 export async function getAnalyticsSummary(from: string, to: string) {
   await pause()
   return withChatState(() => {
-    deliverReadyReplies()
+    refreshCases()
     return structuredClone(summarizeAnalytics(from, to))
   })
 }

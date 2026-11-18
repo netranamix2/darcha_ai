@@ -90,7 +90,7 @@ function EmptyChart() {
 
 function ChannelChart({ byChannel, locale }: { byChannel: AnalyticsSummary['by_channel']; locale: string }) {
   const t = useT(analyticsChartMessages)
-  const gradient = useId()
+  const gradient = 'channel-' + useId().replaceAll(':', '')
   const names = Object.keys(channelNames) as Channel[]
   const data = names.map((channel) => ({ name: t(channelNames[channel]), count: byChannel.find((row) => row.channel === channel)?.count ?? 0 }))
   const formatter = new Intl.NumberFormat(locale, { notation: 'compact' })
@@ -99,26 +99,22 @@ function ChannelChart({ byChannel, locale }: { byChannel: AnalyticsSummary['by_c
   return (
     <ChartCard title={title} icon={<BarChart3 size={17} />}>
       {data.some(({ count }) => count > 0) ? (
-        <div className="analytics-channel-plot">
-          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-            <BarChart accessibilityLayer aria-label={title} data={data} margin={chartMargin} barCategoryGap="25%">
-              <defs>
-                <linearGradient id={gradient} x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="var(--color-focus)" stopOpacity={0.98} />
-                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.36} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} stroke={chartGrid} strokeDasharray="3 5" />
-              <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={false} tickMargin={9} interval={0} />
-              <YAxis tick={axisTick} tickLine={false} axisLine={false} width={35} tickCount={4} allowDecimals={false}
-                tickFormatter={(value: number) => formatter.format(value)} />
-              <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} cursor={{ fill: 'var(--control-fill)' }} wrapperStyle={tooltipStyle} isAnimationActive={false} />
-              <Bar className="analytics-chart-columns" name={t('charts.total')} dataKey="count" fill={`url(#${gradient})`} radius={[7, 7, 2, 2]} maxBarSize={76} isAnimationActive={false}>
-                <LabelList dataKey="count" position="top" fill="var(--color-text)" fontSize={13} fontWeight={650} formatter={(value) => formatter.format(Number(value))} />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <BarChart className="analytics-channel-plot" responsive accessibilityLayer aria-label={title} data={data} margin={chartMargin} barCategoryGap="25%">
+          <defs>
+            <linearGradient id={gradient} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-focus)" stopOpacity={0.98} />
+              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.36} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} stroke={chartGrid} strokeDasharray="3 5" />
+          <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={false} tickMargin={9} interval={0} />
+          <YAxis tick={axisTick} tickLine={false} axisLine={false} width={35} tickCount={4} allowDecimals={false}
+            tickFormatter={(value: number) => formatter.format(value)} />
+          <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} cursor={{ fill: 'var(--control-fill)' }} wrapperStyle={tooltipStyle} isAnimationActive={false} />
+          <Bar name={t('charts.total')} dataKey="count" fill={`url(#${gradient}) var(--color-primary)`} radius={[7, 7, 2, 2]} maxBarSize={76} isAnimationActive={false}>
+            <LabelList dataKey="count" position="top" fill="var(--color-text)" fontSize={13} fontWeight={650} formatter={(value) => formatter.format(Number(value))} />
+          </Bar>
+        </BarChart>
       ) : <EmptyChart />}
     </ChartCard>
   )
@@ -139,9 +135,9 @@ function LevelChart({ summary, locale }: { summary: AnalyticsSummary; locale: st
       {data.some(({ count }) => count > 0) ? (
         <div className="analytics-donut-layout">
           <div className="analytics-donut-plot">
-            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+            <ResponsiveContainer width="100%" aspect={1}>
               <PieChart accessibilityLayer aria-label={title}>
-                <Pie className="analytics-chart-ring" data={data} dataKey="count" nameKey="name" startAngle={90} endAngle={-270}
+                <Pie data={data} dataKey="count" nameKey="name" startAngle={90} endAngle={-270}
                   innerRadius="73%" outerRadius="96%" paddingAngle={3} cornerRadius={4} stroke="none" isAnimationActive={false} />
                 <Tooltip content={(props) => <ChartTooltip {...props} locale={locale} />} wrapperStyle={tooltipStyle} isAnimationActive={false} />
               </PieChart>

@@ -170,14 +170,9 @@
 }
 
 .analytics-channel-plot {
+  width: 100%;
   height: clamp(12.3rem, 18vw, 15.5rem);
   min-width: 0;
-}
-
-.analytics-chart-columns {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: analytics-chart-grow-y 450ms var(--ease-out) both;
 }
 
 .analytics-chart-empty {
@@ -205,12 +200,6 @@
   max-width: 14rem;
   aspect-ratio: 1;
   justify-self: center;
-}
-
-.analytics-chart-ring {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: analytics-chart-ring-in 380ms var(--ease-out) both;
 }
 
 .analytics-donut-center {
@@ -443,16 +432,6 @@
   to { transform: scaleX(1); opacity: 1; }
 }
 
-@keyframes analytics-chart-grow-y {
-  from { transform: scaleY(0.14); opacity: 0; }
-  to { transform: scaleY(1); opacity: 1; }
-}
-
-@keyframes analytics-chart-ring-in {
-  from { transform: scale(0.84); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
 @media (max-width: 1120px) {
   .analytics-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -474,8 +453,6 @@
 @media (prefers-reduced-motion: reduce) {
   .analytics-kpi-card,
   .analytics-kpi-spark,
-  .analytics-chart-columns,
-  .analytics-chart-ring,
   .analytics-chart-area,
   .analytics-rank-mark {
     animation: none;

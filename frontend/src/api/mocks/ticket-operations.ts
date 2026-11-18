@@ -14,7 +14,7 @@ const ratingDelay = 20_000
 const arrivalInterval = 40_000
 const knowledgeBase = [
   ...Object.values(topics).map(({ source }) => cite(source, 'uz-latn')),
-  ...determineReply('shikoyat').citations,
+  ...determineReply('shikoyat', true).citations,
 ]
 
 export function getMockKnowledgeBase() {

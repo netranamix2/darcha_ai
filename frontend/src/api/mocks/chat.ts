@@ -175,6 +175,11 @@ const replyText = {
     'uz-cyrl': 'Саволингизга аниқ жавоб бериш учун таълим муассасаси номини ва қайси масала бўйича ёрдам кераклигини ёзинг. Мурожаатларни кўриб чиқиш тартиби қуйидаги ҳужжатда келтирилган.',
     ru: 'Чтобы ответить точнее, укажите учебное заведение и опишите, в чём нужна помощь. Порядок рассмотрения обращений приведён в документе ниже.',
   },
+  refusal: {
+    'uz-latn': 'Iltimos, savolingizni taʼlimga oid tarzda yozing — men meʼyoriy hujjatlar asosida yordam beraman.',
+    'uz-cyrl': 'Илтимос, саволингизни таълимга оид тарзда ёзинг — мен меъёрий ҳужжатлар асосида ёрдам бераман.',
+    ru: 'Пожалуйста, задайте вопрос об образовании. Я помогу разобраться, опираясь на нормативные документы.',
+  },
   specialist: {
     'uz-latn': 'Murojaatingizni koʻrib chiqdim. Vaziyatni aniqlashtirish uchun taʼlim muassasasi nomini va hodisa sanasini shu suhbatda yozishingiz mumkin.',
     'uz-cyrl': 'Мурожаатингизни кўриб чиқдим. Вазиятни аниқлаштириш учун таълим муассасаси номини ва ҳодиса санасини шу суҳбатда ёзишингиз мумкин.',
@@ -184,7 +189,7 @@ const replyText = {
 
 function detectLocale(text: string): MockLocale {
   if (!/\p{Script=Cyrillic}/u.test(text)) return 'uz-latn'
-  if (/[ўқғҳ]|салом|мактаб|ариза|менга|олий|педагоглар|аттестацияси|қабул|(?:^|\s)пул(?:$|\s)/i.test(text)) return 'uz-cyrl'
+  if (/[ўқғҳ]|салом|мактаб|ариза|менга|олий|педагоглар|аттестацияси|қабул|тентак|жинни|(?:^|\s)пул(?:$|\s)/i.test(text)) return 'uz-cyrl'
   return 'ru'
 }
 
@@ -194,21 +199,34 @@ export function cite(source: TopicReference, locale: MockLocale): Citation {
   return { title: source.title[locale], ref: source.ref[locale], url: `https://lex.uz/${prefix}docs/${latinMarker}${source.documentId}` }
 }
 
-function isFraud(text: string) {
+const abusiveWords = /(?<!\p{L})(?:a[hx]moq|аҳмоқ|ахмоқ|tentak|тентак|jinni|жинни|siktir|сиктир|go't|гўт|haromi|ҳароми|бл(?:я|яд\p{L}*)|сука|мудак\p{L}*|долбо[её]б\p{L}*|(?:на|по|ни|за)?ху[йеяи]\p{L}*|пизд\p{L}*|[ёе]б(?:ан|ат|лан|уч)\p{L}*|дебил\p{L}*|идиот\p{L}*|дурак\p{L}*)(?!\p{L})/iu
+const educationTopic = /ta'lim|talaba|maktab|o'quv|o'qish|dars|pedagog|o'qituv|otm\b|universitet|institut|oliygoh|kollej|imtihon|shahodatnoma|stipendiy|таълим|талаба|мактаб|ўқув|ўқиш|дарс|педагог|ўқитув|университет|институт|олийгоҳ|коллеж|имтиҳон|образован|уч(?:ё|е)б|ученик|школ|студент|учител|преподав|(?:^|[^\p{L}])вуз|колледж|экзамен|каникул|сессия|стипенди|абитуриент/iu
+const unrelatedUse = /парол|уч[её]тн\p{L}* запис|восстанов\p{L}* файл|перевод \p{L}*(?:слов|текст)|контракт на (?:аренду|поставку)|банковск\p{L}* перевод|parol|файл|akkaunt|ijara shartnoma|погод|ob-havo/iu
+
+function isFraud(text: string, aboutEducation: boolean) {
+  const admission = /qabul|kirish|kirit|поступ|зачисл|қабул|кириш|кирит/i.test(text)
+  if (!admission && !aboutEducation) return false
   if (/firibgar|фирибгар|мошенни|\bpora\b|пора (бер|сўра)|взятк|kontraktsiz (o'qishga )?kirit|контрактсиз (ўқишга )?кирит/i.test(text)) return true
 
   const words = text.split(/[^\p{L}]+/u).filter(Boolean)
   const hasMoney = words.some((word) => /^(pul|пул)(m?ni|и?ни|ga|га|dan|дан|lar|лар)?$|^деньг|^денег$/i.test(word))
-  const admission = /qabul|kirish|kirit|поступ|зачисл|қабул|кириш|кирит/i.test(text)
   const solicitation = /so'radi|so'ray|so'rashyap|сўради|сўраяп|требу|прос[ия]|вымага/i.test(text)
-  return hasMoney && (words.length === 1 || solicitation || (admission && !topics.contract.pattern.test(text)))
+  return hasMoney && (solicitation || (admission && !topics.contract.pattern.test(text)))
 }
 
 export function determineReply(text: string, forceEscalation = false) {
   const locale = detectLocale(text)
   const normalized = text.toLowerCase().replace(/[ʻʼ‘’`´]/g, "'")
+  const aboutEducation = educationTopic.test(normalized)
   const topic = Object.values(topics).find(({ pattern }) => pattern.test(normalized))
-  const fraud = isFraud(normalized)
+  const fraud = isFraud(normalized, aboutEducation)
+  const offTopic = unrelatedUse.test(normalized) || (!fraud && !topic && !aboutEducation)
+  const refused = abusiveWords.test(normalized) || (!forceEscalation && offTopic)
+  if (refused) {
+    const answer = replyText.refusal[locale]
+    return { locale, topic: 'Boshqa murojaatlar', level: 'green' as const, answer, citations: [], fraud: false, followUp: answer, refused }
+  }
+
   const escalated = forceEscalation || fraud || /shikoyat|şikoyat|шикоят|жалоб|rad etildi|рад этилди|отказал|muddati o'tdi|муддати ўтди|просроч/i.test(normalized)
   const level: Level = escalated ? 'red' : topic?.level ?? 'yellow'
   const source = escalated ? appealSource : topic?.source ?? appealSource
@@ -219,5 +237,5 @@ export function determineReply(text: string, forceEscalation = false) {
 
   const label = fraud ? 'Qabuldagi firibgarlik' : topic?.label ?? 'Boshqa murojaatlar'
   const followUp = escalated ? replyText.specialist[locale] : topic?.overview[locale] ?? replyText.clarify[locale]
-  return { locale, topic: label, level, answer, citations: [cite(source, locale)], fraud, followUp }
+  return { locale, topic: label, level, answer, citations: [cite(source, locale)], fraud, followUp, refused }
 }

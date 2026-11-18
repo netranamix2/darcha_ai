@@ -83,15 +83,13 @@ export function summarizeAnalytics(from: string, to: string): AnalyticsSummary {
   const dayCounts = countBy(all, (item) => dateKey(Date.parse(item.created_at)))
   const alerts = findSpikes(items, dayCounts)
 
-  const activeUntil = Math.min(end, Date.now())
-  const overdueTickets = [...tickets.values()].filter((ticket) => {
-    const due = Date.parse(ticket.due_at)
-    return due >= start && due < activeUntil && wasOpen(ticket, activeUntil)
-  })
-  const overdueByDay = new Map<string, number>()
-  for (const { due_at } of overdueTickets) {
-    const day = dateKey(Date.parse(due_at))
-    overdueByDay.set(day, (overdueByDay.get(day) ?? 0) + 1)
+  const now = Date.now()
+  const ticketRecords = [...tickets.values()]
+  function countOverdue(at: number) {
+    return ticketRecords.filter((ticket) => {
+      const open = at === now ? ticket.status !== 'answered' : wasOpen(ticket, at)
+      return open && Date.parse(ticket.due_at) < at
+    }).length
   }
 
   const daily = new Map<string, {
@@ -134,7 +132,7 @@ export function summarizeAnalytics(from: string, to: string): AnalyticsSummary {
     total: items.length,
     ai_resolved_pct: items.length ? Math.round((levelCounts.get('green') ?? 0) / items.length * 100) : 0,
     avg_response_sec: meanResponse(totalResponseSeconds, responseCount),
-    overdue: overdueTickets.length,
+    overdue: countOverdue(Math.min(end, now)),
     by_channel: channels.map((channel) => ({ channel, count: channelCounts.get(channel) ?? 0 })),
     by_level: levels.map((level) => ({ level, count: levelCounts.get(level) ?? 0 })),
     sentiment_daily: days.map((date) => ({
@@ -147,7 +145,7 @@ export function summarizeAnalytics(from: string, to: string): AnalyticsSummary {
         total: value?.total ?? 0,
         ai_resolved_pct: value ? Math.round(value.green / value.total * 100) : 0,
         avg_response_sec: value ? meanResponse(value.responseTotal, value.responseCount) : 0,
-        overdue: overdueByDay.get(date) ?? 0,
+        overdue: countOverdue(Math.min(dateBoundary(date, true), end, now)),
       }
     }),
     top_topics: Array.from(topicCounts, ([topic, count]) => ({

@@ -1,6 +1,6 @@
 .analytics-page {
   min-width: 0;
-  padding: clamp(1.45rem, 3.2vw, 2.6rem) 0.05rem 2.75rem;
+  padding: clamp(24px, 3.4vw, 40px) 0 40px;
 }
 
 .analytics-screen-only {
@@ -13,8 +13,8 @@
   display: flex;
   align-items: end;
   justify-content: space-between;
-  gap: 0.8rem 1.4rem;
-  padding-bottom: 0.28rem;
+  gap: 8px 16px;
+  padding-bottom: 4px;
 }
 
 .analytics-heading h1 {
@@ -23,10 +23,9 @@
 }
 
 .analytics-heading p:not(.analytics-last-updated) {
-  margin-top: 0.46rem;
+  margin-top: 8px;
   color: var(--color-secondary);
   font-size: var(--text-ui);
-  line-height: 1.55;
 }
 
 .analytics-heading-controls {
@@ -69,10 +68,8 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
   border-radius: inherit;
-  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  box-shadow: var(--glass-highlight);
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
 }
 
 .analytics-last-updated {
@@ -120,43 +117,23 @@
 .analytics-operations {
   display: grid;
   grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-  gap: 0.85rem;
+  gap: 16px;
   min-width: 0;
 }
 
 .analytics-savings,
 .analytics-alerts {
   min-width: 0;
-  padding: clamp(0.94rem, 2vw, 1.35rem);
-}
-
-.analytics-savings {
-  background:
-    radial-gradient(ellipse at 90% 100%, color-mix(in srgb, var(--color-primary) 17%, transparent), transparent 64%),
-    var(--glass-fill-subtle);
+  padding: 16px;
 }
 
 .analytics-operations-heading {
-  display: flex;
-  align-items: center;
-  gap: 0.57rem;
-  margin-bottom: 0.72rem;
+  margin-bottom: 12px;
 }
 
 .analytics-operations-heading h2 {
   font-size: clamp(1rem, 1.55vw, 1.16rem);
   line-height: 1.25;
-}
-
-.analytics-operations-icon {
-  display: inline-grid;
-  width: 2.15rem;
-  height: 2.15rem;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 38%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-primary) 13%, transparent);
-  color: var(--color-focus);
 }
 
 .analytics-savings-value {
@@ -220,13 +197,13 @@
 
 .analytics-savings-control input::-webkit-slider-runnable-track {
   height: 0.35rem;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--analytics-slider-track);
 }
 
 .analytics-savings-control input::-moz-range-track {
   height: 0.35rem;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--analytics-slider-track);
 }
 
@@ -238,7 +215,6 @@
   border: 2px solid var(--color-text);
   border-radius: 50%;
   background: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 24%, transparent);
 }
 
 .analytics-savings-control input::-moz-range-thumb {
@@ -247,7 +223,6 @@
   border: 2px solid var(--color-text);
   border-radius: 50%;
   background: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 24%, transparent);
 }
 
 .analytics-savings-note,
@@ -259,10 +234,8 @@
 
 .analytics-alert-list {
   display: grid;
-  gap: 0.42rem;
   max-height: 15rem;
   overflow: auto;
-  padding: 0.14rem;
   scrollbar-width: thin;
   scrollbar-color: var(--control-border) transparent;
 }
@@ -272,35 +245,32 @@
   min-width: 0;
 }
 
+
+.analytics-alert-entry + .analytics-alert-entry {
+  border-top: 1px solid var(--color-border);
+}
+
 .analytics-alert-entry[data-kind="fraud"] {
   --alert-tone: var(--color-red);
 }
 
 .analytics-alert-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.55rem;
+  gap: 8px;
   min-width: 0;
-  padding: 0.59rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--glass-fill-subtle);
+  padding: 8px;
 }
 
 a.analytics-alert-row:hover,
 a.analytics-alert-row:focus-visible {
-  border-color: color-mix(in srgb, var(--alert-tone) 45%, transparent);
   background: var(--control-fill-hover);
 }
 
 .analytics-alert-mark {
   display: grid;
   place-items: center;
-  width: 1.95rem;
-  height: 1.95rem;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--alert-tone) 14%, transparent);
   color: var(--alert-tone);
 }
 
@@ -338,10 +308,6 @@ a.analytics-alert-row:focus-visible {
   font-size: var(--text-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.analytics-alert-link-icon {
-  color: var(--color-focus);
 }
 
 @media (max-width: 740px) {

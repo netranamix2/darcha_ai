@@ -14,12 +14,11 @@ import { ChatFraud, ChatPending, ChatTicket } from './ChatStatus'
 import { ChatThinking } from './ChatThinking'
 import './chat.css'
 
-const settleSpring = { type: 'spring', visualDuration: 0.32, bounce: 0.1 } as const
+const messageTransition = { duration: 0.2, ease: 'easeOut' } as const
 
-function AssistantReply({ message, stream, animate, resolved }: {
+function AssistantReply({ message, stream, resolved }: {
   message: ChatMessage
   stream: boolean
-  animate: boolean
   resolved: boolean
 }) {
   const { reply } = message
@@ -27,7 +26,7 @@ function AssistantReply({ message, stream, animate, resolved }: {
   if (reply?.warning === 'fraud') {
     return (
       <>
-        <ChatFraud animate={animate} />
+        <ChatFraud />
         {reply.ticket_number && <ChatTicket reply={reply} createdAt={message.created_at} resolved={resolved} />}
       </>
     )
@@ -49,9 +48,9 @@ const ChatLine = memo(function ChatLine({ message, stream, animate, resolved }: 
   return (
     <motion.li
       className={'chat-message chat-message--' + message.role}
-      initial={animate ? { y: 8, opacity: 0 } : false}
+      initial={animate ? { y: 4, opacity: 0 } : false}
       animate={{ y: 0, opacity: 1 }}
-      transition={settleSpring}
+      transition={messageTransition}
     >
       {message.role === 'user' ? (
         <div className="chat-bubble chat-bubble--user"><p>{message.text}</p></div>
@@ -65,7 +64,7 @@ const ChatLine = memo(function ChatLine({ message, stream, animate, resolved }: 
         </>
       ) : (
         <div className="chat-reply-stack">
-          <AssistantReply message={message} stream={stream} animate={animate} resolved={resolved} />
+          <AssistantReply message={message} stream={stream} resolved={resolved} />
         </div>
       )}
     </motion.li>

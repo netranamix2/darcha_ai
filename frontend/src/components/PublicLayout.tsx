@@ -1,4 +1,3 @@
-import { ArrowUpRight } from 'lucide-react'
 import { Link } from 'react-router'
 import { useT } from '../i18n/useT'
 import { AnimatedOutlet } from './AnimatedOutlet'
@@ -17,7 +16,7 @@ export function PublicLayout() {
         <div className="public-actions">
           <LanguageSwitcher />
           <Link className="staff-link" to="/login">
-            {t('header.staff')} <ArrowUpRight aria-hidden="true" size={16} />
+            {t('header.staff')}
           </Link>
         </div>
       </header>

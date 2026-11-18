@@ -206,7 +206,7 @@ export function TicketKanban({ tickets, staff, now, onOpen, onMove }: TicketView
         </div>
       </div>
       {createPortal(
-        <DragOverlay dropAnimation={reducedMotion ? null : { duration: 270, easing: 'cubic-bezier(0.18, 0.78, 0.28, 1)' }} transition={reducedMotion ? () => undefined : undefined}>
+        <DragOverlay dropAnimation={reducedMotion ? null : { duration: 200, easing: 'ease-out' }} transition={reducedMotion ? () => undefined : undefined}>
           {activeTicket && (
             <div className="ticket-card ticket-card--overlay" aria-hidden="true" data-movable="true">
               <div className="ticket-card-open">

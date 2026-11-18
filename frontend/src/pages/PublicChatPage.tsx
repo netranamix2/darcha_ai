@@ -1,4 +1,3 @@
-import { Activity, Clock3, FileCheck2, Languages, MessageCircle, Search, ShieldCheck } from 'lucide-react'
 import { useInView } from 'motion/react'
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
@@ -14,18 +13,9 @@ const PublicDetails = lazy(() => import('../components/public/PublicDetails'))
 const introStorageKey = 'darcha.home-intro'
 let introShownInDocument = false
 
-const trustItems = [
-  { label: 'public.trustSources', icon: FileCheck2 },
-  { label: 'public.trustAvailability', icon: Clock3 },
-  { label: 'public.trustLanguages', icon: Languages },
-  { label: 'public.trustReview', icon: ShieldCheck },
-] as const
+const trustItems = ['public.trustSources', 'public.trustAvailability', 'public.trustLanguages', 'public.trustReview'] as const
 
-const steps = [
-  { label: 'public.stepQuestion', icon: MessageCircle },
-  { label: 'public.stepSearch', icon: Search },
-  { label: 'public.stepAnswer', icon: FileCheck2 },
-] as const
+const steps = ['public.stepQuestion', 'public.stepSearch', 'public.stepAnswer'] as const
 
 function shouldShowIntro() {
   if (introShownInDocument) return false
@@ -93,23 +83,12 @@ export default function PublicChatPage() {
           </h1>
           <p className="public-hero-description">{t('public.heroDescription')}</p>
           <ul className="public-trust">
-            {trustItems.map(({ label, icon: Icon }) => (
-              <li key={label}>
-                <Icon size={15} aria-hidden="true" />
-                <span>{t(label)}</span>
-              </li>
-            ))}
+            {trustItems.map((label) => <li key={label}>{t(label)}</li>)}
           </ul>
           <ol className="public-steps" aria-label={t('public.how')}>
-            {steps.map(({ label, icon: Icon }) => (
-              <li key={label}>
-                <span className="public-step-icon"><Icon size={18} aria-hidden="true" /></span>
-                <span>{t(label)}</span>
-              </li>
-            ))}
+            {steps.map((label) => <li key={label}>{t(label)}</li>)}
           </ol>
           <div className="public-stat">
-            <Activity size={18} aria-hidden="true" />
             <p>
               {t('public.today')}{' '}
               <ViewportCounter value={1284} locale={localeCodes[language]} className="public-stat-value" />

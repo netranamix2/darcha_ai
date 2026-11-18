@@ -1,14 +1,14 @@
 .analytics-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(0.65rem, 1.3vw, 1rem);
+  gap: 16px;
   margin: 0;
 }
 
 .analytics-kpi-card {
   min-width: 0;
-  padding: 1.05rem clamp(0.82rem, 1.42vw, 1.34rem);
-  animation: analytics-card-in 360ms var(--ease-out) both;
+  padding: 16px;
+  animation: analytics-card-in 200ms var(--ease-out) both;
 }
 
 .analytics-kpi-card:nth-child(2) { animation-delay: 40ms; }
@@ -18,7 +18,7 @@
 .analytics-kpi-label {
   display: flex;
   align-items: center;
-  gap: 0.46rem;
+  gap: 8px;
   min-height: 1.25rem;
   margin: 0;
   color: var(--color-secondary);
@@ -27,17 +27,12 @@
   line-height: 1.3;
 }
 
-.analytics-kpi-label svg {
-  flex: 0 0 auto;
-  color: var(--analytics-kpi-color);
-}
-
 .analytics-kpi-main {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 0.35rem;
-  margin: 0.72rem 0 0;
+  margin: 12px 0 0;
 }
 
 .analytics-kpi-number {
@@ -73,10 +68,8 @@
   width: clamp(2.25rem, 6vw, 5.2rem);
   min-width: 1.7rem;
   height: 1.82rem;
-  color: var(--analytics-kpi-color);
-  opacity: 0.87;
-  transform-origin: 0 100%;
-  animation: analytics-chart-grow-x 420ms var(--ease-out) both;
+  color: var(--color-focus);
+  opacity: 0.76;
 }
 
 .analytics-kpi-foot {
@@ -90,17 +83,10 @@
 
 .analytics-kpi-change,
 .analytics-ranking-growth {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.14rem;
   width: max-content;
-  padding: 0.14rem 0.34rem;
-  border: 1px solid color-mix(in srgb, currentColor 27%, transparent);
-  border-radius: 7px;
-  background: color-mix(in srgb, currentColor 9%, transparent);
-  color: var(--color-focus);
-  font-size: 0.71rem;
-  font-weight: 700;
+  color: var(--color-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -121,13 +107,13 @@
 .analytics-charts-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.03fr) minmax(0, 1fr);
-  gap: clamp(0.72rem, 1.45vw, 1.15rem);
+  gap: 16px;
   min-width: 0;
 }
 
 .analytics-chart-card {
   min-width: 0;
-  padding: clamp(0.88rem, 1.65vw, 1.4rem);
+  padding: clamp(16px, 1.65vw, 24px);
 }
 
 .analytics-chart-card:focus-within {
@@ -137,9 +123,9 @@
 .analytics-chart-heading {
   display: flex;
   align-items: center;
-  gap: 0.66rem;
+  gap: 8px;
   min-width: 0;
-  margin: 0 0 0.75rem;
+  margin: 0 0 12px;
 }
 
 .analytics-chart-heading h2 {
@@ -155,18 +141,6 @@
   font-size: 0.74rem;
   line-height: 1.2;
   text-align: end;
-}
-
-.analytics-chart-icon {
-  display: grid;
-  flex: 0 0 auto;
-  width: 2.12rem;
-  height: 2.12rem;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 32%, transparent);
-  border-radius: 0.69rem;
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  color: var(--color-focus);
 }
 
 .analytics-channel-plot {
@@ -270,12 +244,6 @@
 .analytics-sentiment-plot {
   height: clamp(12rem, 18vw, 16rem);
   min-width: 0;
-}
-
-.analytics-chart-area {
-  transform-box: fill-box;
-  transform-origin: 0 100%;
-  animation: analytics-chart-grow-x 440ms var(--ease-out) both;
 }
 
 .analytics-sentiment-legend {
@@ -404,12 +372,6 @@
   text-align: end;
 }
 
-.analytics-rank-mark {
-  transform-box: fill-box;
-  transform-origin: 0 50%;
-  animation: analytics-chart-grow-x 400ms var(--ease-out) both;
-}
-
 .analytics-ranking-unspecified {
   display: flex;
   justify-content: space-between;
@@ -423,13 +385,8 @@
 }
 
 @keyframes analytics-card-in {
-  from { transform: translateY(8px); opacity: 0; }
+  from { transform: translateY(4px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes analytics-chart-grow-x {
-  from { transform: scaleX(0.1); opacity: 0; }
-  to { transform: scaleX(1); opacity: 1; }
 }
 
 @media (max-width: 1120px) {
@@ -451,10 +408,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .analytics-kpi-card,
-  .analytics-kpi-spark,
-  .analytics-chart-area,
-  .analytics-rank-mark {
+  .analytics-kpi-card {
     animation: none;
   }
 }

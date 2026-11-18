@@ -137,7 +137,7 @@ export default function TicketsPage() {
             <div role="group" aria-label={t('tickets.views')} className="tickets-view-toggle">
               {views.map(({ id, label, icon: Icon }) => (
                 <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)}>
-                  {view === id && <motion.span className="tickets-view-marker" aria-hidden="true" layoutId={reducedMotion ? undefined : 'selected'} transition={{ type: 'spring', duration: 0.28, bounce: 0.12 }} />}
+                  {view === id && <motion.span className="tickets-view-marker" aria-hidden="true" layoutId={reducedMotion ? undefined : 'selected'} transition={{ duration: 0.2, ease: 'easeOut' }} />}
                   <Icon aria-hidden="true" size={16} />
                   {t(label)}
                 </button>

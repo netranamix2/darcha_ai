@@ -10,7 +10,6 @@ import {
   Layers2,
   LayoutGrid,
   MessageSquareText,
-  MousePointer2,
   PanelTop,
   RotateCcw,
   Rows3,
@@ -102,12 +101,11 @@ function SurfaceSamples() {
       <div className="ui-surface-grid glass-stagger">
         {surfaceSamples.map(({ variant, label, icon: Icon }) => (
           <GlassPanel className="ui-surface-preview glass-lift" variant={variant} key={variant}>
-            <span className="ui-surface-symbol" aria-hidden="true"><Icon size={20} /></span>
+            <Icon size={17} aria-hidden="true" />
             <span>{t(label)}</span>
           </GlassPanel>
         ))}
       </div>
-      <p className="ui-pointer-hint"><MousePointer2 size={15} aria-hidden="true" /> {t('ui.spotlightHint')}</p>
     </SampleSection>
   );
 }
@@ -125,7 +123,6 @@ function ActionSamples({ onPress }: { onPress: (action: ActionName) => void }) {
         <Button variant="secondary" onClick={() => onPress('ui.secondary')}>{t('ui.secondary')}</Button>
         <Button variant="ghost" onClick={() => onPress('ui.ghost')}>{t('ui.ghost')}</Button>
       </div>
-      <p className="ui-pointer-hint"><MousePointer2 size={15} aria-hidden="true" /> {t('ui.magnetHint')}</p>
       <Divider className="ui-sample-divider" />
       <div className="ui-inline-samples">
         <Button variant="primary" size="sm" data-preview-state="hover" onClick={() => onPress('ui.hover')}>

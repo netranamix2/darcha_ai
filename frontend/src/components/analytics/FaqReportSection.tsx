@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowDownRight, ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Check, ChevronDown,
-  Clock3, Copy, FileText, Inbox, Layers3, PenLine, Printer, Quote, RefreshCw, Send,
+  BookOpen, CalendarDays, Check, ChevronDown,
+  Clock3, Copy, FileText, Inbox, Layers3, PenLine, Printer, RefreshCw, Send,
   TriangleAlert,
 } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
@@ -127,8 +127,6 @@ function ClusterCard({ cluster, index }: { cluster: Cluster; index: number }) {
   const percent = new Intl.NumberFormat(locale, { style: 'percent', signDisplay: 'exceptZero', maximumFractionDigits: 1 })
   const count = new Intl.NumberFormat(locale).format(cluster.count)
   const growth = percent.format(cluster.growth_pct / 100)
-  const change = cluster.growth_pct > 0 ? 'up' : cluster.growth_pct < 0 ? 'down' : 'steady'
-  const GrowthIcon = change === 'up' ? ArrowUpRight : change === 'down' ? ArrowDownRight : ArrowRight
   const examples = cluster.examples.slice(0, 2)
   const effect = cluster.effect_pct
 
@@ -142,7 +140,7 @@ function ClusterCard({ cluster, index }: { cluster: Cluster; index: number }) {
         <div className="faq-cluster-header">
           <h3 id={titleId}>{title}</h3>
           <span className="faq-growth" role="img" aria-label={t('faq.growth').replace('{value}', growth)}>
-            <GrowthIcon aria-hidden="true" /> {growth}
+            {growth}
           </span>
         </div>
         <div className="faq-cluster-metric">
@@ -168,7 +166,6 @@ function ClusterCard({ cluster, index }: { cluster: Cluster; index: number }) {
                 <ul className="faq-examples">
                   {examples.map((example, exampleIndex) => (
                     <li key={exampleIndex}>
-                      <Quote aria-hidden="true" />
                       <q dir="auto">{example}</q>
                     </li>
                   ))}
@@ -179,7 +176,7 @@ function ClusterCard({ cluster, index }: { cluster: Cluster; index: number }) {
         )}
         {effect != null && (
           <p className="faq-effect">
-            <ArrowDownRight aria-hidden="true" /> {t('faq.effect').replace('{value}', percent.format(effect / 100))}
+            {t('faq.effect').replace('{value}', percent.format(effect / 100))}
           </p>
         )}
         {draft && <Explainer draft={draft} />}

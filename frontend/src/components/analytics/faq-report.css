@@ -71,15 +71,15 @@
 
 .faq-cluster {
   min-width: 0;
-  animation: faq-rise 320ms var(--ease-out) var(--faq-stagger, 0ms) both;
+  animation: faq-rise 200ms var(--ease-out) var(--faq-stagger, 0ms) both;
 }
 
 .faq-cluster-panel {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  gap: 0.85rem;
-  padding: clamp(1.05rem, 2.1vw, 1.45rem);
+  gap: 12px;
+  padding: clamp(16px, 2.1vw, 24px);
 }
 
 .faq-cluster-header {
@@ -97,16 +97,8 @@
 
 .faq-growth,
 .faq-knowledge-gap {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.55rem;
-  border: 1px solid color-mix(in srgb, var(--color-focus) 23%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  color: var(--color-focus);
-  font-size: var(--text-caption);
-  font-weight: 650;
+  align-self: flex-start;
+  color: color-mix(in srgb, var(--color-amber) 70%, var(--color-text));
 }
 
 .faq-growth {
@@ -114,9 +106,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.faq-growth svg,
-.faq-knowledge-gap svg,
-.faq-effect svg {
+.faq-knowledge-gap svg {
   width: 0.9rem;
   height: 0.9rem;
   flex: none;
@@ -180,22 +170,9 @@
 }
 
 .faq-examples li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.45rem;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: 10px;
-  background: rgb(7 11 22 / 33%);
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid var(--color-border);
   color: var(--color-secondary);
-}
-
-.faq-examples svg {
-  width: 0.8rem;
-  height: 0.8rem;
-  flex: none;
-  margin-top: 0.22rem;
-  color: var(--color-focus);
 }
 
 .faq-examples q {
@@ -209,10 +186,6 @@
   color: var(--color-focus);
   font-size: var(--text-ui);
   line-height: 1.4;
-}
-
-.faq-effect svg {
-  margin-top: 0.11rem;
 }
 
 .faq-draft {
@@ -259,11 +232,9 @@
 
 .faq-draft-preview {
   display: none;
-  padding: 0.75rem;
-  margin-top: 0.45rem;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
-  border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-deep));
+  padding: 12px 0 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--color-border);
 }
 
 .faq-draft[data-expanded='true'] .faq-draft-preview {
@@ -289,13 +260,11 @@
 }
 
 .faq-preview-text {
-  padding: 0.65rem 0.75rem;
-  border-inline-start: 2px solid color-mix(in srgb, var(--color-primary) 70%, var(--color-focus));
-  border-radius: 3px 11px 11px 3px;
-  background: rgb(255 255 255 / 5%);
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--color-border);
   color: var(--color-text);
   font-size: var(--text-ui);
-  line-height: 1.57;
+  line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
@@ -389,7 +358,7 @@
 }
 
 @keyframes faq-rise {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 

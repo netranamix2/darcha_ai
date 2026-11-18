@@ -45,7 +45,7 @@ export default function AnalyticsPage() {
                         className="analytics-period-marker"
                         aria-hidden="true"
                         layoutId={reducedMotion ? undefined : 'selected'}
-                        transition={{ type: 'spring', duration: 0.28, bounce: 0.12 }}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
                       />
                     )}
                     {t('analytics.periodDays').replace('{days}', String(value))}

@@ -1,4 +1,4 @@
-import { ArrowRightLeft, ArrowUpRight, CreditCard, GraduationCap, RotateCcw } from 'lucide-react'
+import { ArrowRightLeft, CreditCard, GraduationCap, RotateCcw } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { chatMessages } from '../../i18n/chat'
 import { useT } from '../../i18n/useT'
@@ -21,10 +21,10 @@ export function ChatPrompt({ disabled, onPrompt }: { disabled: boolean; onPrompt
       <ul className="chat-prompts glass-stagger" aria-label={t('conversation.suggestions')}>
         {prompts.map(({ key, icon: TopicIcon }, index) => (
           <li key={key} style={{ '--stagger-index': index } as CSSProperties}>
-            <button type="button" className="chat-prompt-chip glass-lift" disabled={disabled} onClick={() => onPrompt(t(key))}>
+            <button type="button" className="chat-prompt-chip" disabled={disabled} onClick={() => onPrompt(t(key))}>
               <TopicIcon className="chat-chip-icon" aria-hidden="true" size={16} />
               <span>{t(key)}</span>
-              <ArrowUpRight className="chat-chip-arrow" aria-hidden="true" size={13} />
+
             </button>
           </li>
         ))}

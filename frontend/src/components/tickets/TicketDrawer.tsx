@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import {
   ArrowDownUp, BookOpenCheck, CalendarClock, Check, CircleAlert, CircleHelp,
   ClipboardList, Eye, Files, FileText, Flag, History, Instagram, MessageCircle, Send, Sparkles,
-  Star, Ticket as TicketIcon, UserRound, X,
+  Star, UserRound, X,
 } from 'lucide-react'
 import { Dialog } from 'radix-ui'
 import { useEffect, useId, useRef, useState } from 'react'
@@ -239,7 +239,6 @@ export function TicketDrawer({ ticket, staff, now, detailLoading, detailError, s
         >
           <header className="ticket-drawer-header">
             <div className="ticket-drawer-heading">
-              <span className="ticket-drawer-title-icon"><TicketIcon size={20} aria-hidden="true" /></span>
               <div>
                 <Dialog.Title className="ticket-drawer-title">{formatNumber(ticket.number)}</Dialog.Title>
                 <Dialog.Description className="ticket-drawer-topic">{localizeCaseTopic(ticket.topic, language)}</Dialog.Description>

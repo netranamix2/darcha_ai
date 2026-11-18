@@ -34,41 +34,28 @@
     var(--glass-hairline) border-box;
   color: var(--color-text);
   box-shadow: var(--glass-highlight), var(--shadow-elevated);
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--glass-blur));
 }
 
-.ticket-drawer[data-state="open"] { animation: ticket-drawer-enter 370ms var(--ease-spring) both; }
+.ticket-drawer[data-state="open"] { animation: ticket-drawer-enter 220ms var(--ease-out) both; }
 .ticket-drawer[data-state="closed"] { animation: ticket-drawer-exit 235ms ease-in both; }
 .ticket-drawer:focus { outline: none; }
 
 .ticket-drawer-header {
   display: grid;
-  gap: 1.05rem;
-  padding: 1.13rem var(--drawer-pad) 0.95rem;
+  gap: 16px;
+  padding: 16px var(--drawer-pad);
   border-bottom: 1px solid var(--color-border);
-  background: linear-gradient(135deg, rgb(148 181 235 / 8%), transparent 52%);
 }
 
 .ticket-drawer-heading {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
 }
 
-.ticket-drawer-title-icon {
-  display: grid;
-  flex: none;
-  width: 2.75rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 37%, transparent);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
-  color: var(--color-focus);
-}
-
-.ticket-drawer-title { font-size: 1.45rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.ticket-drawer-title { font-family: var(--font-mono); font-size: 1.45rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .ticket-drawer-topic { margin-top: 0.28rem; color: var(--color-secondary); font-size: var(--text-ui); overflow-wrap: anywhere; }
 .ticket-drawer-close { align-self: start; }
 
@@ -119,12 +106,9 @@
 .ticket-drawer-overdue svg { flex: none; }
 
 .ticket-drawer-deadline {
-  --deadline-ink: var(--color-green);
-  padding: 0.9rem 0.95rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel-subtle);
-  background: linear-gradient(124deg, color-mix(in srgb, var(--deadline-ink) 7%, transparent), transparent 55%), var(--glass-fill-subtle);
-  box-shadow: var(--glass-highlight);
+  --deadline-ink: var(--color-focus);
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .ticket-drawer-deadline[data-tone="warning"] { --deadline-ink: var(--color-amber); }
@@ -173,25 +157,12 @@
 
 .ticket-drawer-timeline { display: grid; gap: 0.38rem; }
 .ticket-drawer-timeline li { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.6rem; align-items: center; min-height: 2rem; }
-.ticket-drawer-timeline li:not(:last-child)::after {
-  position: absolute;
-  inset-block: 50% -0.5rem;
-  inset-inline-start: calc(0.92rem - 0.5px);
-  width: 1px;
-  background: var(--color-border);
-  content: "";
-}
-
 .ticket-drawer-event-icon {
-  z-index: 1;
   display: grid;
-  width: 1.85rem;
-  aspect-ratio: 1;
   place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--overlay-fill);
-  color: var(--color-focus);
+  width: 1.85rem;
+  height: 1.85rem;
+  color: var(--color-secondary);
 }
 
 .ticket-drawer-timeline [data-event="answered"] .ticket-drawer-event-icon { color: var(--color-green); }
@@ -203,27 +174,16 @@
 
 .ticket-drawer-channel,
 .ticket-drawer-flags li {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.34rem;
-  padding: 0.26rem 0.45rem;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--glass-fill-subtle);
-  color: var(--color-secondary);
-  font-size: var(--text-caption);
+  color: color-mix(in srgb, var(--color-amber) 66%, var(--color-text));
 }
 
 .ticket-drawer-channel svg { color: var(--color-focus); }
 .ticket-drawer-original {
-  padding: 0.82rem 0.9rem;
-  border: 1px solid var(--color-border);
-  border-inline-start-color: var(--color-focus);
-  border-radius: var(--radius-control);
-  background: var(--glass-fill-subtle);
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--color-border);
   color: var(--color-text);
   font-size: var(--text-ui);
-  line-height: 1.55;
+  line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -251,15 +211,13 @@
 .ticket-drawer-similar-list li {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.75rem;
+  gap: 12px;
   align-items: center;
-  padding: 0.62rem 0.72rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--glass-fill-subtle);
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border);
 }
 
-.ticket-drawer-similar-list strong { color: var(--color-focus); font-size: var(--text-ui); font-weight: 650; }
+.ticket-drawer-similar-list strong { font-family: var(--font-mono); color: var(--color-focus); font-size: var(--text-ui); font-weight: 650; }
 .ticket-drawer-similar-list p { color: var(--color-secondary); font-size: var(--text-caption); line-height: 1.4; overflow-wrap: anywhere; }
 .ticket-drawer-muted { color: var(--color-secondary); font-size: var(--text-ui); }
 
@@ -322,8 +280,7 @@
 
 .ticket-drawer-drawn-check::before { top: 0.68rem; left: 0.22rem; width: 0.42rem; transform: rotate(45deg); }
 .ticket-drawer-drawn-check::after { top: 0.96rem; left: 0.5rem; width: 0.75rem; transform: rotate(-48deg); }
-.ticket-drawer-sent[data-recent] .ticket-drawer-drawn-check::before { animation: ticket-check-first 150ms var(--ease-out) both; }
-.ticket-drawer-sent[data-recent] .ticket-drawer-drawn-check::after { animation: ticket-check-second 230ms var(--ease-out) 105ms both; }
+.ticket-drawer-sent[data-recent] .ticket-drawer-drawn-check { animation: ticket-overlay-enter 180ms var(--ease-out) both; }
 
 .ticket-drawer-modal {
   position: fixed;
@@ -342,7 +299,7 @@
   transform: translate(-50%, -50%);
 }
 
-.ticket-drawer-modal[data-state="open"] { animation: ticket-modal-enter 265ms var(--ease-spring) both; }
+.ticket-drawer-modal[data-state="open"] { animation: ticket-modal-enter 200ms var(--ease-out) both; }
 .ticket-drawer-modal[data-state="closed"] { animation: ticket-modal-exit 175ms ease-in both; }
 .ticket-drawer-modal-header { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; }
 .ticket-drawer-modal-header h2 { font-size: 1.22rem; }
@@ -356,13 +313,11 @@
 .ticket-drawer-citation {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  width: 100%;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.55rem 0.62rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--glass-fill-subtle);
+  width: 100%;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
   text-align: start;
   cursor: pointer;
@@ -376,12 +331,10 @@
 
 @keyframes ticket-overlay-enter { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ticket-overlay-exit { from { opacity: 1; } to { opacity: 0; } }
-@keyframes ticket-drawer-enter { from { transform: translateX(104%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes ticket-drawer-exit { to { transform: translateX(105%); opacity: 0; } }
-@keyframes ticket-modal-enter { from { transform: translate(-50%, -47%) scale(0.97); opacity: 0; } }
-@keyframes ticket-modal-exit { to { transform: translate(-50%, -47%) scale(0.97); opacity: 0; } }
-@keyframes ticket-check-first { from { transform: rotate(45deg) scaleX(0); } }
-@keyframes ticket-check-second { from { transform: rotate(-48deg) scaleX(0); } }
+@keyframes ticket-drawer-enter { from { transform: translateX(12px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes ticket-drawer-exit { to { transform: translateX(12px); opacity: 0; } }
+@keyframes ticket-modal-enter { from { transform: translate(-50%, calc(-50% + 8px)); opacity: 0; } }
+@keyframes ticket-modal-exit { to { transform: translate(-50%, calc(-50% + 8px)); opacity: 0; } }
 
 @media (max-width: 640px) {
   .ticket-drawer {
@@ -410,8 +363,7 @@
   .ticket-drawer-modal-overlay[data-state],
   .ticket-drawer[data-state],
   .ticket-drawer-modal[data-state],
-  .ticket-drawer-sent[data-recent] .ticket-drawer-drawn-check::before,
-  .ticket-drawer-sent[data-recent] .ticket-drawer-drawn-check::after {
+  .ticket-drawer-sent[data-recent] .ticket-drawer-drawn-check {
     animation: none;
   }
 }

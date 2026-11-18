@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { ArrowUpRight, CalendarPlus, ChevronDown, FileText, Info, Link2, Search, X } from 'lucide-react'
+import { CalendarPlus, ChevronDown, FileText, Info, Link2, Search, X } from 'lucide-react'
 import { Dialog } from 'radix-ui'
 import { useId, useRef, useState } from 'react'
 import { getKnowledgeBase, updateTicket } from '../../api/client'
@@ -203,7 +203,6 @@ export function TicketDeadline({ ticket, now, disabled, onUpdated }: {
       <a href={appealLaw} className="ticket-drawer-legal" target="_blank" rel="noopener noreferrer">
         <FileText size={15} aria-hidden="true" />
         <span>{t('drawer.law')}</span>
-        <ArrowUpRight size={13} aria-hidden="true" />
       </a>
     </section>
   )

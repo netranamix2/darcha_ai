@@ -54,11 +54,11 @@ export function ChatTicket({ reply, createdAt, resolved }: { reply: ChatReply; c
   )
 }
 
-export function ChatFraud({ animate }: { animate: boolean }) {
+export function ChatFraud() {
   const t = useT(chatMessages)
 
   return (
-    <div className="chat-status chat-status--fraud" data-attention={animate || undefined}>
+    <div className="chat-status chat-status--fraud">
       <span className="chat-status-icon"><ShieldAlert size={19} aria-hidden="true" /></span>
       <div>
         <p className="chat-status-title">{t('conversation.fraudTitle')}</p>

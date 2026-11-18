@@ -1,4 +1,4 @@
-import { FileCheck2, Layers3, Phone, QrCode, UserRoundCheck } from 'lucide-react'
+import { Phone, QrCode } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { publicHomeMessages } from '../../i18n/public-home'
 import { useT } from '../../i18n/useT'
@@ -6,9 +6,9 @@ import { LanguageSwitcher } from '../LanguageSwitcher'
 import { GlassPanel } from '../ui/glass-panel'
 
 const ministryCards = [
-  { title: 'public.sourceTitle', body: 'public.sourceBody', icon: FileCheck2 },
-  { title: 'public.reviewTitle', body: 'public.reviewBody', icon: UserRoundCheck },
-  { title: 'public.channelsTitle', body: 'public.channelsBody', icon: Layers3 },
+  { title: 'public.sourceTitle', body: 'public.sourceBody' },
+  { title: 'public.reviewTitle', body: 'public.reviewBody' },
+  { title: 'public.channelsTitle', body: 'public.channelsBody' },
 ] as const
 
 export default function PublicDetails() {
@@ -20,16 +20,15 @@ export default function PublicDetails() {
       <section className="ministry-section" aria-labelledby="ministry-title">
         <h2 id="ministry-title">{t('public.how')}</h2>
         <div className="ministry-cards">
-          {ministryCards.map(({ title, body, icon: Icon }, index) => (
+          {ministryCards.map(({ title, body }, index) => (
             <motion.article
               key={title}
-              initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+              initial={reducedMotion ? false : { opacity: 0, y: 5 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: reducedMotion ? 0 : 0.35, delay: reducedMotion ? 0 : index * 0.04, ease: 'easeOut' }}
+              transition={{ duration: reducedMotion ? 0 : 0.2, delay: reducedMotion ? 0 : index * 0.04, ease: 'easeOut' }}
             >
               <GlassPanel variant="subtle" className="ministry-card">
-                <span className="ministry-card-icon"><Icon aria-hidden="true" size={21} /></span>
                 <h3>{t(title)}</h3>
                 <p>{t(body)}</p>
               </GlassPanel>

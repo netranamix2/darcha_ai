@@ -89,7 +89,7 @@ export default function PanelLayout() {
                           aria-hidden="true"
                           className="panel-nav-indicator"
                           layoutId={reducedMotion ? undefined : 'panel-nav-indicator'}
-                          transition={{ type: 'spring', duration: 0.32, bounce: 0.12 }}
+                          transition={{ duration: 0.2, ease: 'easeOut' }}
                         />
                       )}
                       <SectionIcon size={19} aria-hidden="true" />

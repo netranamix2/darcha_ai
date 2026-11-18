@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowUpRight, Check, ChevronLeft, ChevronRight, Globe2, Inbox, Instagram, Send, Ticket as TicketIcon } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Globe2, Inbox, Instagram, Send, Ticket as TicketIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useOutletContext, useSearchParams } from 'react-router'
 import { approveResponse, convertInboxToTicket } from '../api/client'
@@ -53,7 +53,7 @@ function AppealedRow({ appeal, selected, pendingAction, disabled, onConvert, onA
 
   return (
     <article className="inbox-record" ref={row} tabIndex={selected ? -1 : undefined} data-highlighted={selected || undefined}>
-      <div className="inbox-record-icon"><ChannelIcon aria-hidden="true" size={20} /></div>
+      <div className="inbox-record-icon"><ChannelIcon aria-hidden="true" size={16} /></div>
       <div className="inbox-record-body">
         <div className="inbox-record-meta">
           <span>{t(label)}</span>
@@ -72,7 +72,7 @@ function AppealedRow({ appeal, selected, pendingAction, disabled, onConvert, onA
       <div className="inbox-record-actions">
         {appeal.ticket_id || appeal.ticket_number ? (
           <Button asChild variant="secondary" size="sm">
-            <Link to={target}>{t('inbox.open')} <ArrowUpRight aria-hidden="true" size={16} /></Link>
+            <Link to={target}>{t('inbox.open')}</Link>
           </Button>
         ) : (
           <>

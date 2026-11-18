@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, ChartNoAxesCombined, ChartPie, CircleAlert, MapPin, MessagesSquare } from 'lucide-react'
+import { CircleAlert } from 'lucide-react'
 import { useId, useMemo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, Pie, PieChart, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -40,9 +40,8 @@ const rankHeight = 47
 const rankMargin = { top: 0, right: 0, bottom: 0, left: 0 }
 const tooltipStyle = { zIndex: 4 }
 
-function ChartCard({ title, icon, detail, className = '', children }: {
+function ChartCard({ title, detail, className = '', children }: {
   title: string
-  icon: ReactNode
   detail?: string
   className?: string
   children: ReactNode
@@ -51,7 +50,6 @@ function ChartCard({ title, icon, detail, className = '', children }: {
   return (
     <GlassPanel className={`analytics-chart-card ${className}`} blur={false} role="region" aria-labelledby={titleId}>
       <header className="analytics-chart-heading">
-        <span className="analytics-chart-icon" aria-hidden="true">{icon}</span>
         <h2 id={titleId}>{title}</h2>
         {detail && <span className="analytics-chart-detail">{detail}</span>}
       </header>
@@ -97,7 +95,7 @@ function ChannelChart({ byChannel, locale }: { byChannel: AnalyticsSummary['by_c
   const title = t('charts.channels')
 
   return (
-    <ChartCard title={title} icon={<BarChart3 size={17} />}>
+    <ChartCard title={title}>
       {data.some(({ count }) => count > 0) ? (
         <BarChart className="analytics-channel-plot" responsive accessibilityLayer aria-label={title} data={data} margin={chartMargin} barCategoryGap="25%">
           <defs>
@@ -131,7 +129,7 @@ function LevelChart({ summary, locale }: { summary: AnalyticsSummary; locale: st
     fill: color,
   }))
   return (
-    <ChartCard title={title} icon={<ChartPie size={17} />}>
+    <ChartCard title={title}>
       {data.some(({ count }) => count > 0) ? (
         <div className="analytics-donut-layout">
           <div className="analytics-donut-plot">
@@ -182,7 +180,7 @@ function SentimentChart({ data, language, loading, onRetry }: {
   }
 
   return (
-    <ChartCard title={title} detail={t('charts.last14')} icon={<ChartNoAxesCombined size={17} />} className="analytics-sentiment-card">
+    <ChartCard title={title} detail={t('charts.last14')} className="analytics-sentiment-card">
       {onRetry && (
         <div className="analytics-load-error" role="alert">
           <CircleAlert size={18} aria-hidden="true" />
@@ -236,10 +234,9 @@ function RankBar({ x, y, width, height, fill }: BarShapeProps) {
   return <Rectangle className="analytics-rank-mark" x={x} y={y + 11} width={width} height={height} fill={fill} radius={4} />
 }
 
-function RankedBars({ rows, title, icon, locale, unspecified, region = false }: {
+function RankedBars({ rows, title, locale, unspecified, region = false }: {
   rows: Rank[]
   title: string
-  icon: ReactNode
   locale: string
   unspecified?: number
   region?: boolean
@@ -249,7 +246,7 @@ function RankedBars({ rows, title, icon, locale, unspecified, region = false }: 
   const format = new Intl.NumberFormat(locale)
   const growthFormat = new Intl.NumberFormat(locale, { maximumFractionDigits: 1, signDisplay: 'exceptZero' })
   return (
-    <ChartCard title={title} icon={icon} className={region ? 'analytics-ranking-card analytics-ranking-regions' : 'analytics-ranking-card'}>
+    <ChartCard title={title} className={region ? 'analytics-ranking-card analytics-ranking-regions' : 'analytics-ranking-card'}>
       {rows.length > 0 ? (
         <div className="analytics-ranking" tabIndex={region && rows.length > 5 ? 0 : undefined} style={{ '--analytics-rank-height': `${rankHeight}px` } as CSSProperties}>
           <div className="analytics-ranking-plot" style={{ height: rows.length * rankHeight }}>
@@ -258,7 +255,7 @@ function RankedBars({ rows, title, icon, locale, unspecified, region = false }: 
                 <defs>
                   <linearGradient id={gradient} x1="0" x2="1" y1="0" y2="0">
                     <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={region ? 0.4 : 0.52} />
-                    <stop offset="100%" stopColor={region ? 'var(--color-cyan)' : 'var(--color-focus)'} stopOpacity={region ? 0.72 : 0.92} />
+                    <stop offset="100%" stopColor="var(--color-focus)" stopOpacity={region ? 0.72 : 0.92} />
                   </linearGradient>
                 </defs>
                 <XAxis hide type="number" domain={[0, (max: number) => Math.max(1, max)]} />
@@ -274,7 +271,6 @@ function RankedBars({ rows, title, icon, locale, unspecified, region = false }: 
                 <span className="analytics-ranking-name" title={label}>{label}</span>
                 {growth !== undefined && (
                   <span className="analytics-ranking-growth" title={t('charts.previous')}>
-                    {growth > 0 ? <ArrowUpRight size={12} aria-hidden="true" /> : growth < 0 ? <ArrowDownRight size={12} aria-hidden="true" /> : <ArrowRight size={12} aria-hidden="true" />}
                     {growthFormat.format(growth)}%
                   </span>
                 )}
@@ -320,8 +316,8 @@ export function AnalyticsCharts({ summary, previous, sentiment, sentimentLoading
       <ChannelChart byChannel={summary.by_channel} locale={locale} />
       <LevelChart summary={summary} locale={locale} />
       <SentimentChart data={sentiment ?? []} language={language} loading={sentimentLoading} onRetry={onSentimentRetry} />
-      <RankedBars rows={topics} title={t('charts.topics')} icon={<MessagesSquare size={17} />} locale={locale} />
-      <RankedBars rows={regions} title={t('charts.regions')} icon={<MapPin size={17} />} locale={locale} unspecified={unspecified} region />
+      <RankedBars rows={topics} title={t('charts.topics')} locale={locale} />
+      <RankedBars rows={regions} title={t('charts.regions')} locale={locale} unspecified={unspecified} region />
     </div>
   )
 }

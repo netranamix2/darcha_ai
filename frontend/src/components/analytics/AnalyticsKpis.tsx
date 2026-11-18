@@ -1,6 +1,4 @@
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Bot, Inbox, Timer, TriangleAlert } from 'lucide-react'
 import { useId } from 'react'
-import type { CSSProperties } from 'react'
 import type { AnalyticsSummary } from '../../api/types'
 import { analyticsChartMessages } from '../../i18n/analytics-charts'
 import { localeCodes } from '../../i18n/locales'
@@ -10,10 +8,10 @@ import { GlassPanel, Skeleton, ViewportCounter } from '../ui'
 import './analytics-charts.css'
 
 const metrics = [
-  { key: 'total', label: 'charts.total', icon: Inbox, color: 'var(--color-focus)' },
-  { key: 'ai_resolved_pct', label: 'charts.resolved', icon: Bot, color: 'var(--color-green)' },
-  { key: 'avg_response_sec', label: 'charts.response', icon: Timer, color: 'var(--color-cyan)' },
-  { key: 'overdue', label: 'charts.overdue', icon: TriangleAlert, color: 'var(--color-red)' },
+  { key: 'total', label: 'charts.total' },
+  { key: 'ai_resolved_pct', label: 'charts.resolved' },
+  { key: 'avg_response_sec', label: 'charts.response' },
+  { key: 'overdue', label: 'charts.overdue' },
 ] as const
 
 type MetricKey = (typeof metrics)[number]['key']
@@ -69,14 +67,12 @@ function MetricChange({ metric, value, previous, locale }: {
     : (ai && diff > 0) || (!ai && diff < 0)
       ? 'good'
       : metric === 'overdue' ? 'bad' : 'attention'
-  const Arrow = diff > 0 ? ArrowUpRight : diff < 0 ? ArrowDownRight : ArrowRight
   const unit = ai ? ` ${t('charts.points')}` : comparative ? '%' : metric === 'avg_response_sec' ? ` ${t('charts.seconds')}` : ''
   const amount = new Intl.NumberFormat(locale, { maximumFractionDigits: 1, signDisplay: 'exceptZero' }).format(change)
 
   return (
     <>
       <span className="analytics-kpi-change" data-tone={tone}>
-        <Arrow size={14} aria-hidden="true" />
         <span>{amount}{unit}</span>
       </span>
       <span className="analytics-kpi-baseline">{t('charts.previous')}</span>
@@ -95,16 +91,14 @@ export function AnalyticsKpis({ summary, previous, comparisonLoading }: {
 
   return (
     <dl className="analytics-kpi-grid" aria-label={t('charts.kpiLabel')}>
-      {metrics.map(({ key, label, icon: Icon, color }) => (
+      {metrics.map(({ key, label }) => (
         <GlassPanel
           key={key}
           className="analytics-kpi-card"
           variant="subtle"
           blur={false}
-          style={{ '--analytics-kpi-color': color } as CSSProperties}
         >
           <dt className="analytics-kpi-label">
-            <Icon size={16} aria-hidden="true" />
             {t(key === 'avg_response_sec' && summary.response_time_kind === 'median' ? 'charts.responseMedian' : label)}
           </dt>
           <dd className="analytics-kpi-main">

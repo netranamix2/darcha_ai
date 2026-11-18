@@ -1,4 +1,4 @@
-import { ArrowUpRight, BellRing, Clock3, ShieldAlert, SlidersHorizontal, TrendingUp } from 'lucide-react'
+import { ShieldAlert, SlidersHorizontal, TrendingUp } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
@@ -36,7 +36,6 @@ function TimeSavings({ summary, days, minutes, onMinutesChange }: SavingsOptions
   return (
     <GlassPanel variant="elevated" blur={false} className="analytics-savings" role="region" aria-labelledby={headingId}>
       <div className="analytics-operations-heading">
-        <span className="analytics-operations-icon"><Clock3 size={19} aria-hidden="true" /></span>
         <h2 id={headingId}>{t('analytics.saved')}</h2>
       </div>
       <output className="analytics-savings-value" htmlFor={sliderId} aria-live="off">
@@ -73,7 +72,6 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
   return (
     <GlassPanel blur={false} className="analytics-alerts" role="region" aria-labelledby={headingId}>
       <div className="analytics-operations-heading">
-        <span className="analytics-operations-icon"><BellRing size={19} aria-hidden="true" /></span>
         <h2 id={headingId}>{t('analytics.alerts')}</h2>
       </div>
       {recent.length ? (
@@ -95,7 +93,6 @@ function AlertFeed({ alerts }: { alerts: AnalyticsSummary['alerts'] }) {
                   </span>
                   <span className="analytics-alert-text">{text}</span>
                 </span>
-                {canOpen && <ArrowUpRight className="analytics-alert-link-icon" size={17} aria-hidden="true" />}
               </>
             )
             return (
